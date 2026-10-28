@@ -354,11 +354,7 @@ function setOutbox(a) { try { localStorage.setItem(LS_OUTBOX, JSON.stringify(a))
 
 async function save(none) {
   clearDraft();
-  if (pendingUploads.size) {
-    showBusy(t('uploading'));
-    await Promise.all([...pendingUploads]);   // 写真の送信が終わるのを待つ（たいていは撮影直後に終わっている）
-    hideBusy();
-  }
+  // 写真の送信は待たない（送信中の写真は、届きしだい記録の中身を差し替えてから送る）
   const job = {
     id: Date.now() + '_' + Math.random().toString(36).slice(2, 7),
     no: state.no, name: state.name,
@@ -381,8 +377,17 @@ async function flushOutbox() {
   let sent = 0, failed = false;
   try {
     for (;;) {
-      const job = getOutbox()[0];
+      let job = getOutbox()[0];
       if (!job) break;
+      // この記録に送信中の写真があれば、届くのを待つ（ページを開き直して行方が分からないものは、写真なしにする）
+      const marks = job.adds.map(a => a.photo).filter(isPending);
+      if (marks.length) {
+        await Promise.all(marks.map(m => uploadJobs.get(m) || Promise.resolve()));
+        marks.forEach(m => { if (!uploadJobs.has(m)) replacePhoto(m, ''); });
+        job = getOutbox().find(j => j.id === job.id);
+        if (!job) continue;
+        job.adds.forEach(a => { if (isPending(a.photo)) a.photo = ''; });
+      }
       try {
         await call('apiSave', [state.deviceId, job.no, job.name, job.adds, job.removes, job.none]);
       } catch (e) { failed = true; break; }
@@ -419,28 +424,44 @@ function removeSymptom(h) {
 }
 
 // 写真を裏で送る。画面はすぐ次に進める
+// ・送信中の写真は「pending:番号」という目印にしておき、届いたら本当のURLに差し替える
+// ・「完了」を押したあとに届いた場合も、送信待ちの記録の中身を差し替える
 const pendingUploads = new Set();
+const uploadJobs = new Map();   // 目印 → 送信中の処理
+let uploadSeq = 0;
+function replacePhoto(mark, url) {
+  state.adds.forEach((p, s) => { if (p === mark) state.adds.set(s, url); });
+  state.current.forEach(c => { if (c.photo === mark) c.photo = url; });
+  const box = getOutbox();
+  let changed = false;
+  box.forEach(j => j.adds.forEach(a => { if (a.photo === mark) { a.photo = url; changed = true; } }));
+  if (changed) setOutbox(box);
+}
 function uploadPhoto(dataUrl) {
   const h = state.photoFor, no = state.no;
+  const mark = 'pending:' + Date.now() + '_' + (++uploadSeq);
   hideBusy();
-  addSymptom(h, '');   // 先に症状を追加して、カテゴリ画面に戻る
+  addSymptom(h, mark);   // 先に症状を追加して、カテゴリ画面に戻る
   toast(t('uploading'));
   const p = call('apiUploadPhoto', [state.deviceId, no, h, dataUrl])
     .then(r => {
-      if (state.no === no && state.adds.has(h)) state.adds.set(h, r.url);
+      replacePhoto(mark, r.url);
       state.photoCounts[h] = (state.photoCounts[h] || 0) + 1;
-      if (state.screen === 'cat') render();
     })
     .catch(e => {
-      // 失敗したら、写真なしの症状を取り消して、撮り直せるようにする
-      if (state.no === no && state.adds.get(h) === '') state.adds.delete(h);
-      if (state.screen === 'cat') render();
-      alert(t('errSave') + '\n' + (e.message || e));
+      // 「完了」の前なら、症状を外して撮り直せるようにする
+      if (state.no === no && state.adds.get(h) === mark) {
+        state.adds.delete(h);
+        alert(t('errSave') + '\n' + (e.message || e));
+      }
+      replacePhoto(mark, '');   // 「完了」のあとなら、写真なしで症状だけ記録する
     })
-    .then(() => pendingUploads.delete(p));
+    .then(() => { pendingUploads.delete(p); uploadJobs.delete(mark); refresh(); });
   pendingUploads.add(p);
+  uploadJobs.set(mark, p);
   return p;
 }
+const isPending = v => typeof v === 'string' && v.indexOf('pending:') === 0;
 
 // 「写真を選ぶ」、またはページ内カメラが使えない端末の撮影
 async function onPhotoPicked(ev) {
