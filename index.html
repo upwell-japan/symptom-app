@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#1d2024">
+<title>症状入力</title>
+<style>
+:root{--ink:#1d2024;--ink2:#5b6168;--pill:#3a3f46;--sand:#ece7dd;--rule:#d9d4ca;--amber:#e9a320;--amber-soft:#fdf1d8;--danger:#b3261e;}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Noto Sans JP',system-ui,-apple-system,sans-serif;background:#fff;color:var(--ink);-webkit-tap-highlight-color:transparent}
+header{background:var(--ink);color:#fff;display:flex;align-items:center;gap:8px;padding:10px 12px;position:sticky;top:0;z-index:5;min-height:56px}
+.title{font-weight:700;font-size:18px}
+.pill{background:var(--pill);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill.no{font-size:16px;flex:none}
+.pill.name{min-width:0}
+.lang{margin-left:auto;flex:none;background:var(--pill);color:#fff;border:0;border-radius:999px;padding:7px 12px;font:inherit;font-size:14px;font-weight:700}
+main{padding:12px 14px 40px;max-width:760px;margin:0 auto}
+h2{font-size:18px;font-weight:700;margin:16px 0 10px}
+.group{background:var(--sand);border-radius:14px;padding:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.btn{background:#fff;border:1px solid var(--ink);border-radius:10px;min-height:64px;padding:10px 8px;font:inherit;font-weight:700;font-size:15px;color:var(--ink);position:relative;line-height:1.3;cursor:pointer}
+.btn small{display:block;font-weight:400;font-size:12px;color:var(--ink2);margin-top:3px}
+.btn.on{background:var(--amber-soft);border:2px solid var(--amber);cursor:default}
+.btn.on::after{content:"✓";position:absolute;top:4px;right:8px;font-size:14px}
+.badge{position:absolute;top:-7px;right:-7px;background:var(--amber);color:var(--ink);border-radius:999px;min-width:24px;height:24px;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 7px}
+.sel{list-style:none;padding:0;margin:0;border:1px solid var(--rule);border-radius:12px;overflow:hidden}
+.sel li{display:flex;align-items:center;gap:10px;padding:10px 12px;border-top:1px solid #eee;font-weight:700}
+.sel li:first-child{border-top:0}
+.sel small{display:block;font-weight:400;font-size:12px;color:var(--ink2)}
+.tag{font-size:11px;font-weight:700;border:1px solid var(--ink2);color:var(--ink2);border-radius:6px;padding:1px 6px;flex:none}
+.tag.new{border-color:var(--amber);color:#8a5a00;background:var(--amber-soft)}
+.x{margin-left:auto;flex:none;width:40px;height:40px;border-radius:8px;border:1px solid var(--rule);background:#fff;font-size:20px;color:var(--ink)}
+.empty{color:var(--ink2);font-size:14px;padding:12px;border:1px dashed var(--rule);border-radius:12px}
+.actions{display:flex;gap:10px;margin:20px 0 8px}
+.primary,.secondary{flex:1;border-radius:12px;min-height:58px;font:inherit;font-weight:700;font-size:17px;cursor:pointer}
+.primary{background:var(--ink);color:#fff;border:0}
+.secondary{background:#fff;color:var(--ink);border:1px solid var(--ink)}
+.back{background:none;border:0;color:var(--ink2);font:inherit;font-size:15px;padding:8px 0;cursor:pointer}
+.card{border:1px solid var(--rule);border-radius:14px;padding:16px;margin-top:12px}
+.big{font-size:20px;font-weight:700;margin:0 0 4px}
+.note{color:var(--ink2);font-size:14px;line-height:1.7;margin:8px 0}
+label.field{display:block;font-size:14px;color:var(--ink2);margin:14px 0 6px}
+input[type=text]{width:100%;font:inherit;font-size:18px;padding:12px;border:1px solid var(--ink);border-radius:10px}
+.err{color:var(--danger);font-size:14px;margin-top:6px;min-height:1em}
+.link{background:none;border:0;color:var(--ink);text-decoration:underline;font:inherit;font-size:14px;padding:10px 0;cursor:pointer}
+.cam{position:relative;border-radius:12px;overflow:hidden;background:#000}
+.cam video{display:block;width:100%;max-height:62vh;object-fit:cover}
+.cam .frame{position:absolute;inset:18% 22%;border:3px solid var(--amber);border-radius:12px;pointer-events:none}
+button:focus-visible,input:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+#busy{position:fixed;inset:0;background:rgba(255,255,255,.88);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;z-index:20}
+#busy[hidden]{display:none}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:30}
+#toast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){#toast{transition:none}}
+</style>
+</head>
+<body>
+<header id="hd"></header>
+<main id="app"></main>
+<input type="file" id="camPhoto" accept="image/*" capture="environment" hidden>
+<input type="file" id="galPhoto" accept="image/*" hidden>
+<input type="file" id="camQr" accept="image/*" capture="environment" hidden>
+<div id="busy" hidden></div>
+<div id="toast" role="status"></div>
+<script>
+// ===============================================================
+// ★ ここに GAS のウェブアプリのURL（末尾が /exec）を貼る
+// ===============================================================
+const API_URL = 'https://script.google.com/macros/s/AKfycbx2iYguWWJr08QSthZjJcnxo15en0kgEBGBcuvYMoiV2XQuOPQlqX55XIUK1NtIqVeo/exec';
+
+// QRのURLの「?no=564-03&name=…」を受け取る
+const INIT = (() => {
+  const q = new URLSearchParams(location.search);
+  return { no: (q.get('no') || '').trim(), name: (q.get('name') || '').trim() };
+})();
+
+// ===============================================================
+// 表示する言語（日本語／English／Bahasa Indonesia）
+// ・保存されるデータは、どの言語で操作しても日本語のまま
+// ===============================================================
+const LANGS = ['ja', 'en', 'id'];
+const LANG_LABEL = { ja: '日本語', en: 'English', id: 'Indonesia' };
+const T = {
+  title:      { ja: '症状入力', en: 'Defect entry', id: 'Input cacat' },
+  loading:    { ja: '読み込み中…', en: 'Loading…', id: 'Memuat…' },
+  reqTitle:   { ja: 'この端末の利用を申請', en: 'Request access for this device', id: 'Ajukan izin untuk perangkat ini' },
+  reqDesc:    { ja: '初めて使う端末です。端末の呼び名を入れて申請してください。管理者が許可すると使えるようになります。', en: 'This device is new. Enter a name for it and send a request. You can use the app after the manager approves it.', id: 'Perangkat ini baru. Masukkan nama perangkat lalu kirim permintaan. Aplikasi bisa dipakai setelah disetujui manajer.' },
+  reqLabel:   { ja: '端末の呼び名（例：現場スマホ1）', en: 'Device name (e.g. Floor phone 1)', id: 'Nama perangkat (contoh: HP lantai 1)' },
+  reqBtn:     { ja: '申請する', en: 'Send request', id: 'Kirim permintaan' },
+  reqEmpty:   { ja: '端末の呼び名を入力してください', en: 'Enter a device name', id: 'Masukkan nama perangkat' },
+  pendTitle:  { ja: '許可を待っています', en: 'Waiting for approval', id: 'Menunggu persetujuan' },
+  pendDesc:   { ja: '管理者が許可すると使えます。許可されたら「確認する」を押してください。', en: 'You can use the app after the manager approves this device. Then tap “Check again”.', id: 'Aplikasi bisa dipakai setelah manajer menyetujui perangkat ini. Lalu tekan “Periksa lagi”.' },
+  check:      { ja: '確認する', en: 'Check again', id: 'Periksa lagi' },
+  openTitle:  { ja: '台を開く', en: 'Open a unit', id: 'Buka unit' },
+  openDesc:   { ja: '「QRを読み取る」を押して、シールのQRにカメラを向けてください。在庫管理番号を入力して開くこともできます。', en: 'Tap “Scan QR” and point the camera at the QR on the sticker. You can also enter the stock number.', id: 'Tekan “Pindai QR” lalu arahkan kamera ke QR di stiker. Bisa juga memasukkan nomor stok.' },
+  scan:       { ja: 'QRを読み取る', en: 'Scan QR', id: 'Pindai QR' },
+  scanDesc:   { ja: 'QRを枠の中に入れてください。読み取ると自動で開きます。', en: 'Put the QR inside the frame. The unit opens automatically.', id: 'Masukkan QR ke dalam bingkai. Unit akan terbuka otomatis.' },
+  noLabel:    { ja: '在庫管理番号（例：564-03）', en: 'Stock number (e.g. 564-03)', id: 'Nomor stok (contoh: 564-03)' },
+  open:       { ja: '開く', en: 'Open', id: 'Buka' },
+  noInvalid:  { ja: '在庫管理番号を「564-03」の形で入力してください', en: 'Enter the stock number like “564-03”', id: 'Masukkan nomor stok seperti “564-03”' },
+  qrFail:     { ja: 'QRを読み取れませんでした。QRを大きく写して、もう一度撮影してください。', en: 'The QR could not be read. Take the photo again with the QR filling more of the picture.', id: 'QR tidak terbaca. Foto lagi dengan QR terlihat lebih besar.' },
+  camNg:      { ja: 'カメラを使えません。ブラウザの設定で、このページのカメラを「許可」にしてください。', en: 'The camera is not available. Allow camera access for this page in the browser settings.', id: 'Kamera tidak bisa dipakai. Izinkan kamera untuk halaman ini di pengaturan browser.' },
+  catTitle:   { ja: 'カテゴリを選択', en: 'Select a category', id: 'Pilih kategori' },
+  selTitle:   { ja: 'この台の症状', en: 'Defects on this unit', id: 'Cacat pada unit ini' },
+  selEmpty:   { ja: 'まだ症状はありません。カテゴリを押して症状を選んでください。', en: 'No defects yet. Tap a category to choose a defect.', id: 'Belum ada cacat. Tekan kategori untuk memilih cacat.' },
+  isNew:      { ja: '今回追加', en: 'New', id: 'Baru' },
+  hasPhoto:   { ja: '写真', en: 'Photo', id: 'Foto' },
+  done:       { ja: '完了', en: 'Done', id: 'Selesai' },
+  none:       { ja: '症状なし', en: 'No defects', id: 'Tidak ada cacat' },
+  backCat:    { ja: '‹ カテゴリに戻る', en: '‹ Back to categories', id: '‹ Kembali ke kategori' },
+  photoReq:   { ja: 'この症状は写真が必要です。瑕疵がはっきり分かるように撮影してください。', en: 'This defect needs a photo. Take a photo that clearly shows the defect.', id: 'Cacat ini perlu foto. Ambil foto yang memperlihatkan cacat dengan jelas.' },
+  photoOpt:   { ja: '同じ型番で写真が{n}枚そろっているので、撮影は任意です。', en: 'This model already has {n} photos of this defect, so a photo is optional.', id: 'Model ini sudah punya {n} foto untuk cacat ini, jadi foto tidak wajib.' },
+  shoot:      { ja: 'カメラで撮影', en: 'Open camera', id: 'Buka kamera' },
+  pick:       { ja: '写真を選ぶ（撮影済みの写真）', en: 'Choose a photo', id: 'Pilih foto' },
+  skip:       { ja: '撮影しないで進む', en: 'Continue without photo', id: 'Lanjut tanpa foto' },
+  cancel:     { ja: 'やめる', en: 'Cancel', id: 'Batal' },
+  uploading:  { ja: '写真を保存しています…', en: 'Saving the photo…', id: 'Menyimpan foto…' },
+  saving:     { ja: '保存しています…', en: 'Saving…', id: 'Menyimpan…' },
+  saved:      { ja: '保存しました', en: 'Saved', id: 'Tersimpan' },
+  retake:     { ja: 'もう一度撮影してください', en: 'Please take the photo again', id: 'Silakan ambil foto lagi' },
+  resNone:    { ja: '症状なしで記録しました。', en: 'Recorded as no defects.', id: 'Dicatat tanpa cacat.' },
+  count:      { ja: '{n}件', en: '{n} items', id: '{n} item' },
+  next:       { ja: '次の台を読み取る', en: 'Scan the next unit', id: 'Pindai unit berikutnya' },
+  fix:        { ja: '修正する', en: 'Edit', id: 'Ubah' },
+  byNumber:   { ja: '在庫管理番号を入力して開く', en: 'Open by stock number', id: 'Buka dengan nomor stok' },
+  errSave:    { ja: '保存できませんでした。通信を確認して、もう一度押してください。', en: 'Could not save. Check the connection and tap again.', id: 'Gagal menyimpan. Periksa koneksi lalu tekan lagi.' },
+  errLoad:    { ja: '読み込めませんでした。通信を確認して、もう一度開いてください。', en: 'Could not load. Check the connection and open the app again.', id: 'Gagal memuat. Periksa koneksi lalu buka aplikasi lagi.' },
+  retry:      { ja: 'もう一度読み込む', en: 'Load again', id: 'Muat ulang' }
+};
+function t(key, n) { const s = (T[key] && (T[key][state.lang] || T[key].ja)) || key; return n === undefined ? s : s.replace('{n}', n); }
+
+// ===============================================================
+// 状態
+// ===============================================================
+const LS_DEVICE = 'symptom_device_id', LS_LANG = 'symptom_lang', LS_DRAFT = 'symptom_draft', LS_MASTER = 'symptom_master';
+const PHOTO_MAX = 1024;
+const PHOTO_QUALITY = 0.7;
+const state = {
+  lang: loadLang(),
+  deviceId: loadDeviceId(),
+  screen: 'loading', back: 'open',
+  owner: '', master: [], masterMap: {}, cats: [], photoNeed: 10,
+  no: '', name: '', current: [], photoCounts: {},
+  adds: new Map(), removes: new Set(),
+  cat: '', photoFor: '', lastNone: false, error: ''
+};
+
+function loadLang() {
+  try { const v = localStorage.getItem(LS_LANG); if (LANGS.includes(v)) return v; } catch (e) {}
+  const nav = (navigator.language || 'ja').slice(0, 2);
+  return nav === 'id' || nav === 'in' ? 'id' : nav === 'en' ? 'en' : 'ja';
+}
+function loadDeviceId() {
+  let id = '';
+  try { id = localStorage.getItem(LS_DEVICE) || ''; } catch (e) {}
+  if (!id) {
+    id = (self.crypto && crypto.randomUUID) ? crypto.randomUUID() : 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+    try { localStorage.setItem(LS_DEVICE, id); } catch (e) {}
+  }
+  return id;
+}
+
+// ===============================================================
+// 下書き（「写真を選ぶ」などでページが破棄されても、途中経過を復元するため）
+// ===============================================================
+function saveDraft() {
+  try {
+    localStorage.setItem(LS_DRAFT, JSON.stringify({
+      t: Date.now(), deviceId: state.deviceId, no: state.no, name: state.name,
+      photoFor: state.photoFor, adds: [...state.adds], removes: [...state.removes]
+    }));
+  } catch (e) {}
+}
+function clearDraft() { try { localStorage.removeItem(LS_DRAFT); } catch (e) {} }
+function loadDraft() {
+  try {
+    const d = JSON.parse(localStorage.getItem(LS_DRAFT) || 'null');
+    if (d && d.no && d.deviceId === state.deviceId && Date.now() - d.t < 30 * 60 * 1000) return d;
+  } catch (e) {}
+  return null;
+}
+
+// 画面に表示する「この台の症状」（保存済み − 取消 ＋ 今回追加）
+function effective() {
+  const list = [];
+  state.current.forEach(c => { if (!state.removes.has(c.symptom)) list.push({ symptom: c.symptom, photo: c.photo, isNew: false }); });
+  state.adds.forEach((photo, s) => list.push({ symptom: s, photo: photo, isNew: true }));
+  const order = s => (state.masterMap[s] ? state.masterMap[s].idx : 9999);
+  return list.sort((a, b) => order(a.symptom) - order(b.symptom));
+}
+function effectiveSet() { return new Set(effective().map(e => e.symptom)); }
+
+// ===============================================================
+// サーバー（GAS）とのやり取り
+// ・Content-Type を text/plain にすると、ブラウザの事前確認なしで送れる
+// ===============================================================
+async function call(fn, args, busyKey) {
+  if (busyKey) showBusy(t(busyKey));
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ fn: fn, args: args || [] })
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error || 'error');
+    return j.result;
+  } finally {
+    if (busyKey) hideBusy();
+  }
+}
+
+function start() {
+  // 前回の症状マスタが残っていれば、先に画面の準備をしておく
+  try { const m = JSON.parse(localStorage.getItem(LS_MASTER) || 'null'); if (m) setMaster(m); } catch (e) {}
+  state.screen = 'loading'; render();
+  call('apiInit', [state.deviceId, INIT.no]).then(r => {
+    if (r.status === 'new') { state.screen = 'request'; return render(); }
+    if (r.status === 'pending') { state.screen = 'pending'; return render(); }
+    setMaster(r.master);
+    try { localStorage.setItem(LS_MASTER, JSON.stringify(r.master)); } catch (e) {}
+    state.owner = r.owner; state.photoNeed = r.photoNeed;
+
+    // 「写真を選ぶ」の途中でページが作り直された場合は、途中経過を復元する
+    // （別の台のQRで開いたときは、下書きを捨てる）
+    const d = loadDraft();
+    const sameUnit = d && (!INIT.no || INIT.no === d.no);
+    if (d && !sameUnit) clearDraft();
+    if (sameUnit) {
+      clearDraft();
+      return call('apiLoadUnit', [state.deviceId, d.no]).then(info => {
+        setUnit(info, d.name);
+        d.adds.forEach(([s, p]) => state.adds.set(s, p));
+        d.removes.forEach(s => state.removes.add(s));
+        state.photoFor = d.photoFor; state.screen = 'photo';
+        render(); toast(t('retake'));
+      });
+    }
+
+    if (INIT.no) { setUnit(r, INIT.name); state.screen = 'cat'; }
+    else state.screen = 'open';
+    render();
+  }).catch(e => { state.error = String(e.message || e); state.screen = 'error'; render(); });
+}
+
+function setMaster(master) {
+  state.master = master; state.masterMap = {}; state.cats = [];
+  master.forEach((m, i) => {
+    m.idx = i; state.masterMap[m.h] = m;
+    if (!state.cats.find(c => c.cat === m.cat)) state.cats.push({ cat: m.cat, en: m.catEn, id: m.catId });
+  });
+}
+
+function setUnit(info, nameFromQr) {
+  state.no = info.no; state.name = nameFromQr || info.name || '';
+  state.current = info.current || []; state.photoCounts = info.photoCounts || {};
+  state.adds = new Map(); state.removes = new Set(); state.cat = ''; state.lastNone = false;
+  // アドレスにも台の番号を残しておく（再読み込みしても同じ台が開く）
+  try {
+    const q = new URLSearchParams({ no: state.no });
+    if (state.name) q.set('name', state.name);
+    history.replaceState(null, '', location.pathname + '?' + q.toString());
+  } catch (e) {}
+}
+
+function openUnit(no, name) {
+  clearDraft();
+  call('apiLoadUnit', [state.deviceId, no], 'loading').then(info => {
+    setUnit(info, name); state.screen = 'cat'; render(); window.scrollTo(0, 0);
+  }).catch(e => { alert(t('errLoad') + '\n' + (e.message || e)); render(); });
+}
+
+async function save(none) {
+  clearDraft();
+  if (pendingUploads.size) {
+    showBusy(t('uploading'));
+    await Promise.all([...pendingUploads]);   // 写真の送信が終わるのを待つ
+    hideBusy();
+  }
+  const adds = [...state.adds].map(([symptom, photo]) => ({ symptom, photo }));
+  const removes = [...state.removes];
+  call('apiSave', [state.deviceId, state.no, state.name, adds, removes, !!none], 'saving').then(info => {
+    setUnit(info, state.name); state.lastNone = !!none; state.screen = 'result'; render(); toast(t('saved')); window.scrollTo(0, 0);
+  }).catch(e => alert(t('errSave') + '\n' + (e.message || e)));
+}
+
+// ===============================================================
+// 操作
+// ===============================================================
+function pickSymptom(h) {
+  const m = state.masterMap[h];
+  if (!m || effectiveSet().has(h)) return;
+  if (m.photo) { state.photoFor = h; state.screen = 'photo'; render(); window.scrollTo(0, 0); return; }
+  addSymptom(h, '');
+}
+function addSymptom(h, photo) {
+  clearDraft();
+  if (state.removes.has(h)) state.removes.delete(h); else state.adds.set(h, photo || '');
+  state.screen = 'cat'; state.cat = ''; render(); window.scrollTo(0, 0);
+}
+function removeSymptom(h) {
+  if (state.adds.has(h)) state.adds.delete(h); else state.removes.add(h);
+  render();
+}
+
+// 写真を裏で送る。画面はすぐ次に進める
+const pendingUploads = new Set();
+function uploadPhoto(dataUrl) {
+  const h = state.photoFor, no = state.no;
+  hideBusy();
+  addSymptom(h, '');   // 先に症状を追加して、カテゴリ画面に戻る
+  toast(t('uploading'));
+  const p = call('apiUploadPhoto', [state.deviceId, no, h, dataUrl])
+    .then(r => {
+      if (state.no === no && state.adds.has(h)) state.adds.set(h, r.url);
+      state.photoCounts[h] = (state.photoCounts[h] || 0) + 1;
+      if (state.screen === 'cat') render();
+    })
+    .catch(e => {
+      // 失敗したら、写真なしの症状を取り消して、撮り直せるようにする
+      if (state.no === no && state.adds.get(h) === '') state.adds.delete(h);
+      if (state.screen === 'cat') render();
+      alert(t('errSave') + '\n' + (e.message || e));
+    })
+    .then(() => pendingUploads.delete(p));
+  pendingUploads.add(p);
+  return p;
+}
+
+// 「写真を選ぶ」、またはページ内カメラが使えない端末の撮影
+async function onPhotoPicked(ev) {
+  const file = ev.target.files && ev.target.files[0];
+  ev.target.value = '';
+  if (!file) return;
+  try {
+    showBusy(t('uploading'));
+    const dataUrl = await resizeImage(file, PHOTO_MAX, PHOTO_QUALITY);
+    await uploadPhoto(dataUrl);
+  } catch (e) { hideBusy(); alert(t('errSave') + '\n' + (e.message || e)); }
+}
+['camPhoto', 'galPhoto'].forEach(id => document.getElementById(id).addEventListener('change', onPhotoPicked));
+
+// ---------------------------------------------------------------
+// ページ内カメラ（別アプリに切り替わらないので、ページが破棄されない）
+// ---------------------------------------------------------------
+let camStream = null, scanTimer = null;
+function stopCamera() {
+  clearTimeout(scanTimer); scanTimer = null;
+  if (camStream) { camStream.getTracks().forEach(tr => tr.stop()); camStream = null; }
+}
+async function startCamera(w, h) {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('no camera');
+  camStream = await navigator.mediaDevices.getUserMedia({
+    video: { facingMode: { ideal: 'environment' }, width: { ideal: w }, height: { ideal: h } }, audio: false });
+  return camStream;
+}
+function cameraHtml(withFrame) {
+  return `<div class="cam"><video id="vid" autoplay playsinline muted></video>${withFrame ? '<div class="frame"></div>' : ''}</div>`;
+}
+
+// 瑕疵の撮影
+async function openCamera() {
+  try { await startCamera(1280, 960); }
+  catch (e) {
+    // ページ内カメラが使えない場合は、カメラアプリで撮影する
+    saveDraft();
+    document.getElementById('camPhoto').click();
+    return;
+  }
+  state.screen = 'camera'; renderHeader();
+  $app.innerHTML = `${cameraHtml(false)}
+    <div class="actions"><button class="primary" id="snap" type="button" aria-label="${esc(t('shoot'))}">📷</button></div>
+    <button class="link" id="camCancel" type="button">${esc(t('cancel'))}</button>`;
+  const v = document.getElementById('vid');
+  v.srcObject = camStream;
+  document.getElementById('camCancel').onclick = () => { stopCamera(); state.screen = 'photo'; render(); };
+  document.getElementById('snap').onclick = async () => {
+    if (!v.videoWidth) return;
+    const r = Math.min(1, PHOTO_MAX / Math.max(v.videoWidth, v.videoHeight));
+    const c = document.createElement('canvas');
+    c.width = Math.round(v.videoWidth * r); c.height = Math.round(v.videoHeight * r);
+    c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+    const dataUrl = c.toDataURL('image/jpeg', PHOTO_QUALITY);
+    c.width = c.height = 0;
+    stopCamera();
+    await uploadPhoto(dataUrl);
+  };
+}
+
+// QRの読み取り（カメラを向けるだけで読み取る）
+async function openScanner() {
+  const back = state.screen === 'result' || state.screen === 'cat' ? state.screen : 'open';
+  try { await loadJsQR(); } catch (e) { return alert(t('errLoad')); }
+  try { await startCamera(640, 480); }
+  catch (e) {
+    // ページ内カメラが使えない場合は、QRを写真に撮って読み取る
+    document.getElementById('camQr').click();
+    return;
+  }
+  state.screen = 'scan'; state.back = back; renderHeader();
+  $app.innerHTML = `<p class="note">${esc(t('scanDesc'))}</p>${cameraHtml(true)}
+    <div class="actions"><button class="secondary" id="scanCancel" type="button">${esc(t('cancel'))}</button></div>
+    <button class="link" id="scanNum" type="button">${esc(t('byNumber'))}</button>`;
+  const v = document.getElementById('vid');
+  v.srcObject = camStream;
+  document.getElementById('scanCancel').onclick = () => { stopCamera(); state.screen = state.back; render(); };
+  document.getElementById('scanNum').onclick = () => { stopCamera(); state.no = ''; state.name = ''; state.screen = 'open'; render(); };
+  const c = document.createElement('canvas');
+  const ctx = c.getContext('2d', { willReadFrequently: true });
+  const tick = () => {
+    if (state.screen !== 'scan' || !camStream) return;
+    if (v.videoWidth) {
+      const r = Math.min(1, 480 / Math.max(v.videoWidth, v.videoHeight));
+      c.width = Math.round(v.videoWidth * r); c.height = Math.round(v.videoHeight * r);
+      ctx.drawImage(v, 0, 0, c.width, c.height);
+      const d = ctx.getImageData(0, 0, c.width, c.height);
+      const code = jsQR(d.data, c.width, c.height, { inversionAttempts: 'dontInvert' });
+      const unit = code && parseQr(code.data);
+      if (unit) { stopCamera(); if (navigator.vibrate) navigator.vibrate(80); openUnit(unit.no, unit.name); return; }
+    }
+    scanTimer = setTimeout(tick, 250);   // 古い端末でも重くならないよう、1秒に4回だけ調べる
+  };
+  tick();
+}
+
+// アプリを裏に回したらカメラを止める（電池とメモリの節約）
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && camStream) {
+    const s = state.screen;
+    stopCamera();
+    state.screen = s === 'scan' ? state.back : 'photo';
+    render();
+  }
+});
+
+// QR読み取りの部品は、必要になったときに読み込む
+let jsqrPromise = null;
+function loadJsQR() {
+  if (window.jsQR) return Promise.resolve();
+  if (!jsqrPromise) jsqrPromise = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+    s.onload = resolve;
+    s.onerror = () => { jsqrPromise = null; reject(new Error('jsQR')); };
+    document.head.appendChild(s);
+  });
+  return jsqrPromise;
+}
+
+// ページ内カメラが使えない端末：QRを写真に撮って読み取る
+document.getElementById('camQr').addEventListener('change', async ev => {
+  const file = ev.target.files && ev.target.files[0];
+  ev.target.value = '';
+  if (!file) return;
+  showBusy(t('loading'));
+  let text = null;
+  try {
+    await loadJsQR();
+    const img = await loadImage(file);
+    for (const size of [1280, 800, 1800]) {
+      const c = drawScaled(img, size);
+      const d = c.getContext('2d').getImageData(0, 0, c.width, c.height);
+      const code = jsQR(d.data, c.width, c.height);
+      c.width = c.height = 0;
+      if (code && code.data) { text = code.data; break; }
+    }
+  } catch (e) {}
+  hideBusy();
+  const unit = parseQr(text);
+  if (!unit) return alert(t('qrFail'));
+  openUnit(unit.no, unit.name);
+});
+
+function parseQr(text) {
+  if (!text) return null;
+  text = String(text).trim();
+  try {
+    const u = new URL(text);
+    const no = u.searchParams.get('no');
+    if (no) return { no: no.trim(), name: (u.searchParams.get('name') || '').trim() };
+  } catch (e) {}
+  const m = text.match(/^(\d+-\d+)(?:\|(.*))?$/);
+  return m ? { no: m[1], name: m[2] || '' } : null;
+}
+
+function loadImage(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+function drawScaled(img, max) {
+  const r = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+  const c = document.createElement('canvas');
+  c.width = Math.round(img.naturalWidth * r); c.height = Math.round(img.naturalHeight * r);
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  return c;
+}
+// 最初から縮小して読み込むので、元画像を丸ごとメモリに載せない
+async function resizeImage(file, max, quality) {
+  try {
+    const bmp = await createImageBitmap(file, { resizeWidth: max, resizeQuality: 'low' });
+    const r = Math.min(1, max / Math.max(bmp.width, bmp.height));   // 縦長の写真も長い辺を max にそろえる
+    const c = document.createElement('canvas');
+    c.width = Math.round(bmp.width * r); c.height = Math.round(bmp.height * r);
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    bmp.close();
+    const url = c.toDataURL('image/jpeg', quality);
+    c.width = c.height = 0;   // 作業用のメモリをすぐ手放す
+    return url;
+  } catch (e) {
+    const img = await loadImage(file);
+    return drawScaled(img, max).toDataURL('image/jpeg', quality);
+  }
+}
+
+// ===============================================================
+// 画面の描画
+// ===============================================================
+const $app = document.getElementById('app');
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function trSym(h) { const m = state.masterMap[h]; return !m || state.lang === 'ja' ? '' : (state.lang === 'en' ? m.en : m.id); }
+function trCat(c) { return state.lang === 'ja' ? '' : (state.lang === 'en' ? c.en : c.id); }
+function sub(s) { return s ? `<small>${esc(s)}</small>` : ''; }
+
+function renderHeader() {
+  const hd = document.getElementById('hd');
+  const left = state.no
+    ? `<span class="pill no">${esc(state.no)}</span>${state.name ? `<span class="pill name">${esc(state.name)}</span>` : ''}`
+    : `<span class="title">${esc(t('title'))}</span>`;
+  hd.innerHTML = `${left}<button class="lang" id="langBtn" type="button">🌐 ${LANG_LABEL[state.lang]}</button>`;
+  document.getElementById('langBtn').onclick = () => {
+    state.lang = LANGS[(LANGS.indexOf(state.lang) + 1) % LANGS.length];
+    try { localStorage.setItem(LS_LANG, state.lang); } catch (e) {}
+    render();
+  };
+}
+
+function render() {
+  renderHeader();
+  document.documentElement.lang = state.lang;
+  const S = state.screen;
+  if (S === 'camera' || S === 'scan') return;   // カメラの表示中は、画面を作り直さない
+  if (S === 'loading') $app.innerHTML = `<p class="note">${esc(t('loading'))}</p>`;
+  else if (S === 'error') renderError();
+  else if (S === 'request') renderRequest();
+  else if (S === 'pending') renderPending();
+  else if (S === 'open') renderOpen();
+  else if (S === 'cat') renderCat();
+  else if (S === 'sym') renderSym();
+  else if (S === 'photo') renderPhoto();
+  else if (S === 'result') renderResult();
+}
+
+function renderError() {
+  $app.innerHTML = `<div class="card"><p class="big">${esc(t('errLoad'))}</p><p class="note">${esc(state.error)}</p>
+    <div class="actions"><button class="primary" id="retry" type="button">${esc(t('retry'))}</button></div></div>`;
+  document.getElementById('retry').onclick = start;
+}
+
+function renderRequest() {
+  $app.innerHTML = `<div class="card"><p class="big">${esc(t('reqTitle'))}</p><p class="note">${esc(t('reqDesc'))}</p>
+    <label class="field" for="devName">${esc(t('reqLabel'))}</label>
+    <input type="text" id="devName" maxlength="40" autocomplete="off">
+    <div class="err" id="devErr"></div>
+    <div class="actions"><button class="primary" id="reqBtn" type="button">${esc(t('reqBtn'))}</button></div></div>`;
+  const input = document.getElementById('devName');
+  input.oninput = () => { document.getElementById('devErr').textContent = ''; };
+  document.getElementById('reqBtn').onclick = () => {
+    const label = input.value.trim();
+    if (!label) { document.getElementById('devErr').textContent = t('reqEmpty'); input.focus(); return; }
+    call('apiRequestDevice', [state.deviceId, label], 'saving').then(() => { state.screen = 'pending'; render(); })
+      .catch(e => alert(t('errSave') + '\n' + (e.message || e)));
+  };
+}
+
+function renderPending() {
+  $app.innerHTML = `<div class="card"><p class="big">${esc(t('pendTitle'))}</p><p class="note">${esc(t('pendDesc'))}</p>
+    <div class="actions"><button class="primary" id="chk" type="button">${esc(t('check'))}</button></div></div>`;
+  document.getElementById('chk').onclick = start;
+}
+
+function renderOpen() {
+  $app.innerHTML = `<div class="card"><p class="big">${esc(t('openTitle'))}</p><p class="note">${esc(t('openDesc'))}</p>
+    <div class="actions"><button class="primary" id="scanBtn" type="button">${esc(t('scan'))}</button></div>
+    <label class="field" for="noInput">${esc(t('noLabel'))}</label>
+    <input type="text" id="noInput" inputmode="numeric" autocomplete="off" placeholder="564-03">
+    <div class="err" id="noErr"></div>
+    <div class="actions"><button class="secondary" id="openBtn" type="button">${esc(t('open'))}</button></div></div>`;
+  const input = document.getElementById('noInput');
+  input.oninput = () => {
+    document.getElementById('noErr').textContent = '';
+    // 全角数字を半角にして、数字と「-」以外を消す
+    let v = input.value.replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
+                       .replace(/[－ー―‐]/g, '-')
+                       .replace(/[^0-9-]/g, '');
+    // 数字だけが3桁以上続いたら、3桁目のあとに「-」を入れる
+    if (/^\d{4,}$/.test(v)) v = v.slice(0, 3) + '-' + v.slice(3);
+    else if (/^\d{3}-?$/.test(v) && input.value.length > (input._prev || '').length) v = v.slice(0, 3) + '-';
+    input.value = v;
+    input._prev = v;
+  };
+  document.getElementById('scanBtn').onclick = openScanner;
+  document.getElementById('openBtn').onclick = () => {
+    const v = input.value.trim();
+    if (!/^\d+-\d+$/.test(v)) { document.getElementById('noErr').textContent = t('noInvalid'); input.focus(); return; }
+    openUnit(v, '');
+  };
+}
+
+function selectedListHtml(withRemove) {
+  const list = effective();
+  if (!list.length) return `<div class="empty">${esc(t('selEmpty'))}</div>`;
+  return `<ul class="sel">${list.map(e => `<li><span>${esc(e.symptom)}${sub(trSym(e.symptom))}</span>
+      ${e.photo ? `<span class="tag">${esc(t('hasPhoto'))}</span>` : ''}${e.isNew && withRemove ? `<span class="tag new">${esc(t('isNew'))}</span>` : ''}
+      ${withRemove ? `<button class="x" type="button" data-rm="${esc(e.symptom)}" aria-label="×">×</button>` : ''}</li>`).join('')}</ul>`;
+}
+
+function renderCat() {
+  const eff = effectiveSet();
+  const counts = {};
+  eff.forEach(h => { const m = state.masterMap[h]; if (m) counts[m.cat] = (counts[m.cat] || 0) + 1; });
+  const empty = eff.size === 0;
+  $app.innerHTML = `<h2>${esc(t('catTitle'))}</h2>
+    <div class="group">${state.cats.map((c, i) => `<button class="btn" type="button" data-cat="${i}">${esc(c.cat)}${sub(trCat(c))}${counts[c.cat] ? `<span class="badge">${counts[c.cat]}</span>` : ''}</button>`).join('')}</div>
+    <h2>${esc(t('selTitle'))}</h2>${selectedListHtml(true)}
+    <div class="actions">${empty
+      ? `<button class="primary" id="noneBtn" type="button">${esc(t('none'))}</button>`
+      : `<button class="primary" id="doneBtn" type="button">${esc(t('done'))}</button>`}</div>`;
+  $app.querySelectorAll('[data-cat]').forEach(b => b.onclick = () => { state.cat = state.cats[Number(b.dataset.cat)].cat; state.screen = 'sym'; render(); window.scrollTo(0, 0); });
+  $app.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => removeSymptom(b.dataset.rm));
+  const done = document.getElementById('doneBtn'); if (done) done.onclick = () => save(false);
+  const none = document.getElementById('noneBtn'); if (none) none.onclick = () => save(true);
+}
+
+function renderSym() {
+  const eff = effectiveSet();
+  const c = state.cats.find(x => x.cat === state.cat) || {};
+  const items = state.master.filter(m => m.cat === state.cat);
+  $app.innerHTML = `<button class="back" id="backBtn" type="button">${esc(t('backCat'))}</button>
+    <h2>${esc(state.cat)}${trCat(c) ? ` <span class="note">${esc(trCat(c))}</span>` : ''}</h2>
+    <div class="group">${items.map(m => `<button class="btn${eff.has(m.h) ? ' on' : ''}" type="button" data-h="${esc(m.h)}">${esc(m.h)}${sub(trSym(m.h))}</button>`).join('')}</div>`;
+  document.getElementById('backBtn').onclick = () => { state.screen = 'cat'; render(); window.scrollTo(0, 0); };
+  $app.querySelectorAll('[data-h]').forEach(b => b.onclick = () => pickSymptom(b.dataset.h));
+}
+
+function renderPhoto() {
+  const h = state.photoFor;
+  const have = state.photoCounts[h] || 0;
+  const optional = have >= state.photoNeed;
+  $app.innerHTML = `<div class="card"><p class="big">${esc(h)}</p>${trSym(h) ? `<p class="note">${esc(trSym(h))}</p>` : ''}
+    <p class="note">${esc(optional ? t('photoOpt', have) : t('photoReq'))}</p>
+    <div class="actions"><button class="primary" id="shootBtn" type="button">${esc(t('shoot'))}</button></div>
+    <div class="actions"><button class="secondary" id="pickBtn" type="button">${esc(t('pick'))}</button></div>
+    ${optional ? `<div class="actions"><button class="secondary" id="skipBtn" type="button">${esc(t('skip'))}</button></div>` : ''}
+    <button class="link" id="cancelBtn" type="button">${esc(t('cancel'))}</button></div>`;
+  document.getElementById('shootBtn').onclick = openCamera;
+  document.getElementById('pickBtn').onclick = () => { saveDraft(); document.getElementById('galPhoto').click(); };
+  const skip = document.getElementById('skipBtn'); if (skip) skip.onclick = () => addSymptom(h, '');
+  document.getElementById('cancelBtn').onclick = () => { clearDraft(); state.screen = 'sym'; render(); };
+}
+
+function renderResult() {
+  const n = effective().length;
+  $app.innerHTML = `<h2>${esc(t('selTitle'))}${n ? ` <span class="note">${esc(t('count', n))}</span>` : ''}</h2>
+    ${state.lastNone ? `<div class="empty">${esc(t('resNone'))}</div>` : selectedListHtml(false)}
+    <div class="actions"><button class="primary" id="nextBtn" type="button">${esc(t('next'))}</button></div>
+    <div class="actions"><button class="secondary" id="fixBtn" type="button">${esc(t('fix'))}</button></div>
+    <button class="link" id="numBtn" type="button">${esc(t('byNumber'))}</button>`;
+  document.getElementById('nextBtn').onclick = openScanner;
+  document.getElementById('fixBtn').onclick = () => { state.screen = 'cat'; render(); window.scrollTo(0, 0); };
+  document.getElementById('numBtn').onclick = () => { state.no = ''; state.name = ''; state.screen = 'open'; render(); };
+}
+
+function showBusy(msg) { const b = document.getElementById('busy'); b.textContent = msg; b.hidden = false; }
+function hideBusy() { document.getElementById('busy').hidden = true; }
+let toastTimer = null;
+function toast(msg) { const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 1800); }
+
+start();
+setTimeout(() => loadJsQR().catch(() => {}), 3000);   // 画面が出たあとで、QR読み取りの部品を先読みする
+</script>
+</body>
+</html>
