@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <meta name="theme-color" content="#1d2024">
+<meta name="robots" content="noindex, nofollow">
 <title>症状入力</title>
 <style>
 :root{--ink:#1d2024;--ink2:#5b6168;--pill:#3a3f46;--sand:#ece7dd;--rule:#d9d4ca;--amber:#e9a320;--amber-soft:#fdf1d8;--danger:#b3261e;}
@@ -14,6 +15,7 @@ header{background:var(--ink);color:#fff;display:flex;align-items:center;gap:8px;
 .pill{background:var(--pill);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pill.no{font-size:16px;flex:none}
 .pill.name{min-width:0}
+.pill.sync{background:var(--amber);color:var(--ink);flex:none}
 .lang{margin-left:auto;flex:none;background:var(--pill);color:#fff;border:0;border-radius:999px;padding:7px 12px;font:inherit;font-size:14px;font-weight:700}
 main{padding:12px 14px 40px;max-width:760px;margin:0 auto}
 h2{font-size:18px;font-weight:700;margin:16px 0 10px}
@@ -125,7 +127,12 @@ const T = {
   byNumber:   { ja: '在庫管理番号を入力して開く', en: 'Open by stock number', id: 'Buka dengan nomor stok' },
   errSave:    { ja: '保存できませんでした。通信を確認して、もう一度押してください。', en: 'Could not save. Check the connection and tap again.', id: 'Gagal menyimpan. Periksa koneksi lalu tekan lagi.' },
   errLoad:    { ja: '読み込めませんでした。通信を確認して、もう一度開いてください。', en: 'Could not load. Check the connection and open the app again.', id: 'Gagal memuat. Periksa koneksi lalu buka aplikasi lagi.' },
-  retry:      { ja: 'もう一度読み込む', en: 'Load again', id: 'Muat ulang' }
+  retry:      { ja: 'もう一度読み込む', en: 'Load again', id: 'Muat ulang' },
+  unitLoading:{ ja: '登録済みの症状を読み込み中…', en: 'Loading registered defects…', id: 'Memuat cacat yang sudah terdaftar…' },
+  unitFail:   { ja: '登録済みの症状を読み込めませんでした。', en: 'Could not load registered defects.', id: 'Gagal memuat cacat yang sudah terdaftar.' },
+  waitLoad:   { ja: '読み込み中…', en: 'Loading…', id: 'Memuat…' },
+  pendingN:   { ja: '送信待ち {n}', en: 'Sending {n}', id: 'Mengirim {n}' },
+  sendFail:   { ja: 'まだ保存できていない記録があります。通信が戻ると自動で送ります。', en: 'Some records are not saved yet. They will be sent automatically when the connection is back.', id: 'Ada data yang belum tersimpan. Akan dikirim otomatis saat koneksi kembali.' }
 };
 function t(key, n) { const s = (T[key] && (T[key][state.lang] || T[key].ja)) || key; return n === undefined ? s : s.replace('{n}', n); }
 
@@ -133,6 +140,7 @@ function t(key, n) { const s = (T[key] && (T[key][state.lang] || T[key].ja)) || 
 // 状態
 // ===============================================================
 const LS_DEVICE = 'symptom_device_id', LS_LANG = 'symptom_lang', LS_DRAFT = 'symptom_draft', LS_MASTER = 'symptom_master';
+const LS_OK = 'symptom_device_ok', LS_NEED = 'symptom_photo_need', LS_OUTBOX = 'symptom_outbox';
 const PHOTO_MAX = 1024;
 const PHOTO_QUALITY = 0.7;
 const state = {
@@ -142,7 +150,8 @@ const state = {
   owner: '', master: [], masterMap: {}, cats: [], photoNeed: 10,
   no: '', name: '', current: [], photoCounts: {},
   adds: new Map(), removes: new Set(),
-  cat: '', photoFor: '', lastNone: false, error: ''
+  cat: '', photoFor: '', lastNone: false, error: '',
+  unitLoaded: true, unitFailed: false
 };
 
 function loadLang() {
@@ -211,26 +220,47 @@ async function call(fn, args, busyKey) {
   }
 }
 
+// 起動：前回の症状マスタと許可の状態が残っていれば、通信を待たずにすぐ画面を出す
 function start() {
-  // 前回の症状マスタが残っていれば、先に画面の準備をしておく
-  try { const m = JSON.parse(localStorage.getItem(LS_MASTER) || 'null'); if (m) setMaster(m); } catch (e) {}
-  state.screen = 'loading'; render();
+  let cachedOk = false;
+  try {
+    const m = JSON.parse(localStorage.getItem(LS_MASTER) || 'null');
+    if (m) setMaster(m);
+    cachedOk = !!m && localStorage.getItem(LS_OK) === '1';
+    state.photoNeed = Number(localStorage.getItem(LS_NEED)) || 10;
+  } catch (e) {}
+  const quick = cachedOk && !loadDraft();
+  if (quick && INIT.no) { setUnit({ no: normalizeNo(INIT.no), name: INIT.name }, INIT.name, false); state.screen = 'cat'; }
+  else if (quick) state.screen = 'open';
+  else state.screen = 'loading';
+  render();
+  flushOutbox();
+
+  const token = ++loadToken;
   call('apiInit', [state.deviceId, INIT.no]).then(r => {
-    if (r.status === 'new') { state.screen = 'request'; return render(); }
-    if (r.status === 'pending') { state.screen = 'pending'; return render(); }
+    if (r.status === 'new' || r.status === 'pending') {
+      try { localStorage.removeItem(LS_OK); } catch (e) {}
+      state.screen = r.status === 'new' ? 'request' : 'pending';
+      return render();
+    }
     setMaster(r.master);
-    try { localStorage.setItem(LS_MASTER, JSON.stringify(r.master)); } catch (e) {}
     state.owner = r.owner; state.photoNeed = r.photoNeed;
+    try {
+      localStorage.setItem(LS_MASTER, JSON.stringify(r.master));
+      localStorage.setItem(LS_OK, '1');
+      localStorage.setItem(LS_NEED, String(r.photoNeed));
+    } catch (e) {}
 
     // 「写真を選ぶ」の途中でページが作り直された場合は、途中経過を復元する
     // （別の台のQRで開いたときは、下書きを捨てる）
     const d = loadDraft();
-    const sameUnit = d && (!INIT.no || INIT.no === d.no);
+    const sameUnit = d && (!INIT.no || normalizeNo(INIT.no) === d.no);
     if (d && !sameUnit) clearDraft();
     if (sameUnit) {
       clearDraft();
       return call('apiLoadUnit', [state.deviceId, d.no]).then(info => {
-        setUnit(info, d.name);
+        setUnit(info, d.name, false);
+        applyUnitInfo(info);
         d.adds.forEach(([s, p]) => state.adds.set(s, p));
         d.removes.forEach(s => state.removes.add(s));
         state.photoFor = d.photoFor; state.screen = 'photo';
@@ -238,11 +268,20 @@ function start() {
       });
     }
 
-    if (INIT.no) { setUnit(r, INIT.name); state.screen = 'cat'; }
-    else state.screen = 'open';
-    render();
-  }).catch(e => { state.error = String(e.message || e); state.screen = 'error'; render(); });
+    if (INIT.no) {
+      if (!quick) { setUnit(r, INIT.name, false); state.screen = 'cat'; }
+      if (token === loadToken) applyUnitInfo(r);
+    } else if (!quick) state.screen = 'open';
+    refresh();
+  }).catch(e => {
+    // すぐ出した画面はそのまま使える。登録済みの症状だけ読み直せるようにする
+    if (quick) { if (INIT.no && token === loadToken) state.unitFailed = true; refresh(); return; }
+    state.error = String(e.message || e); state.screen = 'error'; render();
+  });
 }
+
+// カメラ表示中でなければ、今の画面を描き直す
+function refresh() { if (state.screen !== 'camera' && state.screen !== 'scan') render(); }
 
 function setMaster(master) {
   state.master = master; state.masterMap = {}; state.cats = [];
@@ -252,10 +291,11 @@ function setMaster(master) {
   });
 }
 
-function setUnit(info, nameFromQr) {
+function setUnit(info, nameFromQr, loaded) {
   state.no = info.no; state.name = nameFromQr || info.name || '';
   state.current = info.current || []; state.photoCounts = info.photoCounts || {};
   state.adds = new Map(); state.removes = new Set(); state.cat = ''; state.lastNone = false;
+  state.unitLoaded = loaded !== false; state.unitFailed = false;
   // アドレスにも台の番号を残しておく（再読み込みしても同じ台が開く）
   try {
     const q = new URLSearchParams({ no: state.no });
@@ -264,26 +304,100 @@ function setUnit(info, nameFromQr) {
   } catch (e) {}
 }
 
+// サーバーから届いた「登録済みの症状」を画面に反映する
+// ・まだ送信待ちの保存があれば、その内容も重ねる（送信前でも正しい状態を見せる）
+function applyUnitInfo(info) {
+  if (!info || (info.no && normalizeNo(info.no) !== normalizeNo(state.no))) return;
+  if (info.no) state.no = info.no;
+  let cur = (info.current || []).slice();
+  getOutbox().filter(j => normalizeNo(j.no) === normalizeNo(state.no)).forEach(j => {
+    const rm = new Set(j.removes);
+    cur = cur.filter(c => !rm.has(c.symptom));
+    j.adds.forEach(a => { if (!cur.find(c => c.symptom === a.symptom)) cur.push({ symptom: a.symptom, photo: a.photo }); });
+  });
+  state.current = cur;
+  state.photoCounts = info.photoCounts || {};
+  if (!state.name && info.name) state.name = info.name;
+  cur.forEach(c => state.adds.delete(c.symptom));   // 読み込み前に選んだものが登録済みなら、二重にしない
+  state.unitLoaded = true; state.unitFailed = false;
+}
+function normalizeNo(no) {
+  return String(no || '').trim().replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/[－ー―‐]/g, '-');
+}
+
+// 台を開く：画面はすぐに切り替え、登録済みの症状は裏で読み込む
+let loadToken = 0;
 function openUnit(no, name) {
   clearDraft();
-  call('apiLoadUnit', [state.deviceId, no], 'loading').then(info => {
-    setUnit(info, name); state.screen = 'cat'; render(); window.scrollTo(0, 0);
-  }).catch(e => { alert(t('errLoad') + '\n' + (e.message || e)); render(); });
+  setUnit({ no: normalizeNo(no), name: name }, name, false);
+  state.screen = 'cat'; render(); window.scrollTo(0, 0);
+  loadUnit();
 }
+function loadUnit() {
+  const token = ++loadToken, no = state.no;
+  state.unitLoaded = false; state.unitFailed = false;
+  call('apiLoadUnit', [state.deviceId, no]).then(info => {
+    if (token !== loadToken || state.no !== no) return;
+    applyUnitInfo(info); refresh();
+  }).catch(() => {
+    if (token !== loadToken || state.no !== no) return;
+    state.unitFailed = true; refresh();
+  });
+}
+
+// ---------------------------------------------------------------
+// 保存：「完了」を押したらすぐ結果の画面を出し、送信は裏で行う
+// ・送信待ちの記録はスマホに保存しておき、失敗しても自動で送り直す
+// ---------------------------------------------------------------
+function getOutbox() { try { return JSON.parse(localStorage.getItem(LS_OUTBOX) || '[]'); } catch (e) { return []; } }
+function setOutbox(a) { try { localStorage.setItem(LS_OUTBOX, JSON.stringify(a)); } catch (e) {} }
 
 async function save(none) {
   clearDraft();
   if (pendingUploads.size) {
     showBusy(t('uploading'));
-    await Promise.all([...pendingUploads]);   // 写真の送信が終わるのを待つ
+    await Promise.all([...pendingUploads]);   // 写真の送信が終わるのを待つ（たいていは撮影直後に終わっている）
     hideBusy();
   }
-  const adds = [...state.adds].map(([symptom, photo]) => ({ symptom, photo }));
-  const removes = [...state.removes];
-  call('apiSave', [state.deviceId, state.no, state.name, adds, removes, !!none], 'saving').then(info => {
-    setUnit(info, state.name); state.lastNone = !!none; state.screen = 'result'; render(); toast(t('saved')); window.scrollTo(0, 0);
-  }).catch(e => alert(t('errSave') + '\n' + (e.message || e)));
+  const job = {
+    id: Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+    no: state.no, name: state.name,
+    adds: [...state.adds].map(([symptom, photo]) => ({ symptom, photo })),
+    removes: [...state.removes], none: !!none
+  };
+  const box = getOutbox(); box.push(job); setOutbox(box);
+
+  state.current = effective().map(e => ({ symptom: e.symptom, photo: e.photo }));
+  state.adds = new Map(); state.removes = new Set();
+  state.lastNone = !!none; state.screen = 'result';
+  render(); window.scrollTo(0, 0);
+  flushOutbox();
 }
+
+let flushing = false, flushTimer = null;
+async function flushOutbox() {
+  if (flushing) return;
+  flushing = true; clearTimeout(flushTimer);
+  let sent = 0, failed = false;
+  try {
+    for (;;) {
+      const job = getOutbox()[0];
+      if (!job) break;
+      try {
+        await call('apiSave', [state.deviceId, job.no, job.name, job.adds, job.removes, job.none]);
+      } catch (e) { failed = true; break; }
+      setOutbox(getOutbox().filter(j => j.id !== job.id));
+      sent++;
+      renderHeader();
+    }
+  } finally {
+    flushing = false;
+    renderHeader();
+    if (failed) { flushTimer = setTimeout(flushOutbox, 15000); toast(t('sendFail')); }
+    else if (sent) toast(t('saved'));
+  }
+}
+window.addEventListener('online', flushOutbox);
 
 // ===============================================================
 // 操作
@@ -532,7 +646,9 @@ function renderHeader() {
   const left = state.no
     ? `<span class="pill no">${esc(state.no)}</span>${state.name ? `<span class="pill name">${esc(state.name)}</span>` : ''}`
     : `<span class="title">${esc(t('title'))}</span>`;
-  hd.innerHTML = `${left}<button class="lang" id="langBtn" type="button">🌐 ${LANG_LABEL[state.lang]}</button>`;
+  const n = getOutbox().length;
+  const pend = n ? `<span class="pill sync">${esc(t('pendingN', n))}</span>` : '';
+  hd.innerHTML = `${left}<button class="lang" id="langBtn" type="button">🌐 ${LANG_LABEL[state.lang]}</button>${pend}`;
   document.getElementById('langBtn').onclick = () => {
     state.lang = LANGS[(LANGS.indexOf(state.lang) + 1) % LANGS.length];
     try { localStorage.setItem(LS_LANG, state.lang); } catch (e) {}
@@ -614,7 +730,7 @@ function renderOpen() {
 
 function selectedListHtml(withRemove) {
   const list = effective();
-  if (!list.length) return `<div class="empty">${esc(t('selEmpty'))}</div>`;
+  if (!list.length) return state.unitLoaded ? `<div class="empty">${esc(t('selEmpty'))}</div>` : '';
   return `<ul class="sel">${list.map(e => `<li><span>${esc(e.symptom)}${sub(trSym(e.symptom))}</span>
       ${e.photo ? `<span class="tag">${esc(t('hasPhoto'))}</span>` : ''}${e.isNew && withRemove ? `<span class="tag new">${esc(t('isNew'))}</span>` : ''}
       ${withRemove ? `<button class="x" type="button" data-rm="${esc(e.symptom)}" aria-label="×">×</button>` : ''}</li>`).join('')}</ul>`;
@@ -628,12 +744,17 @@ function renderCat() {
   $app.innerHTML = `<h2>${esc(t('catTitle'))}</h2>
     <div class="group">${state.cats.map((c, i) => `<button class="btn" type="button" data-cat="${i}">${esc(c.cat)}${sub(trCat(c))}${counts[c.cat] ? `<span class="badge">${counts[c.cat]}</span>` : ''}</button>`).join('')}</div>
     <h2>${esc(t('selTitle'))}</h2>${selectedListHtml(true)}
-    <div class="actions">${empty
+    ${state.unitFailed ? `<p class="note">${esc(t('unitFail'))} <button class="link" id="reload" type="button">${esc(t('retry'))}</button></p>`
+      : !state.unitLoaded ? `<p class="note">${esc(t('unitLoading'))}</p>` : ''}
+    <div class="actions">${!state.unitLoaded
+      ? `<button class="primary" type="button" disabled style="opacity:.5">${esc(t('waitLoad'))}</button>`
+      : empty
       ? `<button class="primary" id="noneBtn" type="button">${esc(t('none'))}</button>`
       : `<button class="primary" id="doneBtn" type="button">${esc(t('done'))}</button>`}</div>`;
   $app.querySelectorAll('[data-cat]').forEach(b => b.onclick = () => { state.cat = state.cats[Number(b.dataset.cat)].cat; state.screen = 'sym'; render(); window.scrollTo(0, 0); });
   $app.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => removeSymptom(b.dataset.rm));
   const done = document.getElementById('doneBtn'); if (done) done.onclick = () => save(false);
+  const rl = document.getElementById('reload'); if (rl) rl.onclick = () => { loadUnit(); render(); };
   const none = document.getElementById('noneBtn'); if (none) none.onclick = () => save(true);
 }
 
