@@ -141,6 +141,8 @@ const T = {
   done:      { ja: '完了', en: 'Done', id: 'Selesai' },
   needSym:   { ja: '症状を1つ以上選んでください', en: 'Choose at least one defect', id: 'Pilih minimal satu cacat' },
   backCat:   { ja: '‹ カテゴリに戻る', en: '‹ Back to categories', id: '‹ Kembali ke kategori' },
+  photoOpt:  { ja: 'この品名で、この症状の写真がすでに{n}枚あるので、撮影は任意です。', en: 'This model already has {n} photos of this defect, so a photo is optional.', id: 'Model ini sudah punya {n} foto cacat ini, jadi foto tidak wajib.' },
+  skip:      { ja: '撮影しないで進む', en: 'Continue without photo', id: 'Lanjut tanpa foto' },
   photoReq:  { ja: 'この症状は写真が必要です。撮影したあと、瑕疵の場所をタップして〇を付けてください。', en: 'This defect needs a photo. After taking it, tap the defect to circle it.', id: 'Cacat ini perlu foto. Setelah memotret, ketuk lokasi cacat untuk melingkarinya.' },
   shoot:     { ja: 'カメラで撮影', en: 'Open camera', id: 'Buka kamera' },
   pick:      { ja: '写真を選ぶ（撮影済みの写真）', en: 'Choose a photo', id: 'Pilih foto' },
@@ -197,7 +199,8 @@ const state = {
   unit: null,                 // サーバーから受け取った台の情報（未登録なら { seal, registered:false }）
   adds: new Map(), removes: new Set(), cat: '', photoFor: '',
   repairSel: new Set(), donorSeal: '', repairMsg: '',
-  grade: ''
+  grade: '',
+  photoCounts: {}, photoNeed: 3   // 同じ品名（枝番なし）・同じ症状の写真の枚数と、必要な枚数
 };
 function loadLang() {
   try { const v = localStorage.getItem(LS_LANG); if (LANGS.includes(v)) return v; } catch (e) {}
@@ -240,7 +243,7 @@ function start() {
   state.screen = 'loading'; render();
   call('kInit', [state.deviceId]).then(r => {
     if (r.status === 'new' || r.status === 'pending') { state.screen = r.status === 'new' ? 'request' : 'pending'; return render(); }
-    state.owner = r.owner; setMaster(r.master);
+    state.owner = r.owner; setMaster(r.master); state.photoNeed = r.photoNeed || 3;
     try { localStorage.setItem(LS_KMASTER, JSON.stringify(r.master)); } catch (e) {}
     if (INIT.s) return openSeal(INIT.s);
     if (INIT.k) return openBoard(INIT.k);
@@ -301,6 +304,7 @@ async function openBoard(id) {
   try {
     const r = await call('kLoadBoard', [state.deviceId, normId(id)], 'loading');
     state.board = r.board; state.boardUnits = r.units || [];
+    state.photoCounts = r.photoCounts || {}; if (r.photoNeed) state.photoNeed = r.photoNeed;
     state.screen = 'board'; render(); window.scrollTo(0, 0);
   } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); state.screen = 'home'; render(); }
 }
@@ -311,6 +315,8 @@ async function openSeal(seal, boardId) {
   try {
     const u = await call('kLoadSeal', [state.deviceId, seal], 'loading');
     resetEdit();
+    if (u.photoCounts) state.photoCounts = u.photoCounts;
+    if (u.photoNeed) state.photoNeed = u.photoNeed;
     if (u.registered) {
       if (boardId && u.board && u.board.id !== boardId) { alert(t('otherBoard', { s: seal, b: u.board.id })); state.screen = 'board'; return render(); }
       state.unit = u; state.board = u.board.missing ? state.board : u.board;
@@ -352,6 +358,7 @@ async function saveSymptoms() {
   try {
     const u = await call('kSave', [state.deviceId, boardId, state.unit.seal, adds, [...state.removes]], 'saving');
     state.unit = u; resetEdit(); toast(t('saved'));
+    if (u.photoCounts) state.photoCounts = u.photoCounts;
     state.screen = 'unit'; render(); window.scrollTo(0, 0);
   } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
 }
@@ -416,6 +423,7 @@ async function useMarkedPhoto() {
   try {
     const r = await call('kUploadPhoto', [state.deviceId, state.unit.seal, state.photoFor, url], 'uploading');
     markImg = null; marks = [];
+    state.photoCounts[state.photoFor] = (state.photoCounts[state.photoFor] || 0) + 1;
     addSymptom(state.photoFor, r.url);
   } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
 }
@@ -725,11 +733,15 @@ function renderSym() {
 
 function renderPhoto() {
   const h = state.photoFor;
+  const have = state.photoCounts[h] || 0;
+  const optional = have >= state.photoNeed;
   $app.innerHTML = `<div class="card"><p class="big">${esc(h)}</p>${trSym(h) ? `<p class="note">${esc(trSym(h))}</p>` : ''}
-    <p class="note">${esc(t('photoReq'))}</p>
-    <div class="actions"><button class="primary" id="shootBtn" type="button">${esc(t('shoot'))}</button></div>
+    <p class="note">${esc(optional ? t('photoOpt', { n: have }) : t('photoReq'))}</p>
+    ${optional ? `<div class="actions"><button class="primary" id="skipBtn" type="button">${esc(t('skip'))}</button></div>` : ''}
+    <div class="actions"><button class="${optional ? 'secondary' : 'primary'}" id="shootBtn" type="button">${esc(t('shoot'))}</button></div>
     <div class="actions"><button class="secondary" id="pickBtn" type="button">${esc(t('pick'))}</button></div>
     <button class="link" id="cancelBtn" type="button">${esc(t('cancel'))}</button></div>`;
+  const skip = document.getElementById('skipBtn'); if (skip) skip.onclick = () => addSymptom(h, '');
   document.getElementById('shootBtn').onclick = openCamera;
   document.getElementById('pickBtn').onclick = () => document.getElementById('galPhoto').click();
   document.getElementById('cancelBtn').onclick = () => { state.screen = 'sym'; render(); };
