@@ -22,6 +22,7 @@ h2{font-size:18px;font-weight:700;margin:16px 0 10px}
 .group{background:var(--sand);border-radius:14px;padding:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
 .btn{background:#fff;border:1px solid var(--ink);border-radius:10px;min-height:64px;padding:10px 8px;font:inherit;font-weight:700;font-size:15px;color:var(--ink);position:relative;line-height:1.3;cursor:pointer}
 .btn small{display:block;font-weight:400;font-size:12px;color:var(--ink2);margin-top:3px}
+.btn.other{border-style:dashed;color:var(--ink2)}
 .btn.on{background:var(--amber-soft);border:2px solid var(--amber);cursor:default}
 .btn.on::after{content:"✓";position:absolute;top:4px;right:8px;font-size:14px}
 .badge{position:absolute;top:-7px;right:-7px;background:var(--amber);color:var(--ink);border-radius:999px;min-width:24px;height:24px;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 7px}
@@ -128,6 +129,15 @@ const T = {
   errSave:    { ja: '保存できませんでした。通信を確認して、もう一度押してください。', en: 'Could not save. Check the connection and tap again.', id: 'Gagal menyimpan. Periksa koneksi lalu tekan lagi.' },
   errLoad:    { ja: '読み込めませんでした。通信を確認して、もう一度開いてください。', en: 'Could not load. Check the connection and open the app again.', id: 'Gagal memuat. Periksa koneksi lalu buka aplikasi lagi.' },
   retry:      { ja: 'もう一度読み込む', en: 'Load again', id: 'Muat ulang' },
+  other:      { ja: 'その他（リストにない症状）', en: 'Other (not in the list)', id: 'Lainnya (tidak ada di daftar)' },
+  otherTitle: { ja: 'リストにない症状を入力', en: 'Enter a defect not in the list', id: 'Masukkan cacat yang tidak ada di daftar' },
+  otherDesc:  { ja: '症状を短く入力してください。英語やインドネシア語で入力しても、日本語に翻訳して記録します。このあと写真の撮影が必要です。', en: 'Describe the defect briefly. You can write in English or Indonesian; it will be translated into Japanese. A photo is required next.', id: 'Tulis cacatnya dengan singkat. Boleh dalam bahasa Inggris atau Indonesia; akan diterjemahkan ke bahasa Jepang. Setelah ini wajib ambil foto.' },
+  otherLabel: { ja: '症状（例：底面のゴム足の跡が黒い）', en: 'Defect (e.g. black marks under the rubber feet)', id: 'Cacat (contoh: bekas hitam di bawah kaki karet)' },
+  otherNext:  { ja: '写真を撮る', en: 'Take a photo', id: 'Ambil foto' },
+  otherEmpty: { ja: '症状を入力してください', en: 'Enter the defect', id: 'Masukkan cacatnya' },
+  otherDup:   { ja: 'この症状はすでに選ばれています', en: 'This defect is already selected', id: 'Cacat ini sudah dipilih' },
+  otherReq:   { ja: 'リストにない症状は、必ず写真を撮影してください。', en: 'A photo is required for a defect that is not in the list.', id: 'Cacat yang tidak ada di daftar wajib difoto.' },
+  otherTag:   { ja: 'その他', en: 'Other', id: 'Lainnya' },
   unitLoading:{ ja: '登録済みの症状を読み込み中…', en: 'Loading registered defects…', id: 'Memuat cacat yang sudah terdaftar…' },
   unitFail:   { ja: '登録済みの症状を読み込めませんでした。', en: 'Could not load registered defects.', id: 'Gagal memuat cacat yang sudah terdaftar.' },
   waitLoad:   { ja: '読み込み中…', en: 'Loading…', id: 'Memuat…' },
@@ -151,6 +161,7 @@ const state = {
   no: '', name: '', current: [], photoCounts: {},
   adds: new Map(), removes: new Set(),
   cat: '', photoFor: '', lastNone: false, error: '',
+  addMeta: new Map(), photoOther: false, otherCat: '', otherDraft: '',
   unitLoaded: true, unitFailed: false
 };
 
@@ -176,7 +187,8 @@ function saveDraft() {
   try {
     localStorage.setItem(LS_DRAFT, JSON.stringify({
       t: Date.now(), deviceId: state.deviceId, no: state.no, name: state.name,
-      photoFor: state.photoFor, adds: [...state.adds], removes: [...state.removes]
+      photoFor: state.photoFor, adds: [...state.adds], removes: [...state.removes],
+      meta: [...state.addMeta], photoOther: state.photoOther, otherCat: state.otherCat
     }));
   } catch (e) {}
 }
@@ -192,10 +204,13 @@ function loadDraft() {
 // 画面に表示する「この台の症状」（保存済み − 取消 ＋ 今回追加）
 function effective() {
   const list = [];
-  state.current.forEach(c => { if (!state.removes.has(c.symptom)) list.push({ symptom: c.symptom, photo: c.photo, isNew: false }); });
-  state.adds.forEach((photo, s) => list.push({ symptom: s, photo: photo, isNew: true }));
-  const order = s => (state.masterMap[s] ? state.masterMap[s].idx : 9999);
-  return list.sort((a, b) => order(a.symptom) - order(b.symptom));
+  state.current.forEach(c => { if (!state.removes.has(c.symptom)) list.push({ symptom: c.symptom, photo: c.photo, isNew: false, cat: c.cat, other: !!c.other }); });
+  state.adds.forEach((photo, s) => { const m = state.addMeta.get(s) || {}; list.push({ symptom: s, photo: photo, isNew: true, cat: m.cat, other: !!m.other }); });
+  // その他の症状は、そのカテゴリの最後に並べる
+  const catIdx = c => { const i = state.cats.findIndex(x => x.cat === c); return i < 0 ? 99 : i; };
+  const order = e => { const m = state.masterMap[e.symptom]; return m ? catIdx(m.cat) * 1000 + m.idx % 1000 : catIdx(e.cat) * 1000 + 999; };
+  list.forEach(e => { if (!e.cat && state.masterMap[e.symptom]) e.cat = state.masterMap[e.symptom].cat; });
+  return list.sort((a, b) => order(a) - order(b));
 }
 function effectiveSet() { return new Set(effective().map(e => e.symptom)); }
 
@@ -263,6 +278,8 @@ function start() {
         applyUnitInfo(info);
         d.adds.forEach(([s, p]) => state.adds.set(s, p));
         d.removes.forEach(s => state.removes.add(s));
+        (d.meta || []).forEach(([s, m]) => state.addMeta.set(s, m));
+        state.photoOther = !!d.photoOther; state.otherCat = d.otherCat || '';
         state.photoFor = d.photoFor; state.screen = 'photo';
         render(); toast(t('retake'));
       });
@@ -295,6 +312,7 @@ function setUnit(info, nameFromQr, loaded) {
   state.no = info.no; state.name = nameFromQr || info.name || '';
   state.current = info.current || []; state.photoCounts = info.photoCounts || {};
   state.adds = new Map(); state.removes = new Set(); state.cat = ''; state.lastNone = false;
+  state.addMeta = new Map(); state.photoOther = false; state.otherCat = '';
   state.unitLoaded = loaded !== false; state.unitFailed = false;
   // アドレスにも台の番号を残しておく（再読み込みしても同じ台が開く）
   try {
@@ -313,7 +331,7 @@ function applyUnitInfo(info) {
   getOutbox().filter(j => normalizeNo(j.no) === normalizeNo(state.no)).forEach(j => {
     const rm = new Set(j.removes);
     cur = cur.filter(c => !rm.has(c.symptom));
-    j.adds.forEach(a => { if (!cur.find(c => c.symptom === a.symptom)) cur.push({ symptom: a.symptom, photo: a.photo }); });
+    j.adds.forEach(a => { if (!cur.find(c => c.symptom === a.symptom)) cur.push({ symptom: a.symptom, photo: a.photo, cat: a.cat, other: !!a.other }); });
   });
   state.current = cur;
   state.photoCounts = info.photoCounts || {};
@@ -358,13 +376,13 @@ async function save(none) {
   const job = {
     id: Date.now() + '_' + Math.random().toString(36).slice(2, 7),
     no: state.no, name: state.name,
-    adds: [...state.adds].map(([symptom, photo]) => ({ symptom, photo })),
+    adds: [...state.adds].map(([symptom, photo]) => { const m = state.addMeta.get(symptom); return m && m.other ? { symptom, photo, other: true, cat: m.cat } : { symptom, photo }; }),
     removes: [...state.removes], none: !!none
   };
   const box = getOutbox(); box.push(job); setOutbox(box);
 
-  state.current = effective().map(e => ({ symptom: e.symptom, photo: e.photo }));
-  state.adds = new Map(); state.removes = new Set();
+  state.current = effective().map(e => ({ symptom: e.symptom, photo: e.photo, cat: e.cat, other: e.other }));
+  state.adds = new Map(); state.removes = new Set(); state.addMeta = new Map();
   state.lastNone = !!none; state.screen = 'result';
   render(); window.scrollTo(0, 0);
   flushOutbox();
@@ -389,9 +407,11 @@ async function flushOutbox() {
         job.adds.forEach(a => { if (isPending(a.photo)) a.photo = ''; });
       }
       try {
-        await call('apiSave', [state.deviceId, job.no, job.name, job.adds, job.removes, job.none]);
+        var saved = await call('apiSave', [state.deviceId, job.no, job.name, job.adds, job.removes, job.none]);
       } catch (e) { failed = true; break; }
       setOutbox(getOutbox().filter(j => j.id !== job.id));
+      // 開いている台なら、サーバーに記録された内容（翻訳後の症状名など）に合わせる
+      if (saved && normalizeNo(saved.no) === normalizeNo(state.no)) { applyUnitInfo(saved); refresh(); }
       sent++;
       renderHeader();
     }
@@ -410,16 +430,19 @@ window.addEventListener('online', flushOutbox);
 function pickSymptom(h) {
   const m = state.masterMap[h];
   if (!m || effectiveSet().has(h)) return;
+  state.photoOther = false;
   if (m.photo) { state.photoFor = h; state.screen = 'photo'; render(); window.scrollTo(0, 0); return; }
   addSymptom(h, '');
 }
 function addSymptom(h, photo) {
   clearDraft();
+  if (state.photoOther && h === state.photoFor) state.addMeta.set(h, { cat: state.otherCat, other: true });
+  state.photoOther = false; state.otherDraft = '';
   if (state.removes.has(h)) state.removes.delete(h); else state.adds.set(h, photo || '');
   state.screen = 'cat'; state.cat = ''; render(); window.scrollTo(0, 0);
 }
 function removeSymptom(h) {
-  if (state.adds.has(h)) state.adds.delete(h); else state.removes.add(h);
+  if (state.adds.has(h)) { state.adds.delete(h); state.addMeta.delete(h); } else state.removes.add(h);
   render();
 }
 
@@ -690,6 +713,7 @@ function render() {
   else if (S === 'cat') renderCat();
   else if (S === 'sym') renderSym();
   else if (S === 'photo') renderPhoto();
+  else if (S === 'other') renderOther();
   else if (S === 'result') renderResult();
 }
 
@@ -725,7 +749,7 @@ function renderOpen() {
   $app.innerHTML = `<div class="card"><p class="big">${esc(t('openTitle'))}</p><p class="note">${esc(t('openDesc'))}</p>
     <div class="actions"><button class="primary" id="scanBtn" type="button">${esc(t('scan'))}</button></div>
     <label class="field" for="noInput">${esc(t('noLabel'))}</label>
-    <input type="text" id="noInput" inputmode="numeric" autocomplete="off" placeholder="564-03">
+    <input type="text" id="noInput" inputmode="tel" autocomplete="off" placeholder="564-03">
     <div class="err" id="noErr"></div>
     <div class="actions"><button class="secondary" id="openBtn" type="button">${esc(t('open'))}</button></div></div>`;
   const input = document.getElementById('noInput');
@@ -734,12 +758,9 @@ function renderOpen() {
     // 全角数字を半角にして、数字と「-」以外を消す
     let v = input.value.replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
                        .replace(/[－ー―‐]/g, '-')
+                       .replace(/[ 　.,*#]/g, '-')
                        .replace(/[^0-9-]/g, '');
-    // 数字だけが3桁以上続いたら、3桁目のあとに「-」を入れる
-    if (/^\d{4,}$/.test(v)) v = v.slice(0, 3) + '-' + v.slice(3);
-    else if (/^\d{3}-?$/.test(v) && input.value.length > (input._prev || '').length) v = v.slice(0, 3) + '-';
     input.value = v;
-    input._prev = v;
   };
   document.getElementById('scanBtn').onclick = openScanner;
   document.getElementById('openBtn').onclick = () => {
@@ -753,15 +774,15 @@ function selectedListHtml(withRemove) {
   const list = effective();
   if (!list.length) return state.unitLoaded ? `<div class="empty">${esc(t('selEmpty'))}</div>` : '';
   return `<ul class="sel">${list.map(e => `<li><span>${esc(e.symptom)}${sub(trSym(e.symptom))}</span>
-      ${e.photo ? `<span class="tag">${esc(t('hasPhoto'))}</span>` : ''}${e.isNew && withRemove ? `<span class="tag new">${esc(t('isNew'))}</span>` : ''}
+      ${e.other ? `<span class="tag">${esc(t('otherTag'))}</span>` : ''}${e.photo ? `<span class="tag">${esc(t('hasPhoto'))}</span>` : ''}${e.isNew && withRemove ? `<span class="tag new">${esc(t('isNew'))}</span>` : ''}
       ${withRemove ? `<button class="x" type="button" data-rm="${esc(e.symptom)}" aria-label="×">×</button>` : ''}</li>`).join('')}</ul>`;
 }
 
 function renderCat() {
-  const eff = effectiveSet();
+  const effList = effective();
   const counts = {};
-  eff.forEach(h => { const m = state.masterMap[h]; if (m) counts[m.cat] = (counts[m.cat] || 0) + 1; });
-  const empty = eff.size === 0;
+  effList.forEach(e => { if (e.cat) counts[e.cat] = (counts[e.cat] || 0) + 1; });
+  const empty = effList.length === 0;
   $app.innerHTML = `<h2>${esc(t('catTitle'))}</h2>
     <div class="group">${state.cats.map((c, i) => `<button class="btn" type="button" data-cat="${i}">${esc(c.cat)}${sub(trCat(c))}${counts[c.cat] ? `<span class="badge">${counts[c.cat]}</span>` : ''}</button>`).join('')}</div>
     <h2>${esc(t('selTitle'))}</h2>${selectedListHtml(true)}
@@ -785,17 +806,19 @@ function renderSym() {
   const items = state.master.filter(m => m.cat === state.cat);
   $app.innerHTML = `<button class="back" id="backBtn" type="button">${esc(t('backCat'))}</button>
     <h2>${esc(state.cat)}${trCat(c) ? ` <span class="note">${esc(trCat(c))}</span>` : ''}</h2>
-    <div class="group">${items.map(m => `<button class="btn${eff.has(m.h) ? ' on' : ''}" type="button" data-h="${esc(m.h)}">${esc(m.h)}${sub(trSym(m.h))}</button>`).join('')}</div>`;
+    <div class="group">${items.map(m => `<button class="btn${eff.has(m.h) ? ' on' : ''}" type="button" data-h="${esc(m.h)}">${esc(m.h)}${sub(trSym(m.h))}</button>`).join('')}
+      <button class="btn other" type="button" id="otherBtn">${esc(t('other'))}</button></div>`;
   document.getElementById('backBtn').onclick = () => { state.screen = 'cat'; render(); window.scrollTo(0, 0); };
+  document.getElementById('otherBtn').onclick = () => { state.otherCat = state.cat; state.screen = 'other'; render(); window.scrollTo(0, 0); };
   $app.querySelectorAll('[data-h]').forEach(b => b.onclick = () => pickSymptom(b.dataset.h));
 }
 
 function renderPhoto() {
   const h = state.photoFor;
   const have = state.photoCounts[h] || 0;
-  const optional = have >= state.photoNeed;
+  const optional = !state.photoOther && have >= state.photoNeed;
   $app.innerHTML = `<div class="card"><p class="big">${esc(h)}</p>${trSym(h) ? `<p class="note">${esc(trSym(h))}</p>` : ''}
-    <p class="note">${esc(optional ? t('photoOpt', have) : t('photoReq'))}</p>
+    <p class="note">${esc(state.photoOther ? t('otherReq') : optional ? t('photoOpt', have) : t('photoReq'))}</p>
     <div class="actions"><button class="primary" id="shootBtn" type="button">${esc(t('shoot'))}</button></div>
     <div class="actions"><button class="secondary" id="pickBtn" type="button">${esc(t('pick'))}</button></div>
     ${optional ? `<div class="actions"><button class="secondary" id="skipBtn" type="button">${esc(t('skip'))}</button></div>` : ''}
@@ -803,7 +826,30 @@ function renderPhoto() {
   document.getElementById('shootBtn').onclick = openCamera;
   document.getElementById('pickBtn').onclick = () => { saveDraft(); document.getElementById('galPhoto').click(); };
   const skip = document.getElementById('skipBtn'); if (skip) skip.onclick = () => addSymptom(h, '');
-  document.getElementById('cancelBtn').onclick = () => { clearDraft(); state.screen = 'sym'; render(); };
+  document.getElementById('cancelBtn').onclick = () => { clearDraft(); state.screen = state.photoOther ? 'other' : 'sym'; render(); };
+}
+
+// その他（リストにない症状）の入力
+function renderOther() {
+  const c = state.cats.find(x => x.cat === state.otherCat) || {};
+  $app.innerHTML = `<button class="back" id="backBtn" type="button">${esc(t('backCat'))}</button>
+    <div class="card"><p class="big">${esc(t('otherTitle'))}</p>
+    <p class="note">${esc(state.otherCat)}${trCat(c) ? ' / ' + esc(trCat(c)) : ''}</p>
+    <p class="note">${esc(t('otherDesc'))}</p>
+    <label class="field" for="otherInput">${esc(t('otherLabel'))}</label>
+    <input type="text" id="otherInput" maxlength="60" autocomplete="off">
+    <div class="err" id="otherErr"></div>
+    <div class="actions"><button class="primary" id="otherNext" type="button">${esc(t('otherNext'))}</button></div></div>`;
+  const input = document.getElementById('otherInput');
+  input.value = state.otherDraft || '';
+  input.oninput = () => { state.otherDraft = input.value; document.getElementById('otherErr').textContent = ''; };
+  document.getElementById('backBtn').onclick = () => { state.otherDraft = ''; state.screen = 'cat'; render(); window.scrollTo(0, 0); };
+  document.getElementById('otherNext').onclick = () => {
+    const v = input.value.replace(/\s+/g, ' ').trim();
+    if (!v) { document.getElementById('otherErr').textContent = t('otherEmpty'); input.focus(); return; }
+    if (effectiveSet().has(v)) { document.getElementById('otherErr').textContent = t('otherDup'); input.focus(); return; }
+    state.photoFor = v; state.photoOther = true; state.screen = 'photo'; render(); window.scrollTo(0, 0);
+  };
 }
 
 function renderResult() {
