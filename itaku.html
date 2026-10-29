@@ -15,6 +15,7 @@ header{background:var(--ink);color:#fff;display:flex;align-items:center;gap:8px;
 .pill{background:var(--pill);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pill.id{font-size:16px;flex:none}
 .pill.name{min-width:0}
+.pill.sync{background:var(--amber);color:var(--ink);flex:none}
 .lang{margin-left:auto;flex:none;background:var(--pill);color:#fff;border:0;border-radius:999px;padding:7px 12px;font:inherit;font-size:14px;font-weight:700}
 main{padding:12px 14px 40px;max-width:760px;margin:0 auto}
 h2{font-size:18px;font-weight:700;margin:16px 0 10px}
@@ -73,7 +74,6 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--amber);outline-
 <header id="hd"></header>
 <main id="app"></main>
 <input type="file" id="camPhoto" accept="image/*" capture="environment" hidden>
-<input type="file" id="galPhoto" accept="image/*" hidden>
 <input type="file" id="camQr" accept="image/*" capture="environment" hidden>
 <div id="busy" hidden></div>
 <div id="toast" role="status"></div>
@@ -141,6 +141,12 @@ const T = {
   done:      { ja: '完了', en: 'Done', id: 'Selesai' },
   needSym:   { ja: '症状を1つ以上選んでください', en: 'Choose at least one defect', id: 'Pilih minimal satu cacat' },
   backCat:   { ja: '‹ カテゴリに戻る', en: '‹ Back to categories', id: '‹ Kembali ke kategori' },
+  photoSkipped:{ ja: '「{s}」は写真が{n}枚そろっているので、撮影を省きました。', en: '“{s}” already has {n} photos, so no photo was taken.', id: '“{s}” sudah punya {n} foto, jadi tidak difoto.' },
+  pendingN:  { ja: '送信待ち {n}', en: 'Sending {n}', id: 'Mengirim {n}' },
+  sendFail:  { ja: 'まだ保存できていない記録があります。通信が戻ると自動で送ります。', en: 'Some records are not saved yet. They will be sent when the connection is back.', id: 'Ada data yang belum tersimpan. Akan dikirim saat koneksi kembali.' },
+  sendErr:   { ja: 'シール {s} の記録は保存できませんでした：{m}', en: 'The record for sticker {s} could not be saved: {m}', id: 'Data stiker {s} tidak bisa disimpan: {m}' },
+  photoFail: { ja: '写真を送れなかったため、写真なしで記録しました（{s}）。', en: 'The photo could not be sent, so it was recorded without a photo ({s}).', id: 'Foto gagal dikirim, jadi dicatat tanpa foto ({s}).' },
+  syncing:   { ja: '送信待ちの記録を送っています…', en: 'Sending pending records…', id: 'Mengirim data tertunda…' },
   photoOpt:  { ja: 'この品名で、この症状の写真がすでに{n}枚あるので、撮影は任意です。', en: 'This model already has {n} photos of this defect, so a photo is optional.', id: 'Model ini sudah punya {n} foto cacat ini, jadi foto tidak wajib.' },
   skip:      { ja: '撮影しないで進む', en: 'Continue without photo', id: 'Lanjut tanpa foto' },
   photoReq:  { ja: 'この症状は写真が必要です。撮影したあと、瑕疵の場所をタップして〇を付けてください。', en: 'This defect needs a photo. After taking it, tap the defect to circle it.', id: 'Cacat ini perlu foto. Setelah memotret, ketuk lokasi cacat untuk melingkarinya.' },
@@ -226,11 +232,86 @@ async function call(fn, args, busyKey) {
     const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: fn, args: args || [] }) });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const j = await res.json();
-    if (!j.ok) throw new Error(j.error || 'error');
+    if (!j.ok) { const e = new Error(j.error || 'error'); e.server = true; throw e; }   // サーバーが断った（送り直しても同じ）
     return j.result;
   } finally {
     if (busyKey) hideBusy();
   }
+}
+
+// ===============================================================
+// 裏で保存する仕組み（通販の症状入力アプリと同じ）
+// ・「完了」を押したらすぐ次の画面に進み、保存はスマホに記録を残したまま裏で送る
+// ・写真も裏で送り、届いてから記録を送る。通信が切れても、戻れば自動で送り直す
+// ===============================================================
+const LS_OUTBOX = 'itaku_outbox';
+function getOutbox() { try { return JSON.parse(localStorage.getItem(LS_OUTBOX) || '[]'); } catch (e) { return []; } }
+function setOutbox(a) { try { localStorage.setItem(LS_OUTBOX, JSON.stringify(a)); } catch (e) {} }
+const isPending = v => typeof v === 'string' && v.indexOf('pending:') === 0;
+const uploadJobs = new Map();   // 目印 → 送信中の写真
+function replacePhoto(mark, url) {
+  state.adds.forEach((p, s) => { if (p === mark) state.adds.set(s, url); });
+  if (state.unit && state.unit.current) state.unit.current.forEach(c => { if (c.photo === mark) c.photo = url; });
+  const box = getOutbox(); let changed = false;
+  box.forEach(j => (j.adds || []).forEach(a => { if (a.photo === mark) { a.photo = url; changed = true; } }));
+  if (changed) setOutbox(box);
+}
+function uploadInBackground(seal, symptom, dataUrl) {
+  const mark = 'pending:' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+  const tryUpload = n => call('kUploadPhoto', [state.deviceId, seal, symptom, dataUrl]).catch(e => {
+    if (n > 0 && !e.server) return new Promise(r => setTimeout(r, 3000)).then(() => tryUpload(n - 1));
+    throw e;
+  });
+  const p = tryUpload(2).then(r => replacePhoto(mark, r.url))
+    .catch(() => { replacePhoto(mark, ''); toast(t('photoFail', { s: seal })); })
+    .then(() => { uploadJobs.delete(mark); renderHeader(); });
+  uploadJobs.set(mark, p);
+  return mark;
+}
+let flushing = null, flushTimer = null;
+function flushOutbox() {
+  if (flushing) return flushing;
+  clearTimeout(flushTimer);
+  flushing = (async () => {
+    await null;   // 先に flushing を代入させてから始める（送る記録が無いときに、止まったままにならないように）
+    let failed = false;
+    for (;;) {
+      let job = getOutbox()[0];
+      if (!job) break;
+      const marks = (job.adds || []).map(a => a.photo).filter(isPending);
+      if (marks.length) {
+        await Promise.all(marks.map(m => uploadJobs.get(m) || Promise.resolve()));
+        marks.forEach(m => { if (!uploadJobs.has(m)) replacePhoto(m, ''); });   // 行方の分からない写真は、写真なしにする
+        job = getOutbox().find(j => j.id === job.id);
+        if (!job) continue;
+        job.adds.forEach(a => { if (isPending(a.photo)) a.photo = ''; });
+      }
+      try {
+        const u = await call('kSave', [state.deviceId, job.boardId, job.seal, job.adds, job.removes]);
+        setOutbox(getOutbox().filter(j => j.id !== job.id));
+        if (u && u.photoCounts) Object.keys(u.photoCounts).forEach(k => { state.photoCounts[k] = Math.max(state.photoCounts[k] || 0, u.photoCounts[k]); });
+        if (u && state.unit && state.unit.seal === u.seal && state.screen === 'unit' && !getOutbox().some(j => j.seal === u.seal)) { state.unit = u; render(); }
+      } catch (e) {
+        if (e.server) {   // 例：別の看板のシールだった → 送り直しても同じなので、記録を外して知らせる
+          setOutbox(getOutbox().filter(j => j.id !== job.id));
+          alert(t('sendErr', { s: job.seal, m: e.message || e }));
+          continue;
+        }
+        failed = true; break;
+      }
+    }
+    flushing = null;
+    renderHeader();
+    if (failed) { toast(t('sendFail')); flushTimer = setTimeout(flushOutbox, 15000); }
+  })();
+  return flushing;
+}
+window.addEventListener('online', () => flushOutbox());
+// そのシールの記録が送信待ちなら、送り終わるまで待つ（修理・分類・読み直しの前）
+async function waitSeal(seal) {
+  if (!getOutbox().some(j => j.seal === seal)) return;
+  showBusy(t('syncing'));
+  try { await flushOutbox(); } finally { hideBusy(); }
 }
 
 function setMaster(m) {
@@ -241,6 +322,7 @@ function setMaster(m) {
 function start() {
   try { const m = JSON.parse(localStorage.getItem(LS_KMASTER) || 'null'); if (m) setMaster(m); } catch (e) {}
   state.screen = 'loading'; render();
+  flushOutbox();
   call('kInit', [state.deviceId]).then(r => {
     if (r.status === 'new' || r.status === 'pending') { state.screen = r.status === 'new' ? 'request' : 'pending'; return render(); }
     state.owner = r.owner; setMaster(r.master); state.photoNeed = r.photoNeed || 3;
@@ -304,7 +386,14 @@ async function openBoard(id) {
   try {
     const r = await call('kLoadBoard', [state.deviceId, normId(id)], 'loading');
     state.board = r.board; state.boardUnits = r.units || [];
-    state.photoCounts = r.photoCounts || {}; if (r.photoNeed) state.photoNeed = r.photoNeed;
+    const pc = r.photoCounts || {};
+    Object.keys(state.photoCounts).forEach(k => { if (state.board.name && (pc[k] || 0) < state.photoCounts[k] && state.lastBoardBase === baseName(state.board.name)) pc[k] = state.photoCounts[k]; });
+    state.photoCounts = pc; state.lastBoardBase = baseName(state.board.name || '');
+    if (r.photoNeed) state.photoNeed = r.photoNeed;
+    // まだ送信待ちの台も、一覧に出す
+    getOutbox().forEach(j => {
+      if (j.boardId === state.board.id && !state.boardUnits.some(u => u.seal === j.seal)) state.boardUnits.push({ seal: j.seal, grade: j.grade || 'NG', recheck: false });
+    });
     state.screen = 'board'; render(); window.scrollTo(0, 0);
   } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); state.screen = 'home'; render(); }
 }
@@ -313,9 +402,10 @@ async function openBoard(id) {
 async function openSeal(seal, boardId) {
   seal = normSeal(seal);
   try {
+    await waitSeal(seal);
     const u = await call('kLoadSeal', [state.deviceId, seal], 'loading');
     resetEdit();
-    if (u.photoCounts) state.photoCounts = u.photoCounts;
+    if (u.photoCounts) Object.keys(u.photoCounts).forEach(k => { state.photoCounts[k] = Math.max(state.photoCounts[k] || 0, u.photoCounts[k]); });
     if (u.photoNeed) state.photoNeed = u.photoNeed;
     if (u.registered) {
       if (boardId && u.board && u.board.id !== boardId) { alert(t('otherBoard', { s: seal, b: u.board.id })); state.screen = 'board'; return render(); }
@@ -327,6 +417,7 @@ async function openSeal(seal, boardId) {
     state.screen = 'cat'; render(); toast(t('newUnit')); window.scrollTo(0, 0);
   } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); state.screen = state.board ? 'board' : 'home'; render(); }
 }
+function baseName(n) { return String(n || '').trim().replace(/_\d+$/, ''); }
 function resetEdit() { state.adds = new Map(); state.removes = new Set(); state.cat = ''; state.photoFor = ''; state.repairSel = new Set(); state.repairMsg = ''; }
 
 // ===============================================================
@@ -342,7 +433,11 @@ function effective() {
 function pickSymptom(h) {
   const m = state.masterMap[h];
   if (!m || effective().some(e => e.symptom === h)) return;
-  if (m.photo) { state.photoFor = h; state.screen = 'photo'; render(); window.scrollTo(0, 0); return; }
+  if (m.photo) {
+    const have = state.photoCounts[h] || 0;
+    if (have >= state.photoNeed) { addSymptom(h, ''); toast(t('photoSkipped', { s: h, n: have })); return; }
+    state.photoFor = h; openCamera(); return;   // 写真が必要なら、すぐカメラを開く
+  }
   addSymptom(h, '');
 }
 function addSymptom(h, photo) {
@@ -351,16 +446,27 @@ function addSymptom(h, photo) {
 }
 function removeSymptom(h) { if (state.adds.has(h)) state.adds.delete(h); else state.removes.add(h); render(); }
 
-async function saveSymptoms() {
-  if (!effective().length && !state.unit.registered) return alert(t('needSym'));
+function saveSymptoms() {
+  const list = effective();
+  if (!list.length && !state.unit.registered) return alert(t('needSym'));
   const boardId = (state.unit.board && state.unit.board.id) || (state.board && state.board.id) || '';
   const adds = [...state.adds].map(([symptom, photo]) => ({ symptom, photo }));
-  try {
-    const u = await call('kSave', [state.deviceId, boardId, state.unit.seal, adds, [...state.removes]], 'saving');
-    state.unit = u; resetEdit(); toast(t('saved'));
-    if (u.photoCounts) state.photoCounts = u.photoCounts;
-    state.screen = 'unit'; render(); window.scrollTo(0, 0);
-  } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
+  const removes = [...state.removes];
+  // 分類は、サーバーと同じ決め方でスマホでも先に決めて表示する
+  const auto = list.every(e => state.masterMap[e.symptom] && state.masterMap[e.symptom].aOk) ? 'A' : 'NG';
+  const changed = adds.length > 0 || removes.length > 0;
+  const box = getOutbox();
+  box.push({ id: Date.now() + '_' + Math.random().toString(36).slice(2, 7), boardId, seal: state.unit.seal, adds, removes, grade: auto });
+  setOutbox(box);
+  const u = state.unit;
+  state.unit = Object.assign({}, u, {
+    registered: true, current: list.map(e => ({ symptom: e.symptom, hy: (state.masterMap[e.symptom] || {}).hy || e.symptom, photo: e.photo, cat: e.cat, kind: e.kind || '検査' })),
+    auto: auto, sales: changed ? '' : u.sales, grade: changed ? auto : (u.sales || auto), recheck: changed && u.sales ? true : u.recheck,
+    board: u.board || state.board
+  });
+  resetEdit(); toast(t('saved'));
+  state.screen = 'unit'; render(); window.scrollTo(0, 0);
+  flushOutbox();
 }
 
 // ===============================================================
@@ -380,7 +486,7 @@ async function openCamera() {
     <div class="actions"><button class="primary" id="snap" type="button" aria-label="${esc(t('shoot'))}">📷</button></div>
     <button class="link" id="camCancel" type="button">${esc(t('cancel'))}</button>`;
   const v = document.getElementById('vid'); v.srcObject = camStream;
-  document.getElementById('camCancel').onclick = () => { stopCamera(); state.screen = 'photo'; render(); };
+  document.getElementById('camCancel').onclick = () => { stopCamera(); state.screen = 'sym'; render(); };
   document.getElementById('snap').onclick = () => {
     if (!v.videoWidth) return;
     const r = Math.min(1, PHOTO_MAX / Math.max(v.videoWidth, v.videoHeight));
@@ -398,7 +504,7 @@ async function onPhotoPicked(ev) {
   try { showBusy(t('loading')); const url = await resizeImage(file, PHOTO_MAX, 0.9); hideBusy(); openMark(url); }
   catch (e) { hideBusy(); alert(t('errSave') + '\n' + (e.message || e)); }
 }
-['camPhoto', 'galPhoto'].forEach(id => document.getElementById(id).addEventListener('change', onPhotoPicked));
+document.getElementById('camPhoto').addEventListener('change', onPhotoPicked);
 
 function openMark(dataUrl) {
   const img = new Image();
@@ -414,18 +520,17 @@ function drawMarks(canvas, w, h) {
   ctx.strokeStyle = '#ff1e1e';
   marks.forEach(p => { ctx.beginPath(); ctx.arc(p.x * w, p.y * h, r, 0, Math.PI * 2); ctx.stroke(); });
 }
-async function useMarkedPhoto() {
+function useMarkedPhoto() {
   if (!marks.length) return alert(t('needMark'));
   const c = document.createElement('canvas');
   drawMarks(c, markImg.naturalWidth, markImg.naturalHeight);
   const url = c.toDataURL('image/jpeg', PHOTO_QUALITY);
   c.width = c.height = 0;
-  try {
-    const r = await call('kUploadPhoto', [state.deviceId, state.unit.seal, state.photoFor, url], 'uploading');
-    markImg = null; marks = [];
-    state.photoCounts[state.photoFor] = (state.photoCounts[state.photoFor] || 0) + 1;
-    addSymptom(state.photoFor, r.url);
-  } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
+  markImg = null; marks = [];
+  const mark = uploadInBackground(state.unit.seal, state.photoFor, url);   // 写真は裏で送る。画面はすぐ戻る
+  state.photoCounts[state.photoFor] = (state.photoCounts[state.photoFor] || 0) + 1;
+  addSymptom(state.photoFor, mark);
+  renderHeader();
 }
 
 // ===============================================================
@@ -434,6 +539,7 @@ async function useMarkedPhoto() {
 async function saveGrade() {
   if (!state.grade) return;
   try {
+    await waitSeal(state.unit.seal);
     state.unit = await call('kSetGrade', [state.deviceId, state.unit.seal, state.grade], 'saving');
     toast(t('saved')); state.screen = 'unit'; render(); window.scrollTo(0, 0);
   } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
@@ -445,6 +551,7 @@ async function saveGrade() {
 async function repairNew() {
   if (!state.repairSel.size) return alert(t('repPick'));
   try {
+    await waitSeal(state.unit.seal);
     const r = await call('kRepair', [state.deviceId, state.unit.seal, [...state.repairSel], 'new', '', ''], 'saving');
     finishRepair(r);
   } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
@@ -458,6 +565,7 @@ async function repairWithDonor(donorSeal, donorBoardId) {
   donorSeal = normSeal(donorSeal);
   if (donorSeal === state.unit.seal) { alert(t('donorSame')); state.screen = 'repair'; return render(); }
   try {
+    await waitSeal(state.unit.seal); await waitSeal(donorSeal);
     const r = await call('kRepair', [state.deviceId, state.unit.seal, [...state.repairSel], 'unit', donorSeal, donorBoardId || ''], 'saving');
     if (r && r.needBoard) {
       state.donorSeal = donorSeal; scanPurpose = 'donorBoard'; scanBack = 'repair';
@@ -533,7 +641,7 @@ document.getElementById('camQr').addEventListener('change', async ev => {
 document.addEventListener('visibilitychange', () => {
   if (document.hidden && camStream) {
     const s = state.screen; stopCamera();
-    state.screen = s === 'scan' ? scanBack : 'photo'; render();
+    state.screen = s === 'scan' ? scanBack : 'sym'; render();
   }
 });
 
@@ -570,13 +678,15 @@ function renderHeader() {
   const hd = document.getElementById('hd');
   let left = `<span class="title">${esc(t('title'))}</span>`;
   const S = state.screen;
-  if (state.unit && ['unit', 'cat', 'sym', 'photo', 'mark', 'grade', 'repair', 'camera'].includes(S)) {
+  if (state.unit && ['unit', 'cat', 'sym', 'mark', 'grade', 'repair', 'camera'].includes(S)) {
     const nm = (state.unit.board && state.unit.board.name) || state.unit.name || '';
     left = `<span class="pill id">${esc(state.unit.seal)}</span>${nm ? `<span class="pill name">${esc(nm)}</span>` : ''}`;
   } else if (state.board && S === 'board') {
     left = `<span class="pill id">${esc(state.board.id)}</span>${state.board.name ? `<span class="pill name">${esc(state.board.name)}</span>` : ''}`;
   }
-  hd.innerHTML = `${left}<button class="lang" id="langBtn" type="button">🌐 ${LANG_LABEL[state.lang]}</button>`;
+  const n = getOutbox().length + uploadJobs.size;
+  const pend = n ? `<span class="pill sync">${esc(t('pendingN', { n: n }))}</span>` : '';
+  hd.innerHTML = `${left}<button class="lang" id="langBtn" type="button">🌐 ${LANG_LABEL[state.lang]}</button>${pend}`;
   document.getElementById('langBtn').onclick = () => {
     state.lang = LANGS[(LANGS.indexOf(state.lang) + 1) % LANGS.length];
     try { localStorage.setItem(LS_LANG, state.lang); } catch (e) {}
@@ -591,8 +701,8 @@ function render() {
   const S = state.screen;
   if (S === 'camera' || S === 'scan') return;
   const R = { loading: renderLoading, error: renderError, request: renderRequest, pending: renderPending, home: renderHome,
-              board: renderBoard, unit: renderUnit, cat: renderCat, sym: renderSym, photo: renderPhoto, mark: renderMark,
-              grade: renderGrade, repair: renderRepair };
+              board: renderBoard, unit: renderUnit, cat: renderCat, sym: renderSym, mark: renderMark,
+              grade: renderGrade, repair: renderRepair, photo: renderSym };
   (R[S] || renderHome)();
 }
 
@@ -671,7 +781,7 @@ function symListHtml(list, mode) {
   return `<ul class="sel">${list.map(e => {
     const m = state.masterMap[e.symptom];
     const tags = (e.kind === '部品取り' ? `<span class="tag">${esc(t('donorTag'))}</span>` : '') +
-      (e.photo && !String(e.photo).startsWith('pending') ? `<a class="tag" href="${esc(e.photo)}" target="_blank" rel="noopener">${esc(t('hasPhoto'))}</a>` : '') +
+      (e.photo ? (isPending(e.photo) ? `<span class="tag">${esc(t('hasPhoto'))}…</span>` : `<a class="tag" href="${esc(e.photo)}" target="_blank" rel="noopener">${esc(t('hasPhoto'))}</a>`) : '') +
       (e.isNew ? `<span class="tag new">${esc(t('isNew'))}</span>` : '');
     const tail = mode === 'edit' ? `<button class="x" type="button" data-rm="${esc(e.symptom)}" aria-label="×">×</button>`
       : mode === 'repair' ? `<input class="chk" type="checkbox" data-fix="${esc(e.symptom)}" ${state.repairSel.has(e.symptom) ? 'checked' : ''}>` : '';
@@ -731,22 +841,6 @@ function renderSym() {
   $app.querySelectorAll('[data-h]').forEach(b => b.onclick = () => pickSymptom(b.dataset.h));
 }
 
-function renderPhoto() {
-  const h = state.photoFor;
-  const have = state.photoCounts[h] || 0;
-  const optional = have >= state.photoNeed;
-  $app.innerHTML = `<div class="card"><p class="big">${esc(h)}</p>${trSym(h) ? `<p class="note">${esc(trSym(h))}</p>` : ''}
-    <p class="note">${esc(optional ? t('photoOpt', { n: have }) : t('photoReq'))}</p>
-    ${optional ? `<div class="actions"><button class="primary" id="skipBtn" type="button">${esc(t('skip'))}</button></div>` : ''}
-    <div class="actions"><button class="${optional ? 'secondary' : 'primary'}" id="shootBtn" type="button">${esc(t('shoot'))}</button></div>
-    <div class="actions"><button class="secondary" id="pickBtn" type="button">${esc(t('pick'))}</button></div>
-    <button class="link" id="cancelBtn" type="button">${esc(t('cancel'))}</button></div>`;
-  const skip = document.getElementById('skipBtn'); if (skip) skip.onclick = () => addSymptom(h, '');
-  document.getElementById('shootBtn').onclick = openCamera;
-  document.getElementById('pickBtn').onclick = () => document.getElementById('galPhoto').click();
-  document.getElementById('cancelBtn').onclick = () => { state.screen = 'sym'; render(); };
-}
-
 function renderMark() {
   $app.innerHTML = `<p class="big">${esc(t('markTitle'))}</p><p class="note">${esc(t('markDesc'))}</p>
     <div class="mark"><canvas id="mk"></canvas></div>
@@ -765,7 +859,7 @@ function renderMark() {
     redraw();
   };
   document.getElementById('undoBtn').onclick = () => { marks.pop(); redraw(); };
-  document.getElementById('retakeBtn').onclick = () => { markImg = null; marks = []; state.screen = 'photo'; render(); };
+  document.getElementById('retakeBtn').onclick = () => { markImg = null; marks = []; openCamera(); };
   document.getElementById('useBtn').onclick = useMarkedPhoto;
 }
 
