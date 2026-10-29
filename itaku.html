@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#1d2024">
+<meta name="robots" content="noindex, nofollow">
+<title>業務委託 検査</title>
+<style>
+:root{--ink:#1d2024;--ink2:#5b6168;--pill:#3a3f46;--sand:#ece7dd;--rule:#d9d4ca;--amber:#e9a320;--amber-soft:#fdf1d8;--danger:#b3261e;--ok:#2e7d32;--ok-soft:#e5f2e6;--ng-soft:#fbe4e2}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Noto Sans JP',system-ui,-apple-system,sans-serif;background:#fff;color:var(--ink);-webkit-tap-highlight-color:transparent}
+header{background:var(--ink);color:#fff;display:flex;align-items:center;gap:8px;padding:10px 12px;position:sticky;top:0;z-index:5;min-height:56px}
+.title{font-weight:700;font-size:18px}
+.pill{background:var(--pill);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill.id{font-size:16px;flex:none}
+.pill.name{min-width:0}
+.lang{margin-left:auto;flex:none;background:var(--pill);color:#fff;border:0;border-radius:999px;padding:7px 12px;font:inherit;font-size:14px;font-weight:700}
+main{padding:12px 14px 40px;max-width:760px;margin:0 auto}
+h2{font-size:18px;font-weight:700;margin:16px 0 10px}
+.group{background:var(--sand);border-radius:14px;padding:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.btn{background:#fff;border:1px solid var(--ink);border-radius:10px;min-height:64px;padding:10px 8px;font:inherit;font-weight:700;font-size:15px;color:var(--ink);position:relative;line-height:1.3;cursor:pointer;text-align:center}
+.btn small{display:block;font-weight:400;font-size:12px;color:var(--ink2);margin-top:3px}
+.btn.on{background:var(--amber-soft);border:2px solid var(--amber);cursor:default}
+.btn.on::after{content:"✓";position:absolute;top:4px;right:8px;font-size:14px}
+.badge{position:absolute;top:-7px;right:-7px;background:var(--amber);color:var(--ink);border-radius:999px;min-width:24px;height:24px;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 7px}
+.sel{list-style:none;padding:0;margin:0;border:1px solid var(--rule);border-radius:12px;overflow:hidden}
+.sel li{display:flex;align-items:center;gap:10px;padding:10px 12px;border-top:1px solid #eee;font-weight:700}
+.sel li:first-child{border-top:0}
+.sel li.done{color:var(--ink2);font-weight:400;text-decoration:line-through}
+.sel small{display:block;font-weight:400;font-size:12px;color:var(--ink2);text-decoration:none}
+.sel a{color:var(--ink);font-size:13px;font-weight:400}
+.tag{font-size:11px;font-weight:700;border:1px solid var(--ink2);color:var(--ink2);border-radius:6px;padding:1px 6px;flex:none;text-decoration:none}
+.tag.new{border-color:var(--amber);color:#8a5a00;background:var(--amber-soft)}
+.x{margin-left:auto;flex:none;width:40px;height:40px;border-radius:8px;border:1px solid var(--rule);background:#fff;font-size:20px;color:var(--ink)}
+.chk{margin-left:auto;flex:none;width:26px;height:26px}
+.empty{color:var(--ink2);font-size:14px;padding:12px;border:1px dashed var(--rule);border-radius:12px}
+.actions{display:flex;gap:10px;margin:16px 0 8px}
+.primary,.secondary{flex:1;border-radius:12px;min-height:58px;font:inherit;font-weight:700;font-size:17px;cursor:pointer}
+.primary{background:var(--ink);color:#fff;border:0}
+.primary:disabled{opacity:.45}
+.secondary{background:#fff;color:var(--ink);border:1px solid var(--ink)}
+.back{background:none;border:0;color:var(--ink2);font:inherit;font-size:15px;padding:8px 0;cursor:pointer}
+.card{border:1px solid var(--rule);border-radius:14px;padding:16px;margin-top:12px}
+.big{font-size:20px;font-weight:700;margin:0 0 4px}
+.note{color:var(--ink2);font-size:14px;line-height:1.7;margin:8px 0}
+.warn{color:var(--danger);font-size:14px;line-height:1.7;margin:8px 0;font-weight:700}
+label.field{display:block;font-size:14px;color:var(--ink2);margin:14px 0 6px}
+input[type=text]{width:100%;font:inherit;font-size:18px;padding:12px;border:1px solid var(--ink);border-radius:10px}
+.err{color:var(--danger);font-size:14px;margin-top:6px;min-height:1em}
+.link{background:none;border:0;color:var(--ink);text-decoration:underline;font:inherit;font-size:14px;padding:10px 0;cursor:pointer}
+.grade{display:inline-block;min-width:54px;text-align:center;border-radius:10px;padding:6px 12px;font-size:22px;font-weight:700;background:var(--sand)}
+.grade.A{background:var(--ok-soft);color:var(--ok)}
+.grade.NG{background:var(--ng-soft);color:var(--danger)}
+.grades{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.grades button{min-height:76px;font-size:26px}
+.grades button.cur{border:3px solid var(--amber);background:var(--amber-soft)}
+.units{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+.cam{position:relative;border-radius:12px;overflow:hidden;background:#000}
+.cam video{display:block;width:100%;max-height:62vh;object-fit:cover}
+.cam .frame{position:absolute;inset:18% 22%;border:3px solid var(--amber);border-radius:12px;pointer-events:none}
+.mark{position:relative;border-radius:12px;overflow:hidden;background:#000;touch-action:manipulation}
+.mark canvas{display:block;width:100%;height:auto}
+button:focus-visible,input:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+#busy{position:fixed;inset:0;background:rgba(255,255,255,.88);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;z-index:20;text-align:center;padding:20px}
+#busy[hidden]{display:none}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:30}
+#toast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){#toast{transition:none}}
+</style>
+</head>
+<body>
+<header id="hd"></header>
+<main id="app"></main>
+<input type="file" id="camPhoto" accept="image/*" capture="environment" hidden>
+<input type="file" id="galPhoto" accept="image/*" hidden>
+<input type="file" id="camQr" accept="image/*" capture="environment" hidden>
+<div id="busy" hidden></div>
+<div id="toast" role="status"></div>
+<script>
+// ===============================================================
+// ★ ここに 業務委託用の GAS のウェブアプリのURL（末尾が /exec）を貼る（通販のURLとは別）
+// ===============================================================
+const API_URL = 'https://script.google.com/macros/s/AKfycbzMq_YboZgaEs_-I8NzMx3qjt3lBQao_b1aCyc4dAEptMopFnM-A6bkMRQDCCwlXvq1/exec';
+
+// QRのURLの「?k=看板ID」「?s=シール番号」を受け取る
+const INIT = (() => {
+  const q = new URLSearchParams(location.search);
+  return { k: (q.get('k') || '').trim(), s: (q.get('s') || '').trim() };
+})();
+
+// ===============================================================
+// 表示する言語（日本語／English／Bahasa Indonesia）。保存されるデータは日本語のまま
+// ===============================================================
+const LANGS = ['ja', 'en', 'id'];
+const LANG_LABEL = { ja: '日本語', en: 'English', id: 'Indonesia' };
+const T = {
+  title:     { ja: '業務委託 検査', en: 'Contract inspection', id: 'Inspeksi kontrak' },
+  loading:   { ja: '読み込み中…', en: 'Loading…', id: 'Memuat…' },
+  saving:    { ja: '保存しています…', en: 'Saving…', id: 'Menyimpan…' },
+  uploading: { ja: '写真を保存しています…', en: 'Saving the photo…', id: 'Menyimpan foto…' },
+  saved:     { ja: '保存しました', en: 'Saved', id: 'Tersimpan' },
+  errLoad:   { ja: '読み込めませんでした。通信を確認して、もう一度開いてください。', en: 'Could not load. Check the connection and try again.', id: 'Gagal memuat. Periksa koneksi lalu coba lagi.' },
+  errSave:   { ja: '保存できませんでした。通信を確認して、もう一度押してください。', en: 'Could not save. Check the connection and tap again.', id: 'Gagal menyimpan. Periksa koneksi lalu tekan lagi.' },
+  retry:     { ja: 'もう一度読み込む', en: 'Load again', id: 'Muat ulang' },
+  reqTitle:  { ja: 'この端末の利用を申請', en: 'Request access for this device', id: 'Ajukan izin untuk perangkat ini' },
+  reqDesc:   { ja: '初めて使う端末です。端末の呼び名を入れて申請してください。管理者が許可すると使えるようになります。', en: 'This device is new. Enter a name and send a request. You can use the app after the manager approves it.', id: 'Perangkat ini baru. Masukkan nama lalu kirim permintaan. Aplikasi bisa dipakai setelah disetujui manajer.' },
+  reqLabel:  { ja: '端末の呼び名（例：現場スマホ1）', en: 'Device name (e.g. Floor phone 1)', id: 'Nama perangkat (contoh: HP lantai 1)' },
+  reqBtn:    { ja: '申請する', en: 'Send request', id: 'Kirim permintaan' },
+  reqEmpty:  { ja: '端末の呼び名を入力してください', en: 'Enter a device name', id: 'Masukkan nama perangkat' },
+  pendTitle: { ja: '許可を待っています', en: 'Waiting for approval', id: 'Menunggu persetujuan' },
+  pendDesc:  { ja: '管理者が許可すると使えます。許可されたら「確認する」を押してください。', en: 'Tap “Check again” after the manager approves this device.', id: 'Tekan “Periksa lagi” setelah manajer menyetujui perangkat ini.' },
+  check:     { ja: '確認する', en: 'Check again', id: 'Periksa lagi' },
+  homeTitle: { ja: 'QRを読み取る', en: 'Scan a QR', id: 'Pindai QR' },
+  homeDesc:  { ja: '瑕疵を登録するときは「看板」のQRを、登録済みの台を見るときは「シール」のQRを読み取ってください。', en: 'To register a defect, scan the QR on the board. To see a registered unit, scan the QR on its sticker.', id: 'Untuk mendaftarkan cacat, pindai QR di papan. Untuk melihat unit terdaftar, pindai QR di stikernya.' },
+  scan:      { ja: 'QRを読み取る', en: 'Scan QR', id: 'Pindai QR' },
+  scanDesc:  { ja: 'QRを枠の中に入れてください。', en: 'Put the QR inside the frame.', id: 'Masukkan QR ke dalam bingkai.' },
+  typeLabel: { ja: 'シール番号または看板IDを入力（例：D00012、261027SS-03）', en: 'Or type a sticker number or board ID (e.g. D00012, 261027SS-03)', id: 'Atau ketik nomor stiker atau ID papan (contoh: D00012, 261027SS-03)' },
+  open:      { ja: '開く', en: 'Open', id: 'Buka' },
+  typeBad:   { ja: '番号の形が正しくありません', en: 'The number format is not correct', id: 'Format nomor tidak benar' },
+  qrFail:    { ja: 'QRを読み取れませんでした。QRを大きく写して、もう一度撮影してください。', en: 'The QR could not be read. Take the photo again with the QR larger.', id: 'QR tidak terbaca. Foto lagi dengan QR lebih besar.' },
+  qrWrong:   { ja: 'このQRは使えません。', en: 'This QR cannot be used here.', id: 'QR ini tidak bisa dipakai di sini.' },
+  cancel:    { ja: 'やめる', en: 'Cancel', id: 'Batal' },
+  back:      { ja: '‹ 戻る', en: '‹ Back', id: '‹ Kembali' },
+  boardMissing: { ja: '看板の情報がまだ届いていません（案件管理で看板を発行すると届きます）。登録はできます。', en: 'Board details have not arrived yet (they arrive when the board is issued). You can still register.', id: 'Data papan belum masuk (masuk saat papan diterbitkan). Tetap bisa mendaftar.' },
+  boardInfo: { ja: '入荷日 {d} ／ 入荷数 {q}台', en: 'Arrival {d} / Qty {q}', id: 'Tiba {d} / Jumlah {q}' },
+  regUnits:  { ja: 'この看板で登録した台（{n}台）', en: 'Units registered on this board ({n})', id: 'Unit terdaftar di papan ini ({n})' },
+  noUnits:   { ja: 'まだ登録した台はありません。', en: 'No units registered yet.', id: 'Belum ada unit terdaftar.' },
+  sealType:  { ja: 'QRが読めないときは、シール番号を入力（例：D00012）', en: 'If the QR cannot be read, type the sticker number (e.g. D00012)', id: 'Jika QR tidak terbaca, ketik nomor stiker (contoh: D00012)' },
+  scanSeal:  { ja: 'シールを貼って、シールのQRを読む', en: 'Attach a sticker and scan it', id: 'Tempel stiker lalu pindai' },
+  sealDesc:  { ja: '瑕疵がある台に新しいシールを1枚貼り、そのシールのQRを読み取ってください。', en: 'Attach a new sticker to the defective unit and scan the sticker QR.', id: 'Tempel satu stiker baru pada unit cacat, lalu pindai QR stiker itu.' },
+  otherBoard:{ ja: 'このシール（{s}）は、別の看板（{b}）の台に貼られています。', en: 'This sticker ({s}) belongs to another board ({b}).', id: 'Stiker ini ({s}) milik papan lain ({b}).' },
+  newUnit:   { ja: '新しい台です。症状を選んでください。', en: 'New unit. Choose the defects.', id: 'Unit baru. Pilih cacatnya.' },
+  notReg:    { ja: 'このシールはまだ登録されていません。看板のQRを読み取ってから、シールを読み取ってください。', en: 'This sticker is not registered yet. Scan the board QR first, then the sticker.', id: 'Stiker ini belum terdaftar. Pindai QR papan dulu, lalu stiker.' },
+  catTitle:  { ja: 'カテゴリを選択', en: 'Select a category', id: 'Pilih kategori' },
+  selTitle:  { ja: 'この台の症状', en: 'Defects on this unit', id: 'Cacat pada unit ini' },
+  selEmpty:  { ja: 'まだ症状はありません。カテゴリを押して症状を選んでください。', en: 'No defects yet. Tap a category to choose a defect.', id: 'Belum ada cacat. Tekan kategori untuk memilih.' },
+  isNew:     { ja: '今回追加', en: 'New', id: 'Baru' },
+  hasPhoto:  { ja: '写真', en: 'Photo', id: 'Foto' },
+  donorTag:  { ja: '部品取り', en: 'Part taken', id: 'Komponen diambil' },
+  done:      { ja: '完了', en: 'Done', id: 'Selesai' },
+  needSym:   { ja: '症状を1つ以上選んでください', en: 'Choose at least one defect', id: 'Pilih minimal satu cacat' },
+  backCat:   { ja: '‹ カテゴリに戻る', en: '‹ Back to categories', id: '‹ Kembali ke kategori' },
+  photoReq:  { ja: 'この症状は写真が必要です。撮影したあと、瑕疵の場所をタップして〇を付けてください。', en: 'This defect needs a photo. After taking it, tap the defect to circle it.', id: 'Cacat ini perlu foto. Setelah memotret, ketuk lokasi cacat untuk melingkarinya.' },
+  shoot:     { ja: 'カメラで撮影', en: 'Open camera', id: 'Buka kamera' },
+  pick:      { ja: '写真を選ぶ（撮影済みの写真）', en: 'Choose a photo', id: 'Pilih foto' },
+  markTitle: { ja: '瑕疵の場所をタップ', en: 'Tap the defect', id: 'Ketuk lokasi cacat' },
+  markDesc:  { ja: 'タップした場所に赤い〇が付きます。何か所でも付けられます。', en: 'A red circle appears where you tap. You can add several.', id: 'Lingkaran merah muncul di tempat yang diketuk. Bisa beberapa.' },
+  undo:      { ja: '1つ戻す', en: 'Undo', id: 'Urungkan' },
+  usePhoto:  { ja: 'この写真で決める', en: 'Use this photo', id: 'Pakai foto ini' },
+  retake:    { ja: '撮り直す', en: 'Retake', id: 'Foto ulang' },
+  needMark:  { ja: '瑕疵の場所をタップして、〇を付けてください', en: 'Tap the defect to add a circle', id: 'Ketuk lokasi cacat untuk menambah lingkaran' },
+  camNg:     { ja: 'カメラを使えません。ブラウザの設定で、このページのカメラを「許可」にしてください。', en: 'The camera is not available. Allow camera access in the browser settings.', id: 'Kamera tidak tersedia. Izinkan kamera di pengaturan browser.' },
+  gradeNow:  { ja: '分類', en: 'Grade', id: 'Grade' },
+  gradeAuto: { ja: '自動', en: 'auto', id: 'otomatis' },
+  gradeSales:{ ja: '営業', en: 'sales', id: 'sales' },
+  recheck:   { ja: '再確認（修理などで症状が変わりました）', en: 'Recheck (defects changed)', id: 'Periksa ulang (cacat berubah)' },
+  repairedT: { ja: '修理済みの症状', en: 'Repaired defects', id: 'Cacat yang sudah diperbaiki' },
+  fromUnit:  { ja: '部品：{s} から', en: 'part from {s}', id: 'komponen dari {s}' },
+  newPart:   { ja: '新しい部品', en: 'new part', id: 'komponen baru' },
+  editSym:   { ja: '症状を追加・直す', en: 'Add / edit defects', id: 'Tambah / ubah cacat' },
+  setGrade:  { ja: '分類を決める（営業）', en: 'Set grade (sales)', id: 'Tentukan grade (sales)' },
+  repair:    { ja: '修理を記録（修理担当）', en: 'Record repair', id: 'Catat perbaikan' },
+  next:      { ja: '次のQRを読み取る', en: 'Scan the next QR', id: 'Pindai QR berikutnya' },
+  toBoard:   { ja: 'この台の看板を開く', en: 'Open this board', id: 'Buka papan ini' },
+  gradeTitle:{ ja: '分類を選んでください', en: 'Choose the grade', id: 'Pilih grade' },
+  gradeSave: { ja: 'この分類で保存', en: 'Save this grade', id: 'Simpan grade ini' },
+  repTitle:  { ja: '直した症状を選ぶ', en: 'Choose the repaired defects', id: 'Pilih cacat yang diperbaiki' },
+  repNone:   { ja: '直せる症状がありません。', en: 'There are no defects to repair.', id: 'Tidak ada cacat untuk diperbaiki.' },
+  repSrc:    { ja: '部品はどこから？', en: 'Where did the part come from?', id: 'Komponen dari mana?' },
+  srcUnit:   { ja: 'ほかの台から取った', en: 'From another unit', id: 'Dari unit lain' },
+  srcNew:    { ja: '新しい部品・在庫の部品', en: 'New / stock part', id: 'Komponen baru / stok' },
+  repPick:   { ja: '直した症状を1つ以上選んでください', en: 'Choose at least one repaired defect', id: 'Pilih minimal satu cacat yang diperbaiki' },
+  donorScan: { ja: '部品を取った台のシールのQRを読み取ってください。シールが無い台は、新しいシールを貼ってから読み取ってください。', en: 'Scan the sticker of the unit the part came from. If it has no sticker, attach a new one first.', id: 'Pindai stiker unit asal komponen. Jika belum ada stiker, tempel stiker baru dulu.' },
+  donorBoard:{ ja: 'このシールはまだ登録されていません。部品を取った台の「看板」のQRを読み取ってください。', en: 'This sticker is not registered. Scan the board QR of the unit the part came from.', id: 'Stiker ini belum terdaftar. Pindai QR papan unit asal komponen.' },
+  donorSame: { ja: '修理した台と同じシールです。部品を取った台のシールを読み取ってください。', en: 'This is the repaired unit itself. Scan the unit the part came from.', id: 'Ini unit yang diperbaiki. Pindai unit asal komponen.' },
+  repDone:   { ja: '修理を記録しました。', en: 'Repair recorded.', id: 'Perbaikan dicatat.' },
+  donorNow:  { ja: '部品を取った台（{s}）の症状：{list}', en: 'Defects on the donor unit ({s}): {list}', id: 'Cacat pada unit asal ({s}): {list}' },
+  ecMove:    { ja: '通販のシールです。症状入力アプリを開きます。', en: 'This is a retail sticker. Opening the retail app.', id: 'Ini stiker ritel. Membuka aplikasi ritel.' },
+  count:     { ja: '{n}件', en: '{n} items', id: '{n} item' }
+};
+function t(key, vars) {
+  let s = (T[key] && (T[key][state.lang] || T[key].ja)) || key;
+  if (vars) Object.keys(vars).forEach(k => { s = s.split('{' + k + '}').join(vars[k]); });
+  return s;
+}
+
+// ===============================================================
+// 状態
+// ===============================================================
+const LS_DEVICE = 'symptom_device_id', LS_LANG = 'symptom_lang', LS_KMASTER = 'itaku_master';
+const PHOTO_MAX = 1024, PHOTO_QUALITY = 0.72;
+const state = {
+  lang: loadLang(), deviceId: loadDeviceId(), screen: 'loading', error: '',
+  owner: '', master: [], masterMap: {}, cats: [],
+  board: null, boardUnits: [],
+  unit: null,                 // サーバーから受け取った台の情報（未登録なら { seal, registered:false }）
+  adds: new Map(), removes: new Set(), cat: '', photoFor: '',
+  repairSel: new Set(), donorSeal: '', repairMsg: '',
+  grade: ''
+};
+function loadLang() {
+  try { const v = localStorage.getItem(LS_LANG); if (LANGS.includes(v)) return v; } catch (e) {}
+  const nav = (navigator.language || 'ja').slice(0, 2);
+  return nav === 'id' || nav === 'in' ? 'id' : nav === 'en' ? 'en' : 'ja';
+}
+function loadDeviceId() {   // 端末ID（許可は業務委託用のスプレッドシートの「端末の許可」シートで行う）
+  let id = '';
+  try { id = localStorage.getItem(LS_DEVICE) || ''; } catch (e) {}
+  if (!id) {
+    id = (self.crypto && crypto.randomUUID) ? crypto.randomUUID() : 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+    try { localStorage.setItem(LS_DEVICE, id); } catch (e) {}
+  }
+  return id;
+}
+
+// ===============================================================
+// サーバー（GAS）とのやり取り
+// ===============================================================
+async function call(fn, args, busyKey) {
+  if (busyKey) showBusy(t(busyKey));
+  try {
+    const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: fn, args: args || [] }) });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error || 'error');
+    return j.result;
+  } finally {
+    if (busyKey) hideBusy();
+  }
+}
+
+function setMaster(m) {
+  state.master = m; state.masterMap = {}; state.cats = [];
+  m.forEach(x => { state.masterMap[x.h] = x; if (!state.cats.find(c => c.cat === x.cat)) state.cats.push({ cat: x.cat, en: x.catEn, id: x.catId }); });
+}
+
+function start() {
+  try { const m = JSON.parse(localStorage.getItem(LS_KMASTER) || 'null'); if (m) setMaster(m); } catch (e) {}
+  state.screen = 'loading'; render();
+  call('kInit', [state.deviceId]).then(r => {
+    if (r.status === 'new' || r.status === 'pending') { state.screen = r.status === 'new' ? 'request' : 'pending'; return render(); }
+    state.owner = r.owner; setMaster(r.master);
+    try { localStorage.setItem(LS_KMASTER, JSON.stringify(r.master)); } catch (e) {}
+    if (INIT.s) return openSeal(INIT.s);
+    if (INIT.k) return openBoard(INIT.k);
+    state.screen = 'home'; render();
+  }).catch(e => { state.error = String(e.message || e); state.screen = 'error'; render(); });
+}
+
+// ===============================================================
+// QRの中身を見分ける
+//   看板：…itaku.html?k=261027SS-03 または 261027SS-03
+//   シール：…itaku.html?s=D00012 または D00012
+//   通販：…?no=564-03 または 564-03
+// ===============================================================
+function normId(s) {
+  return String(s || '').trim().replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/[－ー―‐]/g, '-').toUpperCase();
+}
+function normSeal(s) { const m = normId(s).match(/^D?0*(\d+)$/); return m ? 'D' + String(Number(m[1])).padStart(5, '0') : normId(s); }
+function parseCode(text) {
+  if (!text) return null;
+  text = String(text).trim();
+  try {
+    const u = new URL(text);
+    const k = u.searchParams.get('k'), s = u.searchParams.get('s'), no = u.searchParams.get('no');
+    if (k) return { type: 'board', id: normId(k) };
+    if (s) return { type: 'seal', id: normSeal(s) };
+    if (no) return { type: 'ec', no: no, raw: text };
+  } catch (e) {}
+  const v = normId(text);
+  if (/^D\d{1,6}$/.test(v)) return { type: 'seal', id: normSeal(v) };
+  if (/^\d{6}[A-Z0-9]*-\d+$/.test(v)) return { type: 'board', id: v };
+  if (/^\d+-\d+$/.test(v)) return { type: 'ec', no: v, raw: text };
+  return null;
+}
+
+// 読み取ったQRを、今の目的に合わせて処理する
+let scanPurpose = 'any';
+function handleCode(code) {
+  if (!code) return alert(t('qrFail'));
+  if (code.type === 'ec') { toast(t('ecMove')); location.href = 'index.html?no=' + encodeURIComponent(code.no); return; }
+  if (scanPurpose === 'donor') {
+    if (code.type !== 'seal') { alert(t('qrWrong')); return backAfterScan(); }
+    return repairWithDonor(code.id, '');
+  }
+  if (scanPurpose === 'donorBoard') {
+    if (code.type !== 'board') { alert(t('qrWrong')); return backAfterScan(); }
+    return repairWithDonor(state.donorSeal, code.id);
+  }
+  if (code.type === 'board') return openBoard(code.id);
+  if (code.type === 'seal') return openSeal(code.id, scanPurpose === 'sealForBoard' && state.board ? state.board.id : '');
+}
+let scanBack = 'home';
+function backAfterScan() { state.screen = scanBack; render(); }
+
+// ===============================================================
+// 看板・台を開く
+// ===============================================================
+async function openBoard(id) {
+  try {
+    const r = await call('kLoadBoard', [state.deviceId, normId(id)], 'loading');
+    state.board = r.board; state.boardUnits = r.units || [];
+    state.screen = 'board'; render(); window.scrollTo(0, 0);
+  } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); state.screen = 'home'; render(); }
+}
+
+// boardId を渡したとき（看板→シールの順に読んだとき）は、未登録のシールをその看板の台として登録する
+async function openSeal(seal, boardId) {
+  seal = normSeal(seal);
+  try {
+    const u = await call('kLoadSeal', [state.deviceId, seal], 'loading');
+    resetEdit();
+    if (u.registered) {
+      if (boardId && u.board && u.board.id !== boardId) { alert(t('otherBoard', { s: seal, b: u.board.id })); state.screen = 'board'; return render(); }
+      state.unit = u; state.board = u.board.missing ? state.board : u.board;
+      state.screen = 'unit'; render(); window.scrollTo(0, 0); return;
+    }
+    if (!boardId) { alert(t('notReg')); state.screen = state.board ? 'board' : 'home'; return render(); }
+    state.unit = { seal: seal, registered: false, current: [], repaired: [], board: state.board };
+    state.screen = 'cat'; render(); toast(t('newUnit')); window.scrollTo(0, 0);
+  } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); state.screen = state.board ? 'board' : 'home'; render(); }
+}
+function resetEdit() { state.adds = new Map(); state.removes = new Set(); state.cat = ''; state.photoFor = ''; state.repairSel = new Set(); state.repairMsg = ''; }
+
+// ===============================================================
+// 症状の選択と保存
+// ===============================================================
+function effective() {
+  const list = [];
+  (state.unit.current || []).forEach(c => { if (!state.removes.has(c.symptom)) list.push(Object.assign({ isNew: false }, c)); });
+  state.adds.forEach((photo, s) => { const m = state.masterMap[s] || {}; list.push({ symptom: s, photo: photo, cat: m.cat, isNew: true }); });
+  const ord = s => { const m = state.masterMap[s]; return m ? m.co * 1000 + m.no : 99999; };
+  return list.sort((a, b) => ord(a.symptom) - ord(b.symptom));
+}
+function pickSymptom(h) {
+  const m = state.masterMap[h];
+  if (!m || effective().some(e => e.symptom === h)) return;
+  if (m.photo) { state.photoFor = h; state.screen = 'photo'; render(); window.scrollTo(0, 0); return; }
+  addSymptom(h, '');
+}
+function addSymptom(h, photo) {
+  if (state.removes.has(h)) state.removes.delete(h); else state.adds.set(h, photo || '');
+  state.screen = 'cat'; state.cat = ''; render(); window.scrollTo(0, 0);
+}
+function removeSymptom(h) { if (state.adds.has(h)) state.adds.delete(h); else state.removes.add(h); render(); }
+
+async function saveSymptoms() {
+  if (!effective().length && !state.unit.registered) return alert(t('needSym'));
+  const boardId = (state.unit.board && state.unit.board.id) || (state.board && state.board.id) || '';
+  const adds = [...state.adds].map(([symptom, photo]) => ({ symptom, photo }));
+  try {
+    const u = await call('kSave', [state.deviceId, boardId, state.unit.seal, adds, [...state.removes]], 'saving');
+    state.unit = u; resetEdit(); toast(t('saved'));
+    state.screen = 'unit'; render(); window.scrollTo(0, 0);
+  } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
+}
+
+// ===============================================================
+// 写真：撮影 → 瑕疵の場所をタップして〇 → 保存
+// ===============================================================
+let camStream = null, scanTimer = null, markImg = null, marks = [];
+function stopCamera() { clearTimeout(scanTimer); scanTimer = null; if (camStream) { camStream.getTracks().forEach(tr => tr.stop()); camStream = null; } }
+async function startCamera(w, h) {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('no camera');
+  camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: w }, height: { ideal: h } }, audio: false });
+  return camStream;
+}
+async function openCamera() {
+  try { await startCamera(1280, 960); } catch (e) { document.getElementById('camPhoto').click(); return; }
+  state.screen = 'camera'; renderHeader();
+  $app.innerHTML = `<div class="cam"><video id="vid" autoplay playsinline muted></video></div>
+    <div class="actions"><button class="primary" id="snap" type="button" aria-label="${esc(t('shoot'))}">📷</button></div>
+    <button class="link" id="camCancel" type="button">${esc(t('cancel'))}</button>`;
+  const v = document.getElementById('vid'); v.srcObject = camStream;
+  document.getElementById('camCancel').onclick = () => { stopCamera(); state.screen = 'photo'; render(); };
+  document.getElementById('snap').onclick = () => {
+    if (!v.videoWidth) return;
+    const r = Math.min(1, PHOTO_MAX / Math.max(v.videoWidth, v.videoHeight));
+    const c = document.createElement('canvas');
+    c.width = Math.round(v.videoWidth * r); c.height = Math.round(v.videoHeight * r);
+    c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+    const url = c.toDataURL('image/jpeg', 0.9);
+    stopCamera(); openMark(url);
+  };
+}
+async function onPhotoPicked(ev) {
+  const file = ev.target.files && ev.target.files[0];
+  ev.target.value = '';
+  if (!file) return;
+  try { showBusy(t('loading')); const url = await resizeImage(file, PHOTO_MAX, 0.9); hideBusy(); openMark(url); }
+  catch (e) { hideBusy(); alert(t('errSave') + '\n' + (e.message || e)); }
+}
+['camPhoto', 'galPhoto'].forEach(id => document.getElementById(id).addEventListener('change', onPhotoPicked));
+
+function openMark(dataUrl) {
+  const img = new Image();
+  img.onload = () => { markImg = img; marks = []; state.screen = 'mark'; render(); window.scrollTo(0, 0); };
+  img.src = dataUrl;
+}
+function drawMarks(canvas, w, h) {
+  const ctx = canvas.getContext('2d');
+  canvas.width = w; canvas.height = h;
+  ctx.drawImage(markImg, 0, 0, w, h);
+  const r = Math.min(w, h) * 0.08;
+  ctx.lineWidth = Math.max(3, Math.min(w, h) * 0.012);
+  ctx.strokeStyle = '#ff1e1e';
+  marks.forEach(p => { ctx.beginPath(); ctx.arc(p.x * w, p.y * h, r, 0, Math.PI * 2); ctx.stroke(); });
+}
+async function useMarkedPhoto() {
+  if (!marks.length) return alert(t('needMark'));
+  const c = document.createElement('canvas');
+  drawMarks(c, markImg.naturalWidth, markImg.naturalHeight);
+  const url = c.toDataURL('image/jpeg', PHOTO_QUALITY);
+  c.width = c.height = 0;
+  try {
+    const r = await call('kUploadPhoto', [state.deviceId, state.unit.seal, state.photoFor, url], 'uploading');
+    markImg = null; marks = [];
+    addSymptom(state.photoFor, r.url);
+  } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
+}
+
+// ===============================================================
+// 分類（営業担当）
+// ===============================================================
+async function saveGrade() {
+  if (!state.grade) return;
+  try {
+    state.unit = await call('kSetGrade', [state.deviceId, state.unit.seal, state.grade], 'saving');
+    toast(t('saved')); state.screen = 'unit'; render(); window.scrollTo(0, 0);
+  } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
+}
+
+// ===============================================================
+// 修理（修理担当）
+// ===============================================================
+async function repairNew() {
+  if (!state.repairSel.size) return alert(t('repPick'));
+  try {
+    const r = await call('kRepair', [state.deviceId, state.unit.seal, [...state.repairSel], 'new', '', ''], 'saving');
+    finishRepair(r);
+  } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
+}
+function repairFromUnit() {
+  if (!state.repairSel.size) return alert(t('repPick'));
+  scanPurpose = 'donor'; scanBack = 'repair';
+  openScanner(t('donorScan'));
+}
+async function repairWithDonor(donorSeal, donorBoardId) {
+  donorSeal = normSeal(donorSeal);
+  if (donorSeal === state.unit.seal) { alert(t('donorSame')); state.screen = 'repair'; return render(); }
+  try {
+    const r = await call('kRepair', [state.deviceId, state.unit.seal, [...state.repairSel], 'unit', donorSeal, donorBoardId || ''], 'saving');
+    if (r && r.needBoard) {
+      state.donorSeal = donorSeal; scanPurpose = 'donorBoard'; scanBack = 'repair';
+      alert(t('donorBoard')); return openScanner(t('donorBoard'));
+    }
+    finishRepair(r);
+  } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); state.screen = 'repair'; render(); }
+}
+function finishRepair(r) {
+  state.unit = r.unit; resetEdit(); state.donorSeal = '';
+  state.repairMsg = t('repDone') + (r.donor ? '\n' + t('donorNow', { s: r.donor.seal, list: (r.donor.current || []).map(c => c.hy || c.symptom).join('、') }) : '');
+  state.screen = 'unit'; render(); window.scrollTo(0, 0);
+}
+
+// ===============================================================
+// QRの読み取り（カメラを向けるだけ。使えない端末は写真に撮って読む）
+// ===============================================================
+let jsqrPromise = null;
+function loadJsQR() {
+  if (window.jsQR) return Promise.resolve();
+  if (!jsqrPromise) jsqrPromise = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+    s.onload = resolve; s.onerror = () => { jsqrPromise = null; reject(new Error('jsQR')); };
+    document.head.appendChild(s);
+  });
+  return jsqrPromise;
+}
+async function openScanner(desc) {
+  try { await loadJsQR(); } catch (e) { return alert(t('errLoad')); }
+  try { await startCamera(640, 480); } catch (e) { document.getElementById('camQr').click(); return; }
+  state.screen = 'scan'; renderHeader();
+  $app.innerHTML = `<p class="note">${esc(desc || t('scanDesc'))}</p>
+    <div class="cam"><video id="vid" autoplay playsinline muted></video><div class="frame"></div></div>
+    <div class="actions"><button class="secondary" id="scanCancel" type="button">${esc(t('cancel'))}</button></div>`;
+  const v = document.getElementById('vid'); v.srcObject = camStream;
+  document.getElementById('scanCancel').onclick = () => { stopCamera(); backAfterScan(); };
+  const c = document.createElement('canvas');
+  const ctx = c.getContext('2d', { willReadFrequently: true });
+  const tick = () => {
+    if (state.screen !== 'scan' || !camStream) return;
+    if (v.videoWidth) {
+      const r = Math.min(1, 480 / Math.max(v.videoWidth, v.videoHeight));
+      c.width = Math.round(v.videoWidth * r); c.height = Math.round(v.videoHeight * r);
+      ctx.drawImage(v, 0, 0, c.width, c.height);
+      const code = jsQR(ctx.getImageData(0, 0, c.width, c.height).data, c.width, c.height, { inversionAttempts: 'dontInvert' });
+      const parsed = code && parseCode(code.data);
+      if (parsed) { stopCamera(); if (navigator.vibrate) navigator.vibrate(80); handleCode(parsed); return; }
+    }
+    scanTimer = setTimeout(tick, 250);
+  };
+  tick();
+}
+document.getElementById('camQr').addEventListener('change', async ev => {
+  const file = ev.target.files && ev.target.files[0];
+  ev.target.value = '';
+  if (!file) return;
+  showBusy(t('loading'));
+  let text = null;
+  try {
+    await loadJsQR();
+    const img = await loadImage(file);
+    for (const size of [1280, 800, 1800]) {
+      const cv = drawScaled(img, size);
+      const code = jsQR(cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data, cv.width, cv.height);
+      cv.width = cv.height = 0;
+      if (code && code.data) { text = code.data; break; }
+    }
+  } catch (e) {}
+  hideBusy();
+  handleCode(parseCode(text));
+});
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && camStream) {
+    const s = state.screen; stopCamera();
+    state.screen = s === 'scan' ? scanBack : 'photo'; render();
+  }
+});
+
+function loadImage(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+    img.onerror = reject; img.src = url;
+  });
+}
+function drawScaled(img, max) {
+  const r = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+  const c = document.createElement('canvas');
+  c.width = Math.round(img.naturalWidth * r); c.height = Math.round(img.naturalHeight * r);
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  return c;
+}
+async function resizeImage(file, max, quality) {
+  const img = await loadImage(file);
+  return drawScaled(img, max).toDataURL('image/jpeg', quality);
+}
+
+// ===============================================================
+// 画面の描画
+// ===============================================================
+const $app = document.getElementById('app');
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function trSym(h) { const m = state.masterMap[h]; return !m || state.lang === 'ja' ? '' : (state.lang === 'en' ? m.en : m.id); }
+function trCat(c) { return state.lang === 'ja' ? '' : (state.lang === 'en' ? c.en : c.id); }
+function sub(s) { return s ? `<small>${esc(s)}</small>` : ''; }
+
+function renderHeader() {
+  const hd = document.getElementById('hd');
+  let left = `<span class="title">${esc(t('title'))}</span>`;
+  const S = state.screen;
+  if (state.unit && ['unit', 'cat', 'sym', 'photo', 'mark', 'grade', 'repair', 'camera'].includes(S)) {
+    const nm = (state.unit.board && state.unit.board.name) || state.unit.name || '';
+    left = `<span class="pill id">${esc(state.unit.seal)}</span>${nm ? `<span class="pill name">${esc(nm)}</span>` : ''}`;
+  } else if (state.board && S === 'board') {
+    left = `<span class="pill id">${esc(state.board.id)}</span>${state.board.name ? `<span class="pill name">${esc(state.board.name)}</span>` : ''}`;
+  }
+  hd.innerHTML = `${left}<button class="lang" id="langBtn" type="button">🌐 ${LANG_LABEL[state.lang]}</button>`;
+  document.getElementById('langBtn').onclick = () => {
+    state.lang = LANGS[(LANGS.indexOf(state.lang) + 1) % LANGS.length];
+    try { localStorage.setItem(LS_LANG, state.lang); } catch (e) {}
+    if (state.screen === 'mark') { renderHeader(); return; }
+    render();
+  };
+}
+
+function render() {
+  renderHeader();
+  document.documentElement.lang = state.lang;
+  const S = state.screen;
+  if (S === 'camera' || S === 'scan') return;
+  const R = { loading: renderLoading, error: renderError, request: renderRequest, pending: renderPending, home: renderHome,
+              board: renderBoard, unit: renderUnit, cat: renderCat, sym: renderSym, photo: renderPhoto, mark: renderMark,
+              grade: renderGrade, repair: renderRepair };
+  (R[S] || renderHome)();
+}
+
+function renderLoading() { $app.innerHTML = `<p class="note">${esc(t('loading'))}</p>`; }
+function renderError() {
+  $app.innerHTML = `<div class="card"><p class="big">${esc(t('errLoad'))}</p><p class="note">${esc(state.error)}</p>
+    <div class="actions"><button class="primary" id="retry" type="button">${esc(t('retry'))}</button></div></div>`;
+  document.getElementById('retry').onclick = start;
+}
+function renderRequest() {
+  $app.innerHTML = `<div class="card"><p class="big">${esc(t('reqTitle'))}</p><p class="note">${esc(t('reqDesc'))}</p>
+    <label class="field" for="devName">${esc(t('reqLabel'))}</label><input type="text" id="devName" maxlength="40" autocomplete="off">
+    <div class="err" id="devErr"></div><div class="actions"><button class="primary" id="reqBtn" type="button">${esc(t('reqBtn'))}</button></div></div>`;
+  document.getElementById('reqBtn').onclick = () => {
+    const label = document.getElementById('devName').value.trim();
+    if (!label) { document.getElementById('devErr').textContent = t('reqEmpty'); return; }
+    call('kRequestDevice', [state.deviceId, label], 'saving').then(() => { state.screen = 'pending'; render(); })
+      .catch(e => alert(t('errSave') + '\n' + (e.message || e)));
+  };
+}
+function renderPending() {
+  $app.innerHTML = `<div class="card"><p class="big">${esc(t('pendTitle'))}</p><p class="note">${esc(t('pendDesc'))}</p>
+    <div class="actions"><button class="primary" id="chk" type="button">${esc(t('check'))}</button></div></div>`;
+  document.getElementById('chk').onclick = start;
+}
+
+function renderHome() {
+  $app.innerHTML = `<div class="card"><p class="big">${esc(t('homeTitle'))}</p><p class="note">${esc(t('homeDesc'))}</p>
+    <div class="actions"><button class="primary" id="scanBtn" type="button">${esc(t('scan'))}</button></div>
+    <label class="field" for="idInput">${esc(t('typeLabel'))}</label>
+    <input type="text" id="idInput" autocomplete="off" autocapitalize="characters">
+    <div class="err" id="idErr"></div>
+    <div class="actions"><button class="secondary" id="openBtn" type="button">${esc(t('open'))}</button></div></div>`;
+  document.getElementById('scanBtn').onclick = () => { scanPurpose = 'any'; scanBack = 'home'; openScanner(); };
+  document.getElementById('openBtn').onclick = () => {
+    const code = parseCode(document.getElementById('idInput').value);
+    if (!code || code.type === 'ec') { document.getElementById('idErr').textContent = t('typeBad'); return; }
+    scanPurpose = 'any'; handleCode(code);
+  };
+}
+
+function gradeHtml(u) {
+  const g = u.grade || 'A';
+  const who = u.sales ? t('gradeSales') : t('gradeAuto');
+  return `<p class="note">${esc(t('gradeNow'))}　<span class="grade ${esc(g)}">${esc(g)}</span>　<small>（${esc(who)}）</small></p>
+    ${u.recheck ? `<p class="warn">${esc(t('recheck'))}</p>` : ''}`;
+}
+
+function renderBoard() {
+  const b = state.board;
+  const units = state.boardUnits;
+  $app.innerHTML = `<div class="card"><p class="big">${esc(b.name || b.id)}</p>
+    ${b.missing ? `<p class="warn">${esc(t('boardMissing'))}</p>` : `<p class="note">${esc(b.supplier || '')}　${esc(t('boardInfo', { d: b.date || '', q: b.qty || 0 }))}</p>`}
+    <p class="note">${esc(t('sealDesc'))}</p>
+    <div class="actions"><button class="primary" id="sealBtn" type="button">${esc(t('scanSeal'))}</button></div>
+    <label class="field" for="sealInput">${esc(t('sealType'))}</label>
+    <input type="text" id="sealInput" autocomplete="off" autocapitalize="characters" placeholder="D00012">
+    <div class="err" id="sealErr"></div>
+    <div class="actions"><button class="secondary" id="sealOpen" type="button">${esc(t('open'))}</button></div></div>
+    <h2>${esc(t('regUnits', { n: units.length }))}</h2>
+    ${units.length ? `<div class="units">${units.map((u, i) => `<button class="btn" type="button" data-i="${i}">${esc(u.seal)}<small><span class="grade ${esc(u.grade)}" style="font-size:14px;padding:2px 8px">${esc(u.grade)}</span>${u.recheck ? ' ⚠' : ''}</small></button>`).join('')}</div>`
+      : `<div class="empty">${esc(t('noUnits'))}</div>`}
+    <button class="link" id="homeBtn" type="button">${esc(t('next'))}</button>`;
+  document.getElementById('sealBtn').onclick = () => { scanPurpose = 'sealForBoard'; scanBack = 'board'; openScanner(t('sealDesc')); };
+  document.getElementById('sealOpen').onclick = () => {
+    const v = normId(document.getElementById('sealInput').value);
+    if (!/^D?\d{1,6}$/.test(v)) { document.getElementById('sealErr').textContent = t('typeBad'); return; }
+    openSeal(v, state.board.id);
+  };
+  $app.querySelectorAll('[data-i]').forEach(btn => btn.onclick = () => openSeal(units[Number(btn.dataset.i)].seal));
+  document.getElementById('homeBtn').onclick = () => { scanPurpose = 'any'; scanBack = 'board'; openScanner(); };
+}
+
+function symListHtml(list, mode) {
+  if (!list.length) return `<div class="empty">${esc(t('selEmpty'))}</div>`;
+  return `<ul class="sel">${list.map(e => {
+    const m = state.masterMap[e.symptom];
+    const tags = (e.kind === '部品取り' ? `<span class="tag">${esc(t('donorTag'))}</span>` : '') +
+      (e.photo && !String(e.photo).startsWith('pending') ? `<a class="tag" href="${esc(e.photo)}" target="_blank" rel="noopener">${esc(t('hasPhoto'))}</a>` : '') +
+      (e.isNew ? `<span class="tag new">${esc(t('isNew'))}</span>` : '');
+    const tail = mode === 'edit' ? `<button class="x" type="button" data-rm="${esc(e.symptom)}" aria-label="×">×</button>`
+      : mode === 'repair' ? `<input class="chk" type="checkbox" data-fix="${esc(e.symptom)}" ${state.repairSel.has(e.symptom) ? 'checked' : ''}>` : '';
+    return `<li><span>${esc(e.symptom)}${sub(trSym(e.symptom) || (m && m.hy !== e.symptom ? m.hy : ''))}</span>${tags}${tail}</li>`;
+  }).join('')}</ul>`;
+}
+
+function renderUnit() {
+  const u = state.unit;
+  const msg = state.repairMsg;
+  $app.innerHTML = `${msg ? `<div class="card" style="border-color:var(--amber)"><p class="note" style="white-space:pre-line">${esc(msg)}</p></div>` : ''}
+    <div class="card">${gradeHtml(u)}</div>
+    <h2>${esc(t('selTitle'))}${u.current.length ? ` <span class="note">${esc(t('count', { n: u.current.length }))}</span>` : ''}</h2>
+    ${symListHtml(u.current.map(c => Object.assign({}, c)), 'view')}
+    ${u.repaired && u.repaired.length ? `<h2>${esc(t('repairedT'))}</h2><ul class="sel">${u.repaired.map(r => `<li class="done"><span>${esc(r.symptom)}<small>${esc(r.rel && r.rel !== '新しい部品' ? t('fromUnit', { s: r.rel }) : t('newPart'))}</small></span></li>`).join('')}</ul>` : ''}
+    <div class="actions"><button class="primary" id="editBtn" type="button">${esc(t('editSym'))}</button></div>
+    <div class="actions"><button class="secondary" id="gradeBtn" type="button">${esc(t('setGrade'))}</button></div>
+    <div class="actions"><button class="secondary" id="repBtn" type="button">${esc(t('repair'))}</button></div>
+    <div class="actions"><button class="secondary" id="nextBtn" type="button">${esc(t('next'))}</button></div>
+    ${u.board && !u.board.missing ? `<button class="link" id="boardBtn" type="button">${esc(t('toBoard'))}</button>` : ''}`;
+  state.repairMsg = '';
+  document.getElementById('editBtn').onclick = () => { resetEdit(); state.screen = 'cat'; render(); window.scrollTo(0, 0); };
+  document.getElementById('gradeBtn').onclick = () => { state.grade = u.sales || u.auto || 'A'; state.screen = 'grade'; render(); };
+  document.getElementById('repBtn').onclick = () => { resetEdit(); state.screen = 'repair'; render(); };
+  document.getElementById('nextBtn').onclick = () => { scanPurpose = 'any'; scanBack = 'unit'; openScanner(); };
+  const bb = document.getElementById('boardBtn'); if (bb) bb.onclick = () => openBoard(u.board.id);
+}
+
+function renderCat() {
+  const list = effective();
+  const counts = {};
+  list.forEach(e => { if (e.cat) counts[e.cat] = (counts[e.cat] || 0) + 1; });
+  $app.innerHTML = `${!state.unit.registered ? `<p class="note">${esc(t('newUnit'))}</p>` : ''}
+    <h2>${esc(t('catTitle'))}</h2>
+    <div class="group">${state.cats.map((c, i) => `<button class="btn" type="button" data-cat="${i}">${esc(c.cat)}${sub(trCat(c))}${counts[c.cat] ? `<span class="badge">${counts[c.cat]}</span>` : ''}</button>`).join('')}</div>
+    <h2>${esc(t('selTitle'))}</h2>${symListHtml(list, 'edit')}
+    <div class="actions"><button class="primary" id="doneBtn" type="button">${esc(t('done'))}</button></div>
+    <button class="link" id="cancelBtn" type="button">${esc(t('cancel'))}</button>`;
+  $app.querySelectorAll('[data-cat]').forEach(b => b.onclick = () => { state.cat = state.cats[Number(b.dataset.cat)].cat; state.screen = 'sym'; render(); window.scrollTo(0, 0); });
+  $app.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => removeSymptom(b.dataset.rm));
+  document.getElementById('doneBtn').onclick = saveSymptoms;
+  document.getElementById('cancelBtn').onclick = () => {
+    resetEdit();
+    if (state.unit.registered) { state.screen = 'unit'; } else { state.unit = null; state.screen = state.board ? 'board' : 'home'; }
+    render();
+  };
+}
+
+function renderSym() {
+  const eff = new Set(effective().map(e => e.symptom));
+  const c = state.cats.find(x => x.cat === state.cat) || {};
+  const items = state.master.filter(m => m.cat === state.cat);
+  $app.innerHTML = `<button class="back" id="backBtn" type="button">${esc(t('backCat'))}</button>
+    <h2>${esc(state.cat)}${trCat(c) ? ` <span class="note">${esc(trCat(c))}</span>` : ''}</h2>
+    <div class="group">${items.map(m => `<button class="btn${eff.has(m.h) ? ' on' : ''}" type="button" data-h="${esc(m.h)}">${esc(m.h)}${sub(trSym(m.h))}${sub(m.desc)}${m.photo ? '<small>📷</small>' : ''}</button>`).join('')}</div>`;
+  document.getElementById('backBtn').onclick = () => { state.screen = 'cat'; render(); window.scrollTo(0, 0); };
+  $app.querySelectorAll('[data-h]').forEach(b => b.onclick = () => pickSymptom(b.dataset.h));
+}
+
+function renderPhoto() {
+  const h = state.photoFor;
+  $app.innerHTML = `<div class="card"><p class="big">${esc(h)}</p>${trSym(h) ? `<p class="note">${esc(trSym(h))}</p>` : ''}
+    <p class="note">${esc(t('photoReq'))}</p>
+    <div class="actions"><button class="primary" id="shootBtn" type="button">${esc(t('shoot'))}</button></div>
+    <div class="actions"><button class="secondary" id="pickBtn" type="button">${esc(t('pick'))}</button></div>
+    <button class="link" id="cancelBtn" type="button">${esc(t('cancel'))}</button></div>`;
+  document.getElementById('shootBtn').onclick = openCamera;
+  document.getElementById('pickBtn').onclick = () => document.getElementById('galPhoto').click();
+  document.getElementById('cancelBtn').onclick = () => { state.screen = 'sym'; render(); };
+}
+
+function renderMark() {
+  $app.innerHTML = `<p class="big">${esc(t('markTitle'))}</p><p class="note">${esc(t('markDesc'))}</p>
+    <div class="mark"><canvas id="mk"></canvas></div>
+    <div class="actions"><button class="secondary" id="undoBtn" type="button">${esc(t('undo'))}</button>
+      <button class="secondary" id="retakeBtn" type="button">${esc(t('retake'))}</button></div>
+    <div class="actions"><button class="primary" id="useBtn" type="button">${esc(t('usePhoto'))}</button></div>`;
+  const cv = document.getElementById('mk');
+  const redraw = () => {
+    const w = Math.min(cv.parentElement.clientWidth * (window.devicePixelRatio || 1), markImg.naturalWidth);
+    drawMarks(cv, Math.round(w), Math.round(w * markImg.naturalHeight / markImg.naturalWidth));
+  };
+  redraw();
+  cv.onclick = ev => {
+    const rect = cv.getBoundingClientRect();
+    marks.push({ x: (ev.clientX - rect.left) / rect.width, y: (ev.clientY - rect.top) / rect.height });
+    redraw();
+  };
+  document.getElementById('undoBtn').onclick = () => { marks.pop(); redraw(); };
+  document.getElementById('retakeBtn').onclick = () => { markImg = null; marks = []; state.screen = 'photo'; render(); };
+  document.getElementById('useBtn').onclick = useMarkedPhoto;
+}
+
+function renderGrade() {
+  $app.innerHTML = `<button class="back" id="backBtn" type="button">${esc(t('back'))}</button>
+    <div class="card"><p class="big">${esc(t('gradeTitle'))}</p>
+    <div class="grades">${['A', 'B', 'C', 'NG'].map(g => `<button class="secondary${state.grade === g ? ' cur' : ''}" type="button" data-g="${g}">${g}</button>`).join('')}</div>
+    <div class="actions"><button class="primary" id="saveBtn" type="button">${esc(t('gradeSave'))}</button></div></div>
+    <h2>${esc(t('selTitle'))}</h2>${symListHtml(state.unit.current.map(c => Object.assign({}, c)), 'view')}`;
+  document.getElementById('backBtn').onclick = () => { state.screen = 'unit'; render(); };
+  $app.querySelectorAll('[data-g]').forEach(b => b.onclick = () => { state.grade = b.dataset.g; render(); });
+  document.getElementById('saveBtn').onclick = saveGrade;
+}
+
+function renderRepair() {
+  const list = state.unit.current.map(c => Object.assign({}, c));
+  $app.innerHTML = `<button class="back" id="backBtn" type="button">${esc(t('back'))}</button>
+    <h2>${esc(t('repTitle'))}</h2>
+    ${list.length ? symListHtml(list, 'repair') : `<div class="empty">${esc(t('repNone'))}</div>`}
+    ${list.length ? `<h2>${esc(t('repSrc'))}</h2>
+      <div class="actions"><button class="primary" id="srcUnit" type="button">${esc(t('srcUnit'))}</button></div>
+      <div class="actions"><button class="secondary" id="srcNew" type="button">${esc(t('srcNew'))}</button></div>` : ''}`;
+  document.getElementById('backBtn').onclick = () => { resetEdit(); state.screen = 'unit'; render(); };
+  $app.querySelectorAll('[data-fix]').forEach(cb => cb.onchange = () => { if (cb.checked) state.repairSel.add(cb.dataset.fix); else state.repairSel.delete(cb.dataset.fix); });
+  const su = document.getElementById('srcUnit'); if (su) su.onclick = repairFromUnit;
+  const sn = document.getElementById('srcNew'); if (sn) sn.onclick = repairNew;
+}
+
+function showBusy(msg) { const b = document.getElementById('busy'); b.textContent = msg; b.hidden = false; }
+function hideBusy() { document.getElementById('busy').hidden = true; }
+let toastTimer = null;
+function toast(msg) { const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 1800); }
+
+start();
+setTimeout(() => loadJsQR().catch(() => {}), 3000);
+</script>
+</body>
+</html>
