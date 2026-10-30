@@ -490,9 +490,9 @@ async function openSeal(seal, boardId) {
   } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); state.screen = state.board ? 'board' : 'home'; render(); }
 }
 // B・C・NG看板の印刷ページ（slip.html）を開く。GASのURLも引き継ぐ
-function openSlip(boardId) {
+function openSlip(boardId, grade) {
   try { localStorage.setItem('itaku_api_url', API_URL); } catch (e) {}
-  location.href = 'slip.html?k=' + encodeURIComponent(boardId);
+  location.href = 'slip.html?k=' + encodeURIComponent(boardId) + (['B', 'C', 'NG'].includes(grade) ? '&g=' + grade : '');   // 台の分類がB・C・NGなら、その看板を選んだ状態で開く
 }
 function baseName(n) { return String(n || '').trim().replace(/_\d+$/, ''); }
 function resetEdit() { state.adds = new Map(); state.removes = new Set(); state.cat = ''; state.photoFor = ''; state.repairSel = new Set(); state.repairMsg = ''; }
@@ -915,7 +915,7 @@ function renderUnit() {
   document.getElementById('gradeBtn').onclick = () => { state.grade = u.sales || u.auto || 'A'; state.screen = 'grade'; render(); };
   document.getElementById('repBtn').onclick = () => { resetEdit(); state.screen = 'repair'; render(); };
   document.getElementById('nextBtn').onclick = () => { scanPurpose = 'any'; scanBack = 'unit'; openScanner(); };
-  const sl = document.getElementById('slipBtn'); if (sl) sl.onclick = () => openSlip(u.board.id);
+  const sl = document.getElementById('slipBtn'); if (sl) sl.onclick = () => openSlip(u.board.id, u.grade);
   const bb = document.getElementById('boardBtn'); if (bb) bb.onclick = () => openBoard(u.board.id);
 }
 

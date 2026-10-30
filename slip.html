@@ -7,7 +7,7 @@
 <meta name="robots" content="noindex, nofollow">
 <title>B・C・NG看板の発行</title>
 <style>
-:root{--ink:#1d2024;--ink2:#5b6168;--rule:#d9d4ca;--sand:#ece7dd;--amber:#e9a320;--danger:#b3261e}
+:root{--ink:#1d2024;--ink2:#5b6168;--rule:#d9d4ca;--sand:#ece7dd;--amber:#e9a320;--amber-soft:#fdf1d8;--danger:#b3261e}
 *{box-sizing:border-box}
 html,body{margin:0}
 body{font-family:'Meiryo','メイリオ','Noto Sans JP',system-ui,-apple-system,sans-serif;color:var(--ink);background:#f6f4ef;-webkit-tap-highlight-color:transparent}
@@ -24,6 +24,10 @@ button{font:inherit;font-weight:700;border-radius:12px;min-height:56px;padding:0
 .secondary{background:#fff;color:var(--ink);border:1px solid var(--ink);flex:1 1 160px}
 .link{display:inline-block;margin-top:6px;color:var(--ink);font-size:15px}
 .err{color:var(--danger);font-size:14px;min-height:1.2em;margin-top:6px}
+.segs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 10px}
+.seg{background:#fff;color:var(--ink);border:1px solid var(--ink);min-height:72px;padding:6px 4px;font-size:24px;line-height:1.2}
+.seg small{display:block;font-size:13px;font-weight:400;color:var(--ink2);margin-top:2px}
+.seg.cur{background:var(--amber-soft);border:3px solid var(--amber)}
 .paper{background:#d9d6cf;border-radius:12px;padding:10px;overflow:hidden}
 #stageWrap{position:relative;overflow:hidden}
 #stage{transform-origin:top left;width:210mm;height:148mm}
@@ -36,16 +40,18 @@ button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(-
 .sheet .head .l{width:94.7mm;overflow:hidden}
 .sheet .head .r{width:90.2mm;overflow:hidden}
 .sheet .mid{display:flex;height:37.2mm;border-top:1mm dashed #000}
-.sheet .mid .g{width:71.2mm;display:flex;align-items:center;justify-content:center;text-align:center;font-size:24pt;font-weight:700;line-height:1.25}
+.sheet .mid .g{width:71.2mm;display:flex;align-items:center;justify-content:center;font-size:60pt;font-weight:700;line-height:1}
 .sheet .mid .m{width:113.7mm;display:flex;align-items:center;font-size:18pt;font-weight:700;line-height:1.25;overflow:hidden;word-break:break-all}
 .sheet .grid{display:grid;grid-template-columns:22.7mm 24.5mm 23.9mm 23.5mm 22.5mm 22.4mm 22.4mm 22.8mm;margin-top:0}
 .sheet .grid>div{border:0.55mm solid #000;margin:0 -0.28mm -0.28mm 0;display:flex;align-items:center;justify-content:center}
 .sheet .grid .lab{color:#b4b4b4;font-weight:700;font-size:10.5pt}
 .sheet .grid .id{grid-column:2 / span 3;font-size:20pt;font-weight:700;letter-spacing:.02em}
-.sheet .grid .qr{grid-column:5 / span 4;justify-content:flex-start;padding-left:4mm}
+/* QRの枠：右辺を、数量の5個目（6列目）の右辺にそろえる */
+.sheet .grid .qr{grid-column:5 / span 2;justify-content:center}
 .sheet .grid .qr svg{width:32mm;height:32mm;display:block}
-.sheet .grid .r1{height:35.3mm}
-.sheet .grid .r2{height:21.3mm}
+.sheet .grid .cnt{font-size:28pt;font-weight:700}
+.sheet .grid .r1{grid-row:1;height:35.3mm}
+.sheet .grid .r2{grid-row:2;height:21.3mm}
 
 @page{size:210mm 148mm;margin:0}
 @media print{
@@ -72,7 +78,8 @@ button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(-
 // ===============================================================
 const API_URL = '';
 const APP_URL = 'https://upwell-japan.github.io/symptom-app/itaku.html';   // 看板のQRの行き先（A看板と同じ）
-const LS_DEVICE = 'symptom_device_id', LS_API = 'itaku_api_url';
+const LS_DEVICE = 'symptom_device_id', LS_API = 'itaku_api_url', LS_OUTBOX = 'itaku_outbox';
+const GRADES = ['B', 'C', 'NG'];
 const $app = document.getElementById('app');
 
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -113,17 +120,35 @@ function qrSvg(text) {
 // 型番が長いときは文字を小さくして、2〜3行に収める
 function modelSize(name) { const n = String(name || '').length; return n > 40 ? 12 : n > 26 ? 15 : 18; }
 
-function slipHtml(b) {
+// ---------------------------------------------------------------
+// 台数（その時点の、この看板で登録された台のうち、その分類の台数）
+//  ・サーバーにまだ届いていない記録（この端末の送信待ち）も数に入れる
+// ---------------------------------------------------------------
+function mergeOutbox(id, units) {
+  let box = [];
+  try { box = JSON.parse(localStorage.getItem(LS_OUTBOX) || '[]'); } catch (e) {}
+  const bySeal = new Map(units.map(u => [u.seal, u]));
+  box.forEach(j => {
+    if (j.boardId !== id) return;
+    const changed = (j.adds && j.adds.length) || (j.removes && j.removes.length);
+    const u = bySeal.get(j.seal);
+    if (!u) { const n = { seal: j.seal, grade: j.grade || 'NG' }; units.push(n); bySeal.set(j.seal, n); }
+    else if (changed) u.grade = j.grade || u.grade;
+  });
+}
+function countOf(g) { return units.filter(u => u.grade === g).length; }
+
+function slipHtml(b, g) {
   const url = APP_URL + '?k=' + encodeURIComponent(b.id);
   return `<div class="sheet"><div class="in">
     <div class="head"><div class="l">入荷日: ${esc(dateText(b.date))}</div><div class="r">仕入先：${esc(b.supplier || '')}</div></div>
     <div class="mid">
-      <div class="g"><div>B ・ C<br>NG</div></div>
+      <div class="g">${esc(g)}</div>
       <div class="m"><div style="font-size:${modelSize(b.name)}pt">型番：${esc(b.name || '')}</div></div>
     </div>
     <div class="grid">
       <div class="lab r1">看板ID</div><div class="id r1">${esc(b.id)}</div><div class="qr r1">${qrSvg(url)}</div>
-      <div class="lab r2">数量</div>${'<div class="r2"></div>'.repeat(7)}
+      <div class="lab r2">数量</div><div class="cnt r2">${countOf(g)}</div>${'<div class="r2"></div>'.repeat(6)}
     </div>
   </div></div>`;
 }
@@ -131,7 +156,7 @@ function slipHtml(b) {
 // ===============================================================
 // 画面
 // ===============================================================
-let board = null;
+let board = null, units = [], grade = 'NG';
 function fit() {
   const wrap = document.getElementById('stageWrap'), st = document.getElementById('stage');
   if (!wrap || !st) return;
@@ -162,6 +187,8 @@ async function load(id) {
     const r = await call('kLoadBoard', [deviceId(), id]);
     board = r.board;
     if (!board.id) board.id = id;
+    units = (r.units || []).map(u => ({ seal: u.seal, grade: u.grade }));
+    mergeOutbox(board.id, units);
     renderSlip();
   } catch (e) {
     $app.innerHTML = `<div class="card"><p class="big">読み込めませんでした</p><p class="warn">${esc(e.message || e)}</p>
@@ -172,24 +199,26 @@ async function load(id) {
 }
 
 function renderSlip() {
-  const b = board;
+  const b = board, n = countOf(grade);
   $app.innerHTML = `<div class="ui">
       ${b.missing ? '<p class="warn">この看板の情報（入荷日・仕入先・型番）がまだ届いていません。このまま印刷すると、その部分が空欄になります。</p>' : ''}
-      <div class="row"><button class="primary" id="printBtn" type="button">この看板を印刷する</button></div>
+      <div class="segs">${GRADES.map(g => `<button class="seg${g === grade ? ' cur' : ''}" type="button" data-g="${g}">${g}<small>${countOf(g)}台</small></button>`).join('')}</div>
+      ${n === 0 ? `<p class="warn">${esc(grade)}の台は、まだ登録されていません。数量は「0」で印刷されます。</p>` : ''}
+      <div class="row"><button class="primary" id="printBtn" type="button">${esc(grade)}看板を印刷する</button></div>
       <p class="note">印刷の画面で、用紙は「A5」・向きは「横」・倍率は「100%（実際のサイズ）」になっているか確かめてください。</p>
     </div>
-    <div class="paper"><div id="stageWrap"><div id="stage">${slipHtml(b)}</div></div></div>
+    <div class="paper"><div id="stageWrap"><div id="stage">${slipHtml(b, grade)}</div></div></div>
     <div class="ui paper-bar"><a class="link" href="itaku.html?k=${encodeURIComponent(b.id)}">‹ 看板の画面に戻る</a></div>`;
   fit();
-  document.getElementById('printBtn').onclick = () => {
-    // 発行の記録を残す（失敗しても印刷は止めない）
-    call('kLogSlip', [deviceId(), b.id]).catch(() => {});
-    window.print();
-  };
+  $app.querySelectorAll('[data-g]').forEach(btn => btn.onclick = () => { grade = btn.dataset.g; renderSlip(); });
+  document.getElementById('printBtn').onclick = () => window.print();
 }
 
 (function start() {
-  const k = normId(new URLSearchParams(location.search).get('k') || '');
+  const q = new URLSearchParams(location.search);
+  const k = normId(q.get('k') || '');
+  const g = String(q.get('g') || '').toUpperCase();
+  if (GRADES.includes(g)) grade = g;
   if (k) load(k); else renderHome();
 })();
 </script>
