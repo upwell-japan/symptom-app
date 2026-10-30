@@ -224,10 +224,28 @@ const state = {
   grade: '',
   photoCounts: {}, photoNeed: 3,  // 同じ品名（枝番なし）・同じ症状の写真の枚数と、必要な枚数
   lastSaved: { seal: '', t: 0 },  // 保存したばかりのシールを読み直さないため
-  nextSeal: loadNextSeal(), nextErr: ''   // この端末が次に貼るシール（サーバーから受け取った番号）
+  sealQueue: loadSealQueue(), nextSeal: '', nextErr: ''   // この端末が貼るシール（今の番号＋控えの番号）
 };
-function loadNextSeal() { try { return localStorage.getItem('itaku_next_seal') || ''; } catch (e) { return ''; } }
-function setNextSeal(v) { state.nextSeal = v || ''; try { localStorage.setItem('itaku_next_seal', state.nextSeal); } catch (e) {} }
+state.nextSeal = state.sealQueue[0] || '';
+const SEAL_KEEP = 2;   // 「今の番号」と「控えの番号」の2つを持っておく
+function loadSealQueue() {
+  try {
+    const q = JSON.parse(localStorage.getItem('itaku_seal_queue') || 'null');
+    if (Array.isArray(q)) return q;
+    const old = localStorage.getItem('itaku_next_seal');   // 前の版で受け取っていた番号
+    return old ? [old] : [];
+  } catch (e) { return []; }
+}
+function saveSealQueue() {
+  state.nextSeal = state.sealQueue[0] || '';
+  try { localStorage.setItem('itaku_seal_queue', JSON.stringify(state.sealQueue)); localStorage.removeItem('itaku_next_seal'); } catch (e) {}
+}
+// 今の番号を使い終えた（または使わない）ので、控えの番号を今の番号にする
+function dropNextSeal(seal) {
+  if (state.sealQueue[0] === seal) state.sealQueue.shift();
+  else state.sealQueue = state.sealQueue.filter(x => x !== seal);
+  saveSealQueue();
+}
 function loadLang() {
   try { const v = localStorage.getItem(LS_LANG); if (LANGS.includes(v)) return v; } catch (e) {}
   const nav = (navigator.language || 'ja').slice(0, 2);
@@ -408,11 +426,16 @@ function backAfterScan() { state.screen = scanBack; render(); }
 // 次に貼るシールの番号を、裏で受け取っておく（すでに持っていれば何もしない）
 let gettingSeal = null;
 function ensureNextSeal() {
-  if (state.nextSeal || gettingSeal) return gettingSeal;
+  if (gettingSeal) return gettingSeal;
+  const need = SEAL_KEEP - state.sealQueue.length;
+  if (need <= 0) return Promise.resolve();
+  const wasEmpty = !state.nextSeal;
   state.nextErr = '';
-  gettingSeal = call('kNextSeal', [state.deviceId]).then(r => { setNextSeal(r.seal); })
-    .catch(e => { state.nextErr = String(e.message || e); })
-    .then(() => { gettingSeal = null; if (state.screen === 'board') render(); });
+  gettingSeal = call('kNextSeal', [state.deviceId, need]).then(r => {
+    (r.seals || [r.seal]).forEach(x => { if (x && !state.sealQueue.includes(x)) state.sealQueue.push(x); });
+    saveSealQueue();
+  }).catch(e => { if (!state.nextSeal) state.nextErr = String(e.message || e); })   // 控えが受け取れないだけなら、知らせない
+    .then(() => { gettingSeal = null; if (state.screen === 'board' && (wasEmpty || state.nextErr)) render(); });
   return gettingSeal;
 }
 // 指示した番号で、新しい台の登録を始める
@@ -519,9 +542,11 @@ function saveSymptoms() {
     // 新しく登録した台なら、看板の画面に戻って次の番号を指示する
     state.lastSaved = { seal: u.seal, t: Date.now() };
     if (!state.boardUnits.some(x => x.seal === u.seal)) state.boardUnits.push({ seal: u.seal, grade: auto, recheck: false });
-    if (fromNext && state.nextSeal === u.seal) setNextSeal('');
+    if (state.sealQueue.includes(u.seal)) dropNextSeal(u.seal);   // 控えの番号が、すぐ今の番号になる
     state.screen = 'board'; render(); window.scrollTo(0, 0);
-    ensureNextSeal().then(() => toast(state.nextSeal ? t('savedNext', { s: u.seal, n: state.nextSeal }) : t('saved')));
+    if (state.nextSeal) toast(t('savedNext', { s: u.seal, n: state.nextSeal }));
+    else ensureNextSeal().then(() => toast(state.nextSeal ? t('savedNext', { s: u.seal, n: state.nextSeal }) : t('saved')));
+    ensureNextSeal();
     return;
   }
   toast(t('saved'));
@@ -838,7 +863,7 @@ function renderBoard() {
   const sb = document.getElementById('stuckBtn'); if (sb) sb.onclick = startWithNextSeal;
   const sk = document.getElementById('skipSeal'); if (sk) sk.onclick = () => {
     if (!confirm(t('skipAsk', { s: state.nextSeal }))) return;
-    setNextSeal(''); render(); ensureNextSeal();
+    dropNextSeal(state.nextSeal); render(); ensureNextSeal();
   };
   const rn = document.getElementById('retryNo'); if (rn) rn.onclick = () => { state.nextErr = ''; render(); ensureNextSeal(); };
   document.getElementById('sealOpen').onclick = () => {
