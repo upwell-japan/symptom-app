@@ -127,6 +127,9 @@ const T = {
   regUnits:  { ja: 'この看板で登録した台（{n}台）', en: 'Units registered on this board ({n})', id: 'Unit terdaftar di papan ini ({n})' },
   noUnits:   { ja: 'まだ登録した台はありません。', en: 'No units registered yet.', id: 'Belum ada unit terdaftar.' },
   sealType:  { ja: 'QRが読めないときは、シール番号を入力（例：D00012）', en: 'If the QR cannot be read, type the sticker number (e.g. D00012)', id: 'Jika QR tidak terbaca, ketik nomor stiker (contoh: D00012)' },
+  nextSeal:  { ja: '【{b}】瑕疵がある台にシールを貼り、シールのQRを読み取ってください。違う看板の台に移るときは、その看板のQRを読み取ります。', en: '[{b}] Attach a sticker to the defective unit and scan it. To move to another board, scan that board QR.', id: '[{b}] Tempel stiker pada unit cacat lalu pindai. Untuk pindah papan, pindai QR papan itu.' },
+  boardSwitched: { ja: '看板を切り替えました：{b}', en: 'Switched board: {b}', id: 'Papan diganti: {b}' },
+  savedSeal: { ja: '{s} を保存しました。次のシールを読み取ってください', en: '{s} saved. Scan the next sticker', id: '{s} tersimpan. Pindai stiker berikutnya' },
   scanSeal:  { ja: 'シールを貼って、シールのQRを読む', en: 'Attach a sticker and scan it', id: 'Tempel stiker lalu pindai' },
   sealDesc:  { ja: '瑕疵がある台に新しいシールを1枚貼り、そのシールのQRを読み取ってください。', en: 'Attach a new sticker to the defective unit and scan the sticker QR.', id: 'Tempel satu stiker baru pada unit cacat, lalu pindai QR stiker itu.' },
   otherBoard:{ ja: 'このシール（{s}）は、別の看板（{b}）の台に貼られています。', en: 'This sticker ({s}) belongs to another board ({b}).', id: 'Stiker ini ({s}) milik papan lain ({b}).' },
@@ -206,7 +209,8 @@ const state = {
   adds: new Map(), removes: new Set(), cat: '', photoFor: '',
   repairSel: new Set(), donorSeal: '', repairMsg: '',
   grade: '',
-  photoCounts: {}, photoNeed: 3   // 同じ品名（枝番なし）・同じ症状の写真の枚数と、必要な枚数
+  photoCounts: {}, photoNeed: 3,  // 同じ品名（枝番なし）・同じ症状の写真の枚数と、必要な枚数
+  lastSaved: { seal: '', t: 0 }   // 連続登録で、保存したばかりのシールを読み直さないため
 };
 function loadLang() {
   try { const v = localStorage.getItem(LS_LANG); if (LANGS.includes(v)) return v; } catch (e) {}
@@ -373,7 +377,10 @@ function handleCode(code) {
     if (code.type !== 'board') { alert(t('qrWrong')); return backAfterScan(); }
     return repairWithDonor(state.donorSeal, code.id);
   }
-  if (code.type === 'board') return openBoard(code.id);
+  if (code.type === 'board') {
+    const switching = scanPurpose === 'sealForBoard';
+    return openBoard(code.id, true).then(ok => { if (ok && switching) toast(t('boardSwitched', { b: state.board.name || state.board.id })); });
+  }
   if (code.type === 'seal') return openSeal(code.id, scanPurpose === 'sealForBoard' && state.board ? state.board.id : '');
 }
 let scanBack = 'home';
@@ -382,7 +389,12 @@ function backAfterScan() { state.screen = scanBack; render(); }
 // ===============================================================
 // 看板・台を開く
 // ===============================================================
-async function openBoard(id) {
+// scanNext が true なら、看板を開いたあとすぐにシールを読む状態にする（連続登録）
+function scanSealForBoard() {
+  scanPurpose = 'sealForBoard'; scanBack = 'board';
+  openScanner(t('nextSeal', { b: state.board.name || state.board.id }));
+}
+async function openBoard(id, scanNext) {
   try {
     const r = await call('kLoadBoard', [state.deviceId, normId(id)], 'loading');
     state.board = r.board; state.boardUnits = r.units || [];
@@ -395,7 +407,9 @@ async function openBoard(id) {
       if (j.boardId === state.board.id && !state.boardUnits.some(u => u.seal === j.seal)) state.boardUnits.push({ seal: j.seal, grade: j.grade || 'NG', recheck: false });
     });
     state.screen = 'board'; render(); window.scrollTo(0, 0);
-  } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); state.screen = 'home'; render(); }
+    if (scanNext) scanSealForBoard();
+    return true;
+  } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); state.screen = 'home'; render(); return false; }
 }
 
 // boardId を渡したとき（看板→シールの順に読んだとき）は、未登録のシールをその看板の台として登録する
@@ -464,9 +478,17 @@ function saveSymptoms() {
     auto: auto, sales: changed ? '' : u.sales, grade: changed ? auto : (u.sales || auto), recheck: changed && u.sales ? true : u.recheck,
     board: u.board || state.board
   });
-  resetEdit(); toast(t('saved'));
-  state.screen = 'unit'; render(); window.scrollTo(0, 0);
+  resetEdit();
   flushOutbox();
+  if (!u.registered && state.board) {
+    // 新しく登録した台なら、そのまま次のシールを読む（連続登録）
+    state.lastSaved = { seal: u.seal, t: Date.now() };
+    toast(t('savedSeal', { s: u.seal }));
+    scanSealForBoard();
+    return;
+  }
+  toast(t('saved'));
+  state.screen = 'unit'; render(); window.scrollTo(0, 0);
 }
 
 // ===============================================================
@@ -613,9 +635,10 @@ async function openScanner(desc) {
       ctx.drawImage(v, 0, 0, c.width, c.height);
       const code = jsQR(ctx.getImageData(0, 0, c.width, c.height).data, c.width, c.height, { inversionAttempts: 'dontInvert' });
       const parsed = code && parseCode(code.data);
-      if (parsed) { stopCamera(); if (navigator.vibrate) navigator.vibrate(80); handleCode(parsed); return; }
+      const justSaved = parsed && parsed.type === 'seal' && parsed.id === state.lastSaved.seal && Date.now() - state.lastSaved.t < 4000;
+      if (parsed && !justSaved) { stopCamera(); if (navigator.vibrate) navigator.vibrate(80); handleCode(parsed); return; }
     }
-    scanTimer = setTimeout(tick, 250);
+    scanTimer = setTimeout(tick, 150);   // 1秒に約6回QRを探す
   };
   tick();
 }
@@ -766,7 +789,7 @@ function renderBoard() {
     ${units.length ? `<div class="units">${units.map((u, i) => `<button class="btn" type="button" data-i="${i}">${esc(u.seal)}<small><span class="grade ${esc(u.grade)}" style="font-size:14px;padding:2px 8px">${esc(u.grade)}</span>${u.recheck ? ' ⚠' : ''}</small></button>`).join('')}</div>`
       : `<div class="empty">${esc(t('noUnits'))}</div>`}
     <button class="link" id="homeBtn" type="button">${esc(t('next'))}</button>`;
-  document.getElementById('sealBtn').onclick = () => { scanPurpose = 'sealForBoard'; scanBack = 'board'; openScanner(t('sealDesc')); };
+  document.getElementById('sealBtn').onclick = scanSealForBoard;
   document.getElementById('sealOpen').onclick = () => {
     const v = normId(document.getElementById('sealInput').value);
     if (!/^D?\d{1,6}$/.test(v)) { document.getElementById('sealErr').textContent = t('typeBad'); return; }
