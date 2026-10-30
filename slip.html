@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1d2024">
+<meta name="robots" content="noindex, nofollow">
+<title>B・C・NG看板の発行</title>
+<style>
+:root{--ink:#1d2024;--ink2:#5b6168;--rule:#d9d4ca;--sand:#ece7dd;--amber:#e9a320;--danger:#b3261e}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:'Meiryo','メイリオ','Noto Sans JP',system-ui,-apple-system,sans-serif;color:var(--ink);background:#f6f4ef;-webkit-tap-highlight-color:transparent}
+header{background:var(--ink);color:#fff;padding:12px 16px;font-weight:700;font-size:17px;position:sticky;top:0;z-index:5}
+main{max-width:900px;margin:0 auto;padding:14px 14px 48px}
+.card{background:#fff;border:1px solid var(--rule);border-radius:14px;padding:14px 16px;margin-bottom:12px}
+.big{font-size:18px;font-weight:700;margin:0 0 6px}
+.note{color:var(--ink2);font-size:14px;line-height:1.7;margin:6px 0}
+.warn{color:var(--danger);font-size:14px;line-height:1.7;margin:6px 0;font-weight:700}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+input[type=text]{width:100%;font:inherit;font-size:18px;padding:12px;border:1px solid var(--ink);border-radius:10px}
+button{font:inherit;font-weight:700;border-radius:12px;min-height:56px;padding:0 20px;font-size:17px;cursor:pointer}
+.primary{background:var(--ink);color:#fff;border:0;flex:1 1 220px}
+.secondary{background:#fff;color:var(--ink);border:1px solid var(--ink);flex:1 1 160px}
+.link{display:inline-block;margin-top:6px;color:var(--ink);font-size:15px}
+.err{color:var(--danger);font-size:14px;min-height:1.2em;margin-top:6px}
+.paper{background:#d9d6cf;border-radius:12px;padding:10px;overflow:hidden}
+#stageWrap{position:relative;overflow:hidden}
+#stage{transform-origin:top left;width:210mm;height:148mm}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+
+/* ------------------ 看板（A5 横：210 × 148mm） ------------------ */
+.sheet{width:210mm;height:148mm;background:#fff;color:#000;position:relative;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.sheet .in{position:absolute;left:12.7mm;top:7mm;width:184.9mm}
+.sheet .head{display:flex;height:27.3mm;align-items:center;font-size:28pt;font-weight:700;white-space:nowrap}
+.sheet .head .l{width:94.7mm;overflow:hidden}
+.sheet .head .r{width:90.2mm;overflow:hidden}
+.sheet .mid{display:flex;height:37.2mm;border-top:1mm dashed #000}
+.sheet .mid .g{width:71.2mm;display:flex;align-items:center;justify-content:center;text-align:center;font-size:24pt;font-weight:700;line-height:1.25}
+.sheet .mid .m{width:113.7mm;display:flex;align-items:center;font-size:18pt;font-weight:700;line-height:1.25;overflow:hidden;word-break:break-all}
+.sheet .grid{display:grid;grid-template-columns:22.7mm 24.5mm 23.9mm 23.5mm 22.5mm 22.4mm 22.4mm 22.8mm;margin-top:0}
+.sheet .grid>div{border:0.55mm solid #000;margin:0 -0.28mm -0.28mm 0;display:flex;align-items:center;justify-content:center}
+.sheet .grid .lab{color:#b4b4b4;font-weight:700;font-size:10.5pt}
+.sheet .grid .id{grid-column:2 / span 3;font-size:20pt;font-weight:700;letter-spacing:.02em}
+.sheet .grid .qr{grid-column:5 / span 4;justify-content:flex-start;padding-left:4mm}
+.sheet .grid .qr svg{width:32mm;height:32mm;display:block}
+.sheet .grid .r1{height:35.3mm}
+.sheet .grid .r2{height:21.3mm}
+
+@page{size:210mm 148mm;margin:0}
+@media print{
+  html,body{background:#fff;height:auto;overflow:hidden}
+  header,.ui,.paper-bar{display:none!important}
+  main{padding:0;max-width:none;margin:0}
+  .paper{background:none;padding:0;border-radius:0}
+  #stageWrap{height:auto!important;overflow:visible!important}
+  #stage{transform:none!important}
+  .sheet{box-shadow:none;width:210mm;height:147mm;break-after:avoid;page-break-after:avoid}
+}
+</style>
+</head>
+<body>
+<header>B・C・NG看板の発行</header>
+<main id="app"></main>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<script>
+// ===============================================================
+// 設定
+//  ・GASのURLは、itaku.html から開いたときに自動で引き継ぎます（ここは空のままで構いません）
+//  ・itaku.html と同じURLを、直接書いても動きます
+// ===============================================================
+const API_URL = '';
+const APP_URL = 'https://upwell-japan.github.io/symptom-app/itaku.html';   // 看板のQRの行き先（A看板と同じ）
+const LS_DEVICE = 'symptom_device_id', LS_API = 'itaku_api_url';
+const $app = document.getElementById('app');
+
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function normId(s) {
+  return String(s || '').trim().replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/[－ー―‐]/g, '-').toUpperCase();
+}
+function apiUrl() { if (API_URL) return API_URL; try { return localStorage.getItem(LS_API) || ''; } catch (e) { return ''; } }
+function deviceId() { try { return localStorage.getItem(LS_DEVICE) || ''; } catch (e) { return ''; } }
+
+async function call(fn, args) {
+  const url = apiUrl();
+  if (!url) throw new Error('GASのURLが分かりません。先に itaku.html を開き、看板の画面からこのページを開いてください。');
+  const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: fn, args: args || [] }) });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const j = await res.json();
+  if (!j.ok) throw new Error(j.error || 'error');
+  return j.result;
+}
+
+// 入荷日は「261030」の形（6桁）にそろえる
+function dateText(d) {
+  const s = String(d == null ? '' : d).trim();
+  const n = s.replace(/\D/g, '');
+  if (n.length === 8) return n.slice(2);
+  if (n.length === 6) return n;
+  return s;
+}
+
+function qrSvg(text) {
+  const qr = qrcode(0, 'M');
+  qr.addData(text); qr.make();
+  const n = qr.getModuleCount(), q = 3;   // まわりの白い余白（3マス分）
+  let d = '';
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) d += `M${c} ${r}h1v1h-1z`;
+  return `<svg viewBox="${-q} ${-q} ${n + 2 * q} ${n + 2 * q}" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="${-q}" y="${-q}" width="${n + 2 * q}" height="${n + 2 * q}" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;
+}
+
+// 型番が長いときは文字を小さくして、2〜3行に収める
+function modelSize(name) { const n = String(name || '').length; return n > 40 ? 12 : n > 26 ? 15 : 18; }
+
+function slipHtml(b) {
+  const url = APP_URL + '?k=' + encodeURIComponent(b.id);
+  return `<div class="sheet"><div class="in">
+    <div class="head"><div class="l">入荷日: ${esc(dateText(b.date))}</div><div class="r">仕入先：${esc(b.supplier || '')}</div></div>
+    <div class="mid">
+      <div class="g"><div>B ・ C<br>NG</div></div>
+      <div class="m"><div style="font-size:${modelSize(b.name)}pt">型番：${esc(b.name || '')}</div></div>
+    </div>
+    <div class="grid">
+      <div class="lab r1">看板ID</div><div class="id r1">${esc(b.id)}</div><div class="qr r1">${qrSvg(url)}</div>
+      <div class="lab r2">数量</div>${'<div class="r2"></div>'.repeat(7)}
+    </div>
+  </div></div>`;
+}
+
+// ===============================================================
+// 画面
+// ===============================================================
+let board = null;
+function fit() {
+  const wrap = document.getElementById('stageWrap'), st = document.getElementById('stage');
+  if (!wrap || !st) return;
+  const w = st.offsetWidth, h = st.offsetHeight;
+  const z = Math.min(1, (wrap.parentElement.clientWidth - 20) / w);   // 左右の余白(10px×2)を引く
+  st.style.transform = `scale(${z})`;
+  wrap.style.height = Math.ceil(h * z) + 'px';
+  wrap.style.width = Math.ceil(w * z) + 'px';
+}
+window.addEventListener('resize', fit);
+
+function renderHome(msg) {
+  $app.innerHTML = `<div class="card"><p class="big">看板IDを入力</p>
+    <p class="note">ふつうは、アプリ（itaku.html）の看板の画面から開きます。IDを直接入れて開くこともできます。</p>
+    <input type="text" id="idIn" autocomplete="off" autocapitalize="characters" placeholder="261030SS-03">
+    <div class="err" id="idErr">${esc(msg || '')}</div>
+    <div class="row" style="margin-top:8px"><button class="primary" id="openBtn" type="button">開く</button></div></div>`;
+  document.getElementById('openBtn').onclick = () => {
+    const v = normId(document.getElementById('idIn').value);
+    if (!/^\d{6}[A-Z0-9]*-\d+$/.test(v)) { document.getElementById('idErr').textContent = '看板IDの形が正しくありません（例：261030SS-03）'; return; }
+    load(v);
+  };
+}
+
+async function load(id) {
+  $app.innerHTML = '<p class="note">読み込み中…</p>';
+  try {
+    const r = await call('kLoadBoard', [deviceId(), id]);
+    board = r.board;
+    if (!board.id) board.id = id;
+    renderSlip();
+  } catch (e) {
+    $app.innerHTML = `<div class="card"><p class="big">読み込めませんでした</p><p class="warn">${esc(e.message || e)}</p>
+      <div class="row"><button class="secondary" id="retry" type="button">もう一度読み込む</button></div>
+      <a class="link" href="itaku.html">アプリに戻る</a></div>`;
+    document.getElementById('retry').onclick = () => load(id);
+  }
+}
+
+function renderSlip() {
+  const b = board;
+  $app.innerHTML = `<div class="ui">
+      ${b.missing ? '<p class="warn">この看板の情報（入荷日・仕入先・型番）がまだ届いていません。このまま印刷すると、その部分が空欄になります。</p>' : ''}
+      <div class="row"><button class="primary" id="printBtn" type="button">この看板を印刷する</button></div>
+      <p class="note">印刷の画面で、用紙は「A5」・向きは「横」・倍率は「100%（実際のサイズ）」になっているか確かめてください。</p>
+    </div>
+    <div class="paper"><div id="stageWrap"><div id="stage">${slipHtml(b)}</div></div></div>
+    <div class="ui paper-bar"><a class="link" href="itaku.html?k=${encodeURIComponent(b.id)}">‹ 看板の画面に戻る</a></div>`;
+  fit();
+  document.getElementById('printBtn').onclick = () => {
+    // 発行の記録を残す（失敗しても印刷は止めない）
+    call('kLogSlip', [deviceId(), b.id]).catch(() => {});
+    window.print();
+  };
+}
+
+(function start() {
+  const k = normId(new URLSearchParams(location.search).get('k') || '');
+  if (k) load(k); else renderHome();
+})();
+</script>
+</body>
+</html>
