@@ -42,16 +42,15 @@ button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(-
 .sheet .mid{display:flex;height:37.2mm;border-top:1mm dashed #000}
 .sheet .mid .g{width:71.2mm;display:flex;align-items:center;justify-content:center;font-size:60pt;font-weight:700;line-height:1}
 .sheet .mid .m{width:113.7mm;display:flex;align-items:center;font-size:18pt;font-weight:700;line-height:1.25;overflow:hidden;word-break:break-all}
-.sheet .grid{display:grid;grid-template-columns:22.7mm 24.5mm 23.9mm 23.5mm 22.5mm 22.4mm 22.4mm 22.8mm;margin-top:0}
-.sheet .grid>div{border:0.55mm solid #000;margin:0 -0.28mm -0.28mm 0;display:flex;align-items:center;justify-content:center}
-.sheet .grid .lab{color:#b4b4b4;font-weight:700;font-size:10.5pt}
-.sheet .grid .id{grid-column:2 / span 3;font-size:20pt;font-weight:700;letter-spacing:.02em}
-/* QRの枠：右辺を、数量の5個目（6列目）の右辺にそろえる */
-.sheet .grid .qr{grid-column:5 / span 2;justify-content:center}
-.sheet .grid .qr svg{width:32mm;height:32mm;display:block}
-.sheet .grid .cnt{font-size:28pt;font-weight:700}
-.sheet .grid .r1{grid-row:1;height:35.3mm}
-.sheet .grid .r2{grid-row:2;height:21.3mm}
+/* 看板ID・数量の表：すべての線を同じ太さ（0.5mm）にする。隣り合うセルの線は1本に重ねる */
+.sheet table.tb{border-collapse:collapse;table-layout:fixed;width:184.7mm}
+.sheet table.tb td{border:0.5mm solid #000;padding:0;text-align:center;vertical-align:middle;overflow:hidden}
+.sheet table.tb .lab{color:#b4b4b4;font-weight:700;font-size:10.5pt}
+.sheet table.tb .id{font-size:20pt;font-weight:700;letter-spacing:.02em}
+.sheet table.tb .cnt{font-size:28pt;font-weight:700}
+.sheet table.tb tr.r1{height:35.3mm}
+.sheet table.tb tr.r2{height:21.3mm}
+.sheet table.tb .qr svg{width:32mm;height:32mm;display:block;margin:0 auto}
 
 @page{size:210mm 148mm;margin:0}
 @media print{
@@ -146,10 +145,11 @@ function slipHtml(b, g) {
       <div class="g">${esc(g)}</div>
       <div class="m"><div style="font-size:${modelSize(b.name)}pt">型番：${esc(b.name || '')}</div></div>
     </div>
-    <div class="grid">
-      <div class="lab r1">看板ID</div><div class="id r1">${esc(b.id)}</div><div class="qr r1">${qrSvg(url)}</div>
-      <div class="lab r2">数量</div><div class="cnt r2">${countOf(g)}</div>${'<div class="r2"></div>'.repeat(6)}
-    </div>
+    <table class="tb">
+      <colgroup><col style="width:22.7mm"><col style="width:24.5mm"><col style="width:23.9mm"><col style="width:23.5mm"><col style="width:22.5mm"><col style="width:22.4mm"><col style="width:22.4mm"><col style="width:22.8mm"></colgroup>
+      <tr class="r1"><td class="lab">看板ID</td><td class="id" colspan="3">${esc(b.id)}</td><td class="qr" colspan="2">${qrSvg(url)}</td></tr>
+      <tr class="r2"><td class="lab">数量</td><td class="cnt">${countOf(g)}</td>${'<td></td>'.repeat(6)}</tr>
+    </table>
   </div></div>`;
 }
 
