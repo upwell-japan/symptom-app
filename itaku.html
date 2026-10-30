@@ -56,6 +56,9 @@ input[type=text]{width:100%;font:inherit;font-size:18px;padding:12px;border:1px 
 .grades{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 .grades button{min-height:76px;font-size:26px}
 .grades button.cur{border:3px solid var(--amber);background:var(--amber-soft)}
+.stick{border:3px solid var(--amber);background:var(--amber-soft);text-align:center}
+.sealno{font-size:56px;font-weight:700;letter-spacing:.06em;margin:6px 0;font-variant-numeric:tabular-nums}
+details.note summary{cursor:pointer;padding:8px 0}
 .units{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
 .cam{position:relative;border-radius:12px;overflow:hidden;background:#000}
 .cam video{display:block;width:100%;max-height:62vh;object-fit:cover}
@@ -127,6 +130,16 @@ const T = {
   regUnits:  { ja: 'この看板で登録した台（{n}台）', en: 'Units registered on this board ({n})', id: 'Unit terdaftar di papan ini ({n})' },
   noUnits:   { ja: 'まだ登録した台はありません。', en: 'No units registered yet.', id: 'Belum ada unit terdaftar.' },
   sealType:  { ja: 'QRが読めないときは、シール番号を入力（例：D00012）', en: 'If the QR cannot be read, type the sticker number (e.g. D00012)', id: 'Jika QR tidak terbaca, ketik nomor stiker (contoh: D00012)' },
+  stickTitle:{ ja: 'このシールを貼ってください', en: 'Attach this sticker', id: 'Tempel stiker ini' },
+  stickDesc: { ja: 'シートの中から、この番号のシールを探して、瑕疵がある台に貼ってください。シートの次の1枚ではなく、必ずこの番号を使ってください。', en: 'Find the sticker with this number on the sheet and attach it to the defective unit. Always use this number, not just the next sticker.', id: 'Cari stiker dengan nomor ini di lembar, lalu tempel pada unit cacat. Selalu pakai nomor ini, bukan stiker berikutnya.' },
+  stuck:     { ja: '貼った → 症状を選ぶ', en: 'Attached → choose defects', id: 'Sudah ditempel → pilih cacat' },
+  skipSeal:  { ja: 'このシールは使えない（次の番号へ）', en: 'This sticker cannot be used (next number)', id: 'Stiker ini tidak bisa dipakai (nomor berikutnya)' },
+  skipAsk:   { ja: '{s} を使わずに、次の番号にしますか？（{s} のシールは捨ててください）', en: 'Skip {s} and use the next number? (Throw away sticker {s})', id: 'Lewati {s} dan pakai nomor berikutnya? (Buang stiker {s})' },
+  getting:   { ja: '番号を受け取っています…', en: 'Getting a number…', id: 'Mengambil nomor…' },
+  getFail:   { ja: '番号を受け取れませんでした：{m}', en: 'Could not get a number: {m}', id: 'Gagal mengambil nomor: {m}' },
+  verify:    { ja: '貼ったシールを読み取って登録する（番号が違うとき）', en: 'Scan the attached sticker instead (if the number is different)', id: 'Pindai stiker yang ditempel (jika nomornya berbeda)' },
+  savedNext: { ja: '{s} を保存しました。次は {n} を貼ってください', en: '{s} saved. Next: attach {n}', id: '{s} tersimpan. Berikutnya: tempel {n}' },
+  usedErr:   { ja: 'シール {s} は、すでに別の台に使われていたため保存できませんでした。この台のシールをはがして、もう一度登録してください。', en: 'Sticker {s} was already used on another unit, so it was not saved. Remove the sticker from this unit and register it again.', id: 'Stiker {s} sudah dipakai di unit lain, jadi tidak tersimpan. Lepas stiker dari unit ini lalu daftarkan lagi.' },
   nextSeal:  { ja: '【{b}】瑕疵がある台にシールを貼り、シールのQRを読み取ってください。違う看板の台に移るときは、その看板のQRを読み取ります。', en: '[{b}] Attach a sticker to the defective unit and scan it. To move to another board, scan that board QR.', id: '[{b}] Tempel stiker pada unit cacat lalu pindai. Untuk pindah papan, pindai QR papan itu.' },
   boardSwitched: { ja: '看板を切り替えました：{b}', en: 'Switched board: {b}', id: 'Papan diganti: {b}' },
   savedSeal: { ja: '{s} を保存しました。次のシールを読み取ってください', en: '{s} saved. Scan the next sticker', id: '{s} tersimpan. Pindai stiker berikutnya' },
@@ -210,8 +223,11 @@ const state = {
   repairSel: new Set(), donorSeal: '', repairMsg: '',
   grade: '',
   photoCounts: {}, photoNeed: 3,  // 同じ品名（枝番なし）・同じ症状の写真の枚数と、必要な枚数
-  lastSaved: { seal: '', t: 0 }   // 連続登録で、保存したばかりのシールを読み直さないため
+  lastSaved: { seal: '', t: 0 },  // 保存したばかりのシールを読み直さないため
+  nextSeal: loadNextSeal(), nextErr: ''   // この端末が次に貼るシール（サーバーから受け取った番号）
 };
+function loadNextSeal() { try { return localStorage.getItem('itaku_next_seal') || ''; } catch (e) { return ''; } }
+function setNextSeal(v) { state.nextSeal = v || ''; try { localStorage.setItem('itaku_next_seal', state.nextSeal); } catch (e) {} }
 function loadLang() {
   try { const v = localStorage.getItem(LS_LANG); if (LANGS.includes(v)) return v; } catch (e) {}
   const nav = (navigator.language || 'ja').slice(0, 2);
@@ -291,14 +307,14 @@ function flushOutbox() {
         job.adds.forEach(a => { if (isPending(a.photo)) a.photo = ''; });
       }
       try {
-        const u = await call('kSave', [state.deviceId, job.boardId, job.seal, job.adds, job.removes]);
+        const u = await call('kSave', [state.deviceId, job.boardId, job.seal, job.adds, job.removes, !!job.newOnly]);
         setOutbox(getOutbox().filter(j => j.id !== job.id));
         if (u && u.photoCounts) Object.keys(u.photoCounts).forEach(k => { state.photoCounts[k] = Math.max(state.photoCounts[k] || 0, u.photoCounts[k]); });
         if (u && state.unit && state.unit.seal === u.seal && state.screen === 'unit' && !getOutbox().some(j => j.seal === u.seal)) { state.unit = u; render(); }
       } catch (e) {
         if (e.server) {   // 例：別の看板のシールだった → 送り直しても同じなので、記録を外して知らせる
           setOutbox(getOutbox().filter(j => j.id !== job.id));
-          alert(t('sendErr', { s: job.seal, m: e.message || e }));
+          alert(job.newOnly && /すでに別の台/.test(String(e.message)) ? t('usedErr', { s: job.seal }) : t('sendErr', { s: job.seal, m: e.message || e }));
           continue;
         }
         failed = true; break;
@@ -379,7 +395,7 @@ function handleCode(code) {
   }
   if (code.type === 'board') {
     const switching = scanPurpose === 'sealForBoard';
-    return openBoard(code.id, true).then(ok => { if (ok && switching) toast(t('boardSwitched', { b: state.board.name || state.board.id })); });
+    return openBoard(code.id, false).then(ok => { if (ok && switching) toast(t('boardSwitched', { b: state.board.name || state.board.id })); });
   }
   if (code.type === 'seal') return openSeal(code.id, scanPurpose === 'sealForBoard' && state.board ? state.board.id : '');
 }
@@ -389,7 +405,24 @@ function backAfterScan() { state.screen = scanBack; render(); }
 // ===============================================================
 // 看板・台を開く
 // ===============================================================
-// scanNext が true なら、看板を開いたあとすぐにシールを読む状態にする（連続登録）
+// 次に貼るシールの番号を、裏で受け取っておく（すでに持っていれば何もしない）
+let gettingSeal = null;
+function ensureNextSeal() {
+  if (state.nextSeal || gettingSeal) return gettingSeal;
+  state.nextErr = '';
+  gettingSeal = call('kNextSeal', [state.deviceId]).then(r => { setNextSeal(r.seal); })
+    .catch(e => { state.nextErr = String(e.message || e); })
+    .then(() => { gettingSeal = null; if (state.screen === 'board') render(); });
+  return gettingSeal;
+}
+// 指示した番号で、新しい台の登録を始める
+function startWithNextSeal() {
+  if (!state.nextSeal) return;
+  resetEdit();
+  state.unit = { seal: state.nextSeal, registered: false, current: [], repaired: [], board: state.board, fromNext: true };
+  state.screen = 'cat'; render(); window.scrollTo(0, 0);
+}
+// scanNext が true なら、看板を開いたあとすぐにシールを読む状態にする（貼ったシールを読み取って登録するとき）
 function scanSealForBoard() {
   scanPurpose = 'sealForBoard'; scanBack = 'board';
   openScanner(t('nextSeal', { b: state.board.name || state.board.id }));
@@ -407,6 +440,7 @@ async function openBoard(id, scanNext) {
       if (j.boardId === state.board.id && !state.boardUnits.some(u => u.seal === j.seal)) state.boardUnits.push({ seal: j.seal, grade: j.grade || 'NG', recheck: false });
     });
     state.screen = 'board'; render(); window.scrollTo(0, 0);
+    ensureNextSeal();
     if (scanNext) scanSealForBoard();
     return true;
   } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); state.screen = 'home'; render(); return false; }
@@ -427,7 +461,7 @@ async function openSeal(seal, boardId) {
       state.screen = 'unit'; render(); window.scrollTo(0, 0); return;
     }
     if (!boardId) { alert(t('notReg')); state.screen = state.board ? 'board' : 'home'; return render(); }
-    state.unit = { seal: seal, registered: false, current: [], repaired: [], board: state.board };
+    state.unit = { seal: seal, registered: false, current: [], repaired: [], board: state.board, fromNext: seal === state.nextSeal };
     state.screen = 'cat'; render(); toast(t('newUnit')); window.scrollTo(0, 0);
   } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); state.screen = state.board ? 'board' : 'home'; render(); }
 }
@@ -470,7 +504,8 @@ function saveSymptoms() {
   const auto = list.every(e => state.masterMap[e.symptom] && state.masterMap[e.symptom].aOk) ? 'A' : 'NG';
   const changed = adds.length > 0 || removes.length > 0;
   const box = getOutbox();
-  box.push({ id: Date.now() + '_' + Math.random().toString(36).slice(2, 7), boardId, seal: state.unit.seal, adds, removes, grade: auto });
+  const fromNext = !!state.unit.fromNext;
+  box.push({ id: Date.now() + '_' + Math.random().toString(36).slice(2, 7), boardId, seal: state.unit.seal, adds, removes, grade: auto, newOnly: fromNext });
   setOutbox(box);
   const u = state.unit;
   state.unit = Object.assign({}, u, {
@@ -481,10 +516,12 @@ function saveSymptoms() {
   resetEdit();
   flushOutbox();
   if (!u.registered && state.board) {
-    // 新しく登録した台なら、そのまま次のシールを読む（連続登録）
+    // 新しく登録した台なら、看板の画面に戻って次の番号を指示する
     state.lastSaved = { seal: u.seal, t: Date.now() };
-    toast(t('savedSeal', { s: u.seal }));
-    scanSealForBoard();
+    if (!state.boardUnits.some(x => x.seal === u.seal)) state.boardUnits.push({ seal: u.seal, grade: auto, recheck: false });
+    if (fromNext && state.nextSeal === u.seal) setNextSeal('');
+    state.screen = 'board'; render(); window.scrollTo(0, 0);
+    ensureNextSeal().then(() => toast(state.nextSeal ? t('savedNext', { s: u.seal, n: state.nextSeal }) : t('saved')));
     return;
   }
   toast(t('saved'));
@@ -779,17 +816,31 @@ function renderBoard() {
   const units = state.boardUnits;
   $app.innerHTML = `<div class="card"><p class="big">${esc(b.name || b.id)}</p>
     ${b.missing ? `<p class="warn">${esc(t('boardMissing'))}</p>` : `<p class="note">${esc(b.supplier || '')}　${esc(t('boardInfo', { d: b.date || '', q: b.qty || 0 }))}</p>`}
-    <p class="note">${esc(t('sealDesc'))}</p>
-    <div class="actions"><button class="primary" id="sealBtn" type="button">${esc(t('scanSeal'))}</button></div>
-    <label class="field" for="sealInput">${esc(t('sealType'))}</label>
-    <input type="text" id="sealInput" autocomplete="off" autocapitalize="characters" placeholder="D00012">
-    <div class="err" id="sealErr"></div>
-    <div class="actions"><button class="secondary" id="sealOpen" type="button">${esc(t('open'))}</button></div></div>
+    </div>
+    <div class="card stick">
+      <p class="big">${esc(t('stickTitle'))}</p>
+      ${state.nextSeal ? `<p class="sealno">${esc(state.nextSeal)}</p><p class="note">${esc(t('stickDesc'))}</p>
+        <div class="actions"><button class="primary" id="stuckBtn" type="button">${esc(t('stuck'))}</button></div>
+        <button class="link" id="skipSeal" type="button">${esc(t('skipSeal'))}</button>`
+      : state.nextErr ? `<p class="warn">${esc(t('getFail', { m: state.nextErr }))}</p><div class="actions"><button class="secondary" id="retryNo" type="button">${esc(t('retry'))}</button></div>`
+      : `<p class="note">${esc(t('getting'))}</p>`}
+    </div>
+    <button class="link" id="sealBtn" type="button">${esc(t('verify'))}</button>
+    <details class="note"><summary>${esc(t('sealType'))}</summary>
+      <input type="text" id="sealInput" autocomplete="off" autocapitalize="characters" placeholder="D00012">
+      <div class="err" id="sealErr"></div>
+      <div class="actions"><button class="secondary" id="sealOpen" type="button">${esc(t('open'))}</button></div></details>
     <h2>${esc(t('regUnits', { n: units.length }))}</h2>
     ${units.length ? `<div class="units">${units.map((u, i) => `<button class="btn" type="button" data-i="${i}">${esc(u.seal)}<small><span class="grade ${esc(u.grade)}" style="font-size:14px;padding:2px 8px">${esc(u.grade)}</span>${u.recheck ? ' ⚠' : ''}</small></button>`).join('')}</div>`
       : `<div class="empty">${esc(t('noUnits'))}</div>`}
     <button class="link" id="homeBtn" type="button">${esc(t('next'))}</button>`;
   document.getElementById('sealBtn').onclick = scanSealForBoard;
+  const sb = document.getElementById('stuckBtn'); if (sb) sb.onclick = startWithNextSeal;
+  const sk = document.getElementById('skipSeal'); if (sk) sk.onclick = () => {
+    if (!confirm(t('skipAsk', { s: state.nextSeal }))) return;
+    setNextSeal(''); render(); ensureNextSeal();
+  };
+  const rn = document.getElementById('retryNo'); if (rn) rn.onclick = () => { state.nextErr = ''; render(); ensureNextSeal(); };
   document.getElementById('sealOpen').onclick = () => {
     const v = normId(document.getElementById('sealInput').value);
     if (!/^D?\d{1,6}$/.test(v)) { document.getElementById('sealErr').textContent = t('typeBad'); return; }
