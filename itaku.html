@@ -59,6 +59,13 @@ input[type=text]{width:100%;font:inherit;font-size:18px;padding:12px;border:1px 
 .stick{border:3px solid var(--amber);background:var(--amber-soft);text-align:center}
 .sealno{font-size:56px;font-weight:700;letter-spacing:.06em;margin:6px 0;font-variant-numeric:tabular-nums}
 details.note summary{cursor:pointer;padding:8px 0}
+.boxrow{display:flex;align-items:center;gap:8px;margin:6px 0}
+.boxrow input{width:84px;font:inherit;font-size:22px;padding:10px;border:1px solid var(--ink);border-radius:10px;text-align:center}
+.boxrow span{font-size:17px}
+.boxrow button{min-height:44px;padding:0 12px;font-size:15px}
+.stocktotal{font-size:40px;font-weight:700;margin:6px 0}
+.stockthumb{max-width:100%;max-height:220px;border-radius:10px;display:block;margin:8px 0}
+.diff{font-weight:700}.diff.plus{color:#1d6b2e}.diff.minus{color:var(--danger)}
 .units{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
 .cam{position:relative;border-radius:12px;overflow:hidden;background:#000}
 .cam video{display:block;width:100%;max-height:62vh;object-fit:cover}
@@ -78,6 +85,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--amber);outline-
 <main id="app"></main>
 <input type="file" id="camPhoto" accept="image/*" capture="environment" hidden>
 <input type="file" id="camQr" accept="image/*" capture="environment" hidden>
+<input type="file" id="stockPhoto" accept="image/*" capture="environment" hidden>
 <div id="busy" hidden></div>
 <div id="toast" role="status"></div>
 <script>
@@ -187,6 +195,30 @@ const T = {
   repair:    { ja: '修理を記録（修理担当）', en: 'Record repair', id: 'Catat perbaikan' },
   next:      { ja: '次のQRを読み取る', en: 'Scan the next QR', id: 'Pindai QR berikutnya' },
   toBoard:   { ja: 'この台の看板を開く', en: 'Open this board', id: 'Buka papan ini' },
+  stockBtn:  { ja: '棚卸し', en: 'Stocktake', id: 'Stok opname' },
+  stockScan: { ja: '数える看板（A看板・B・C・NG看板）のQRを読み取ってください', en: 'Scan the QR on the board (A board or B / C / NG board) you will count', id: 'Pindai QR papan (papan A atau B / C / NG) yang akan dihitung' },
+  stockFile: { ja: '書き込む先：{f}', en: 'Saving to: {f}', id: 'Disimpan ke: {f}' },
+  stockNow:  { ja: '在庫リストの台数', en: 'Stock in the list', id: 'Stok di daftar' },
+  stockPlan: { ja: '（うち出荷予定 {n}台）', en: '(incl. {n} planned to ship)', id: '(termasuk {n} rencana kirim)' },
+  stockNone: { ja: '在庫リストに、この看板（{g}）の在庫はありません。保存すると、棚卸しファイルに行を足します。', en: 'No stock for this board ({g}) in the list. Saving adds a row to the stocktake file.', id: 'Tidak ada stok papan ini ({g}) di daftar. Menyimpan akan menambah baris.' },
+  stockDone: { ja: '数え済み：{n}台（{b}）{w} {t}　保存すると上書きします', en: 'Already counted: {n} ({b}) {w} {t}. Saving overwrites it.', id: 'Sudah dihitung: {n} ({b}) {w} {t}. Menyimpan akan menimpa.' },
+  boxTitle:  { ja: '箱ごとの台数', en: 'Units per box', id: 'Jumlah per kotak' },
+  boxPer:    { ja: '台', en: 'units ×', id: 'unit ×' },
+  boxN:      { ja: '箱', en: 'boxes', id: 'kotak' },
+  boxAdd:    { ja: '＋ 行を足す', en: '+ Add row', id: '+ Tambah baris' },
+  boxDel:    { ja: '消す', en: 'Delete', id: 'Hapus' },
+  boxTotal:  { ja: '合計', en: 'Total', id: 'Total' },
+  boxDiff:   { ja: '在庫リストとの差：{d}台', en: 'Difference from the list: {d}', id: 'Selisih dengan daftar: {d}' },
+  stockPhotoT:{ ja: '端数の箱の写真', en: 'Photo of the partial box', id: 'Foto kotak sisa' },
+  stockPhotoD:{ ja: 'いちばん台数の少ない箱（例：10台×10箱＋9台×1箱なら、9台の箱。5台なら5台）の写真を撮ってください。', en: 'Take a photo of the box with the fewest units (e.g. the 9-unit box for 10×10 + 9×1; the 5 units if 5).', id: 'Foto kotak dengan unit paling sedikit (mis. kotak 9 unit untuk 10×10 + 9×1; 5 unit jika 5).' },
+  stockShoot:{ ja: '写真を撮る', en: 'Take photo', id: 'Ambil foto' },
+  stockRetake:{ ja: '撮り直す', en: 'Retake', id: 'Ulangi foto' },
+  stockSave: { ja: '保存して次の看板へ', en: 'Save and next board', id: 'Simpan dan papan berikutnya' },
+  stockNeedPhoto:{ ja: '端数の箱の写真を撮ってください。', en: 'Please take a photo of the partial box.', id: 'Silakan foto kotak sisa.' },
+  stockZero: { ja: '0台で保存しますか？（この看板の商品が見つからないとき）', en: 'Save as 0 units? (if the items cannot be found)', id: 'Simpan sebagai 0 unit? (jika barang tidak ditemukan)' },
+  stockSaved:{ ja: '保存しました：{n}台（差 {d}）。次の看板を読み取ってください', en: 'Saved: {n} units (difference {d}). Scan the next board', id: 'Tersimpan: {n} unit (selisih {d}). Pindai papan berikutnya' },
+  stockErr:  { ja: '棚卸しの記録（{b}・{g}）を保存できませんでした：{m}', en: 'Could not save the stocktake record ({b}, {g}): {m}', id: 'Gagal menyimpan stok opname ({b}, {g}): {m}' },
+  stockBack: { ja: 'ホームに戻る', en: 'Back to home', id: 'Kembali ke beranda' },
   slipBtn:   { ja: 'B・C・NG看板を印刷', en: 'Print B / C / NG board', id: 'Cetak papan B / C / NG' },
   gradeTitle:{ ja: '分類を選んでください', en: 'Choose the grade', id: 'Pilih grade' },
   gradeSave: { ja: 'この分類で保存', en: 'Save this grade', id: 'Simpan grade ini' },
@@ -317,6 +349,16 @@ function flushOutbox() {
     for (;;) {
       let job = getOutbox()[0];
       if (!job) break;
+      if (job.type === 'stock') {   // 棚卸しの記録
+        try {
+          await call('kSaveStock', [state.deviceId, job.boardId, job.grade, job.boxes, job.photo || '']);
+          setOutbox(getOutbox().filter(j => j.id !== job.id));
+        } catch (e) {
+          if (e.server) { setOutbox(getOutbox().filter(j => j.id !== job.id)); alert(t('stockErr', { b: job.boardId, g: job.grade, m: e.message || e })); continue; }
+          failed = true; break;
+        }
+        continue;
+      }
       const marks = (job.adds || []).map(a => a.photo).filter(isPending);
       if (marks.length) {
         await Promise.all(marks.map(m => uploadJobs.get(m) || Promise.resolve()));
@@ -388,13 +430,13 @@ function parseCode(text) {
   try {
     const u = new URL(text);
     const k = u.searchParams.get('k'), s = u.searchParams.get('s'), no = u.searchParams.get('no');
-    if (k) return { type: 'board', id: normId(k) };
+    if (k) { const g = String(u.searchParams.get('g') || '').toUpperCase(); return { type: 'board', id: normId(k), g: ['B', 'C', 'NG'].includes(g) ? g : 'A' }; }
     if (s) return { type: 'seal', id: normSeal(s) };
     if (no) return { type: 'ec', no: no, raw: text };
   } catch (e) {}
   const v = normId(text);
   if (/^D\d{1,6}$/.test(v)) return { type: 'seal', id: normSeal(v) };
-  if (/^\d{6}[A-Z0-9]*-\d+$/.test(v)) return { type: 'board', id: v };
+  if (/^\d{6}[A-Z0-9]*-\d+$/.test(v)) return { type: 'board', id: v, g: 'A' };
   if (/^\d+-\d+$/.test(v)) return { type: 'ec', no: v, raw: text };
   return null;
 }
@@ -404,6 +446,10 @@ let scanPurpose = 'any';
 function handleCode(code) {
   if (!code) return alert(t('qrFail'));
   if (code.type === 'ec') { toast(t('ecMove')); location.href = 'index.html?no=' + encodeURIComponent(code.no); return; }
+  if (scanPurpose === 'stock') {
+    if (code.type !== 'board') { alert(t('qrWrong')); return openScanner(t('stockScan')); }
+    return openStock(code.id, code.g || 'A');
+  }
   if (scanPurpose === 'donor') {
     if (code.type !== 'seal') { alert(t('qrWrong')); return backAfterScan(); }
     return repairWithDonor(code.id, '');
@@ -772,6 +818,8 @@ function renderHeader() {
   if (state.unit && ['unit', 'cat', 'sym', 'mark', 'grade', 'repair', 'camera'].includes(S)) {
     const nm = (state.unit.board && state.unit.board.name) || state.unit.name || '';
     left = `<span class="pill id">${esc(state.unit.seal)}</span>${nm ? `<span class="pill name">${esc(nm)}</span>` : ''}`;
+  } else if (state.stock && S === 'stock') {
+    left = `<span class="pill id">${esc(state.stock.boardId)}</span><span class="pill name">${esc(state.stock.grade)}</span>`;
   } else if (state.board && S === 'board') {
     left = `<span class="pill id">${esc(state.board.id)}</span>${state.board.name ? `<span class="pill name">${esc(state.board.name)}</span>` : ''}`;
   }
@@ -793,7 +841,7 @@ function render() {
   if (S === 'camera' || S === 'scan') return;
   const R = { loading: renderLoading, error: renderError, request: renderRequest, pending: renderPending, home: renderHome,
               board: renderBoard, unit: renderUnit, cat: renderCat, sym: renderSym, mark: renderMark,
-              grade: renderGrade, repair: renderRepair, photo: renderSym };
+              grade: renderGrade, repair: renderRepair, photo: renderSym, stock: renderStock };
   (R[S] || renderHome)();
 }
 
@@ -826,8 +874,10 @@ function renderHome() {
     <label class="field" for="idInput">${esc(t('typeLabel'))}</label>
     <input type="text" id="idInput" autocomplete="off" autocapitalize="characters">
     <div class="err" id="idErr"></div>
-    <div class="actions"><button class="secondary" id="openBtn" type="button">${esc(t('open'))}</button></div></div>`;
+    <div class="actions"><button class="secondary" id="openBtn" type="button">${esc(t('open'))}</button></div></div>
+    <div class="card"><div class="actions"><button class="secondary" id="stockBtn" type="button">📦 ${esc(t('stockBtn'))}</button></div></div>`;
   document.getElementById('scanBtn').onclick = () => { scanPurpose = 'any'; scanBack = 'home'; openScanner(); };
+  document.getElementById('stockBtn').onclick = () => { scanPurpose = 'stock'; scanBack = 'home'; openScanner(t('stockScan')); };
   document.getElementById('openBtn').onclick = () => {
     const code = parseCode(document.getElementById('idInput').value);
     if (!code || code.type === 'ec') { document.getElementById('idErr').textContent = t('typeBad'); return; }
@@ -840,6 +890,80 @@ function gradeHtml(u) {
   const who = u.sales ? t('gradeSales') : t('gradeAuto');
   return `<p class="note">${esc(t('gradeNow'))}　<span class="grade ${esc(g)}">${esc(g)}</span>　<small>（${esc(who)}）</small></p>
     ${u.recheck ? `<p class="warn">${esc(t('recheck'))}</p>` : ''}`;
+}
+
+// ===============================================================
+// 棚卸し：看板のQR → 箱ごとの台数 → 端数の箱の写真 → 保存（裏で送る）→ 次の看板
+// ===============================================================
+async function openStock(boardId, grade) {
+  try {
+    const r = await call('kLoadStock', [state.deviceId, boardId, grade], 'loading');
+    state.stock = { boardId: r.board.id, name: r.board.name, key: r.board.key, grade: r.grade, info: r,
+                    boxes: [{ per: '', n: '' }], photo: '' };
+    state.screen = 'stock'; render(); window.scrollTo(0, 0);
+  } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); openScanner(t('stockScan')); }
+}
+function stockBoxes() {
+  return state.stock.boxes.map(x => ({ per: Math.floor(Number(x.per) || 0), n: Math.floor(Number(x.n) || 0) })).filter(x => x.per > 0 && x.n > 0);
+}
+function stockTotal() { return stockBoxes().reduce((s, x) => s + x.per * x.n, 0); }
+function renderStock() {
+  const st = state.stock, r = st.info, total = stockTotal(), d = total - (r.stock || 0);
+  const ds = (d > 0 ? '+' : '') + d;
+  $app.innerHTML = `<div class="card"><p class="big">${esc(st.name || st.boardId)}　<span class="grade ${esc(st.grade)}">${esc(st.grade)}</span></p>
+      <p class="note">${esc(t('stockFile', { f: r.file }))}</p>
+      ${r.found ? `<p class="note">${esc(t('stockNow'))}：<b style="font-size:22px">${esc(r.stock)}</b>台 ${r.plan ? esc(t('stockPlan', { n: r.plan })) : ''}</p>`
+                : `<p class="warn">${esc(t('stockNone', { g: st.grade }))}</p>`}
+      ${r.counted !== null && r.counted !== undefined ? `<p class="warn">${esc(t('stockDone', { n: r.counted, b: r.boxes || '-', w: r.by, t: r.at }))}</p>` : ''}
+    </div>
+    <div class="card"><p class="big">${esc(t('boxTitle'))}</p>
+      ${st.boxes.map((x, i) => `<div class="boxrow">
+        <input type="number" inputmode="numeric" min="0" data-i="${i}" data-f="per" value="${esc(x.per)}" placeholder="10"><span>${esc(t('boxPer'))}</span>
+        <input type="number" inputmode="numeric" min="0" data-i="${i}" data-f="n" value="${esc(x.n)}" placeholder="1"><span>${esc(t('boxN'))}</span>
+        ${st.boxes.length > 1 ? `<button class="secondary" type="button" data-del="${i}">${esc(t('boxDel'))}</button>` : ''}</div>`).join('')}
+      <button class="link" id="boxAdd" type="button">${esc(t('boxAdd'))}</button>
+      <p class="note">${esc(t('boxTotal'))}</p><p class="stocktotal" id="stockTotal">${total}</p>
+      <p class="note">${esc(t('boxDiff', { d: '' }))}<span id="stockDiff" class="diff ${d > 0 ? 'plus' : d < 0 ? 'minus' : ''}">${esc(ds)}</span></p>
+    </div>
+    <div class="card"><p class="big">${esc(t('stockPhotoT'))}</p><p class="note">${esc(t('stockPhotoD'))}</p>
+      ${st.photo ? `<img class="stockthumb" src="${st.photo}" alt="">` : ''}
+      <div class="actions"><button class="secondary" id="stockShoot" type="button">📷 ${esc(st.photo ? t('stockRetake') : t('stockShoot'))}</button></div>
+    </div>
+    <div class="actions"><button class="primary" id="stockSave" type="button">${esc(t('stockSave'))}</button></div>
+    <button class="link" id="stockHome" type="button">${esc(t('stockBack'))}</button>`;
+  const upd = () => {
+    const tt = stockTotal(), dd = tt - (r.stock || 0);
+    document.getElementById('stockTotal').textContent = tt;
+    const el = document.getElementById('stockDiff');
+    el.textContent = (dd > 0 ? '+' : '') + dd; el.className = 'diff ' + (dd > 0 ? 'plus' : dd < 0 ? 'minus' : '');
+  };
+  $app.querySelectorAll('.boxrow input').forEach(inp => inp.oninput = () => { st.boxes[+inp.dataset.i][inp.dataset.f] = inp.value; upd(); });
+  $app.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { st.boxes.splice(+b.dataset.del, 1); render(); });
+  document.getElementById('boxAdd').onclick = () => { st.boxes.push({ per: '', n: '' }); render(); };
+  document.getElementById('stockShoot').onclick = () => document.getElementById('stockPhoto').click();
+  document.getElementById('stockSave').onclick = saveStock;
+  document.getElementById('stockHome').onclick = () => { state.stock = null; state.screen = 'home'; render(); };
+}
+document.getElementById('stockPhoto').addEventListener('change', async ev => {
+  const file = ev.target.files && ev.target.files[0];
+  ev.target.value = '';
+  if (!file || !state.stock) return;
+  try { showBusy(t('loading')); state.stock.photo = await resizeImage(file, PHOTO_MAX, PHOTO_QUALITY); hideBusy(); render(); }
+  catch (e) { hideBusy(); alert(t('errSave') + '\n' + (e.message || e)); }
+});
+function saveStock() {
+  const st = state.stock, boxes = stockBoxes(), total = stockTotal();
+  if (total > 0 && !st.photo) return alert(t('stockNeedPhoto'));
+  if (total === 0 && !confirm(t('stockZero'))) return;
+  const box = getOutbox();
+  box.push({ id: Date.now() + '_' + Math.random().toString(36).slice(2, 7), type: 'stock', boardId: st.boardId, grade: st.grade, boxes: boxes, photo: total > 0 ? st.photo : '' });
+  setOutbox(box);
+  flushOutbox();
+  const d = total - (st.info.stock || 0);
+  toast(t('stockSaved', { n: total, d: (d > 0 ? '+' : '') + d }));
+  state.stock = null;
+  scanPurpose = 'stock'; scanBack = 'home';
+  openScanner(t('stockScan'));   // そのまま次の看板を読む
 }
 
 function renderBoard() {

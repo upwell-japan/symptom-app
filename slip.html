@@ -138,7 +138,7 @@ function mergeOutbox(id, units) {
 function countOf(g) { return units.filter(u => u.grade === g).length; }
 
 function slipHtml(b, g) {
-  const url = APP_URL + '?k=' + encodeURIComponent(b.id);
+  const url = APP_URL + '?k=' + encodeURIComponent(b.id) + '&g=' + encodeURIComponent(g);   // 分類も入れる（棚卸しで、どの分類の看板か分かるように）
   return `<div class="sheet"><div class="in">
     <div class="head"><div class="l">入荷日: ${esc(dateText(b.date))}</div><div class="r">仕入先：${esc(b.supplier || '')}</div></div>
     <div class="mid">
