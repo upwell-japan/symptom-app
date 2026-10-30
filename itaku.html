@@ -187,6 +187,7 @@ const T = {
   repair:    { ja: '修理を記録（修理担当）', en: 'Record repair', id: 'Catat perbaikan' },
   next:      { ja: '次のQRを読み取る', en: 'Scan the next QR', id: 'Pindai QR berikutnya' },
   toBoard:   { ja: 'この台の看板を開く', en: 'Open this board', id: 'Buka papan ini' },
+  slipBtn:   { ja: 'B・C・NG看板を印刷', en: 'Print B / C / NG board', id: 'Cetak papan B / C / NG' },
   gradeTitle:{ ja: '分類を選んでください', en: 'Choose the grade', id: 'Pilih grade' },
   gradeSave: { ja: 'この分類で保存', en: 'Save this grade', id: 'Simpan grade ini' },
   repTitle:  { ja: '直した症状を選ぶ', en: 'Choose the repaired defects', id: 'Pilih cacat yang diperbaiki' },
@@ -487,6 +488,11 @@ async function openSeal(seal, boardId) {
     state.unit = { seal: seal, registered: false, current: [], repaired: [], board: state.board, fromNext: seal === state.nextSeal };
     state.screen = 'cat'; render(); toast(t('newUnit')); window.scrollTo(0, 0);
   } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); state.screen = state.board ? 'board' : 'home'; render(); }
+}
+// B・C・NG看板の印刷ページ（slip.html）を開く。GASのURLも引き継ぐ
+function openSlip(boardId) {
+  try { localStorage.setItem('itaku_api_url', API_URL); } catch (e) {}
+  location.href = 'slip.html?k=' + encodeURIComponent(boardId);
 }
 function baseName(n) { return String(n || '').trim().replace(/_\d+$/, ''); }
 function resetEdit() { state.adds = new Map(); state.removes = new Set(); state.cat = ''; state.photoFor = ''; state.repairSel = new Set(); state.repairMsg = ''; }
@@ -858,7 +864,9 @@ function renderBoard() {
     <h2>${esc(t('regUnits', { n: units.length }))}</h2>
     ${units.length ? `<div class="units">${units.map((u, i) => `<button class="btn" type="button" data-i="${i}">${esc(u.seal)}<small><span class="grade ${esc(u.grade)}" style="font-size:14px;padding:2px 8px">${esc(u.grade)}</span>${u.recheck ? ' ⚠' : ''}</small></button>`).join('')}</div>`
       : `<div class="empty">${esc(t('noUnits'))}</div>`}
+    <div class="actions"><button class="secondary" id="slipBtn" type="button">${esc(t('slipBtn'))}</button></div>
     <button class="link" id="homeBtn" type="button">${esc(t('next'))}</button>`;
+  document.getElementById('slipBtn').onclick = () => openSlip(b.id);
   document.getElementById('sealBtn').onclick = scanSealForBoard;
   const sb = document.getElementById('stuckBtn'); if (sb) sb.onclick = startWithNextSeal;
   const sk = document.getElementById('skipSeal'); if (sk) sk.onclick = () => {
@@ -899,6 +907,7 @@ function renderUnit() {
     <div class="actions"><button class="primary" id="editBtn" type="button">${esc(t('editSym'))}</button></div>
     <div class="actions"><button class="secondary" id="gradeBtn" type="button">${esc(t('setGrade'))}</button></div>
     <div class="actions"><button class="secondary" id="repBtn" type="button">${esc(t('repair'))}</button></div>
+    ${u.board && u.board.id ? `<div class="actions"><button class="secondary" id="slipBtn" type="button">${esc(t('slipBtn'))}</button></div>` : ''}
     <div class="actions"><button class="secondary" id="nextBtn" type="button">${esc(t('next'))}</button></div>
     ${u.board && !u.board.missing ? `<button class="link" id="boardBtn" type="button">${esc(t('toBoard'))}</button>` : ''}`;
   state.repairMsg = '';
@@ -906,6 +915,7 @@ function renderUnit() {
   document.getElementById('gradeBtn').onclick = () => { state.grade = u.sales || u.auto || 'A'; state.screen = 'grade'; render(); };
   document.getElementById('repBtn').onclick = () => { resetEdit(); state.screen = 'repair'; render(); };
   document.getElementById('nextBtn').onclick = () => { scanPurpose = 'any'; scanBack = 'unit'; openScanner(); };
+  const sl = document.getElementById('slipBtn'); if (sl) sl.onclick = () => openSlip(u.board.id);
   const bb = document.getElementById('boardBtn'); if (bb) bb.onclick = () => openBoard(u.board.id);
 }
 
