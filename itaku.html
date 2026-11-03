@@ -59,6 +59,11 @@ input[type=text]{width:100%;font:inherit;font-size:18px;padding:12px;border:1px 
 .stick{border:3px solid var(--amber);background:var(--amber-soft);text-align:center}
 .sealno{font-size:56px;font-weight:700;letter-spacing:.06em;margin:6px 0;font-variant-numeric:tabular-nums}
 details.note summary{cursor:pointer;padding:8px 0}
+.grp{list-style:none;padding:0;margin:0 0 10px}
+.grp li{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--rule);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+.grp .gs{flex:1;font-size:15px;line-height:1.5}
+.grp .gn{font-weight:700;white-space:nowrap}
+.grp button{min-height:44px;padding:0 12px;font-size:15px}
 .boxrow{display:flex;align-items:center;gap:8px;margin:6px 0}
 .boxrow input{width:84px;font:inherit;font-size:22px;padding:10px;border:1px solid var(--ink);border-radius:10px;text-align:center}
 .boxrow span{font-size:17px}
@@ -135,6 +140,16 @@ const T = {
   back:      { ja: '‹ 戻る', en: '‹ Back', id: '‹ Kembali' },
   boardMissing: { ja: '看板の情報がまだ届いていません（案件管理で看板を発行すると届きます）。登録はできます。', en: 'Board details have not arrived yet (they arrive when the board is issued). You can still register.', id: 'Data papan belum masuk (masuk saat papan diterbitkan). Tetap bisa mendaftar.' },
   boardInfo: { ja: '入荷日 {d} ／ 入荷数 {q}台', en: 'Arrival {d} / Qty {q}', id: 'Tiba {d} / Jumlah {q}' },
+  grpTitle:  { ja: '分類と症状のまとまり（内訳の行と同じ）', en: 'Groups by grade and defects (same as the breakdown rows)', id: 'Kelompok per grade dan cacat (sama dengan baris rincian)' },
+  grpNone:   { ja: '症状なし', en: 'No defects', id: 'Tanpa cacat' },
+  grpCount:  { ja: '{n}台', en: '{n} units', id: '{n} unit' },
+  grpChange: { ja: '分類を変える', en: 'Change grade', id: 'Ubah grade' },
+  grpWait:   { ja: '送信待ちの台が{n}台あります。送信が終わると、まとまりに入ります。', en: '{n} units are waiting to be sent. They will appear in the groups after sending.', id: '{n} unit menunggu dikirim. Akan masuk kelompok setelah terkirim.' },
+  grpPick:   { ja: 'このまとまりの台の分類を、何に変えますか？', en: 'Change the grade of these units to:', id: 'Ubah grade unit-unit ini menjadi:' },
+  grpAsk:    { ja: '{n}台の分類を「{g}」に変えます。よろしいですか？', en: 'Change the grade of {n} units to "{g}"?', id: 'Ubah grade {n} unit menjadi "{g}"?' },
+  grpDone:   { ja: '{n}台の分類を「{g}」に変えました', en: 'Changed {n} units to "{g}"', id: '{n} unit diubah menjadi "{g}"' },
+  grpBack:   { ja: '看板の画面に戻る', en: 'Back to the board', id: 'Kembali ke papan' },
+  grpAfter:  { ja: '分類を変え終わったら、案件管理のロットファイルで Ctrl+Shift+N を実行し直してください（内訳が新しい分類で作り直されます）。', en: 'After changing grades, run Ctrl+Shift+N again in the lot file (the breakdown is rebuilt with the new grades).', id: 'Setelah mengubah grade, jalankan lagi Ctrl+Shift+N di file lot (rincian dibuat ulang).' },
   regUnits:  { ja: 'この看板で登録した台（{n}台）', en: 'Units registered on this board ({n})', id: 'Unit terdaftar di papan ini ({n})' },
   noUnits:   { ja: 'まだ登録した台はありません。', en: 'No units registered yet.', id: 'Belum ada unit terdaftar.' },
   sealType:  { ja: 'QRが読めないときは、シール番号を入力（例：D00012）', en: 'If the QR cannot be read, type the sticker number (e.g. D00012)', id: 'Jika QR tidak terbaca, ketik nomor stiker (contoh: D00012)' },
@@ -840,7 +855,7 @@ function renderHeader() {
     left = `<span class="pill id">${esc(state.unit.seal)}</span>${nm ? `<span class="pill name">${esc(nm)}</span>` : ''}`;
   } else if (state.stock && S === 'stock') {
     left = `<span class="pill id">${esc(state.stock.boardId)}</span><span class="pill name">${esc(state.stock.grade)}</span>`;
-  } else if (state.board && S === 'board') {
+  } else if (state.board && (S === 'board' || S === 'gradeMany')) {
     left = `<span class="pill id">${esc(state.board.id)}</span>${state.board.name ? `<span class="pill name">${esc(state.board.name)}</span>` : ''}`;
   }
   const n = getOutbox().length + uploadJobs.size;
@@ -861,7 +876,7 @@ function render() {
   if (S === 'camera' || S === 'scan') return;
   const R = { loading: renderLoading, error: renderError, request: renderRequest, pending: renderPending, home: renderHome,
               board: renderBoard, unit: renderUnit, cat: renderCat, sym: renderSym, mark: renderMark,
-              grade: renderGrade, repair: renderRepair, photo: renderSym, stock: renderStock };
+              grade: renderGrade, repair: renderRepair, photo: renderSym, stock: renderStock, gradeMany: renderGradeMany };
   (R[S] || renderHome)();
 }
 
@@ -1005,6 +1020,7 @@ function renderBoard() {
       <input type="text" id="sealInput" autocomplete="off" autocapitalize="characters" placeholder="D00012">
       <div class="err" id="sealErr"></div>
       <div class="actions"><button class="secondary" id="sealOpen" type="button">${esc(t('open'))}</button></div></details>
+    ${boardGroupsHtml(units)}
     <h2>${esc(t('regUnits', { n: units.length }))}</h2>
     ${units.length ? `<div class="units">${units.map((u, i) => `<button class="btn" type="button" data-i="${i}">${esc(u.seal)}<small><span class="grade ${esc(u.grade)}" style="font-size:14px;padding:2px 8px">${esc(u.grade)}</span>${u.recheck ? ' ⚠' : ''}</small></button>`).join('')}</div>`
       : `<div class="empty">${esc(t('noUnits'))}</div>`}
@@ -1024,7 +1040,56 @@ function renderBoard() {
     openSeal(v, state.board.id);
   };
   $app.querySelectorAll('[data-i]').forEach(btn => btn.onclick = () => openSeal(units[Number(btn.dataset.i)].seal));
+  $app.querySelectorAll('[data-grp]').forEach(btn => btn.onclick = () => {
+    const g = state.boardGroups[Number(btn.dataset.grp)];
+    state.grpEdit = g; state.grade = g.grade; state.screen = 'gradeMany'; render(); window.scrollTo(0, 0);
+  });
   document.getElementById('homeBtn').onclick = () => { scanPurpose = 'any'; scanBack = 'board'; openScanner(); };
+}
+
+// 看板の台を、内訳と同じ「分類＋症状」のまとまりに分ける（送信待ちの台は、まだ症状が分からないので入れない）
+function boardGroups(units) {
+  const order = { A: 0, B: 1, C: 2, NG: 3 };
+  const map = new Map();
+  units.forEach(u => {
+    if (u.sym === undefined) return;
+    const k = u.grade + '\t' + u.sym;
+    if (!map.has(k)) map.set(k, { grade: u.grade, sym: u.sym, seals: [] });
+    map.get(k).seals.push(u.seal);
+  });
+  return [...map.values()].sort((a, b) => (order[a.grade] ?? 9) - (order[b.grade] ?? 9) || a.sym.localeCompare(b.sym, 'ja'));
+}
+function boardGroupsHtml(units) {
+  const groups = boardGroups(units);
+  state.boardGroups = groups;
+  const wait = units.filter(u => u.sym === undefined).length;
+  if (!groups.length && !wait) return '';
+  return `<h2>${esc(t('grpTitle'))}</h2>
+    ${wait ? `<p class="warn">${esc(t('grpWait', { n: wait }))}</p>` : ''}
+    <ul class="grp">${groups.map((g, i) => `<li><span class="grade ${esc(g.grade)}" style="font-size:16px;padding:4px 10px">${esc(g.grade)}</span>
+      <span class="gs">${esc(g.sym || t('grpNone'))}</span><span class="gn">${esc(t('grpCount', { n: g.seals.length }))}</span>
+      <button class="secondary" type="button" data-grp="${i}">${esc(t('grpChange'))}</button></li>`).join('')}</ul>`;
+}
+function renderGradeMany() {
+  const g = state.grpEdit;
+  $app.innerHTML = `<div class="card"><p class="big">${esc(state.board.name || state.board.id)}</p>
+      <p class="note"><span class="grade ${esc(g.grade)}">${esc(g.grade)}</span>　${esc(g.sym || t('grpNone'))}　${esc(t('grpCount', { n: g.seals.length }))}</p>
+      <p class="note">${esc(g.seals.join('、'))}</p></div>
+    <p class="big">${esc(t('grpPick'))}</p>
+    <div class="grades">${['A', 'B', 'C', 'NG'].map(x => `<button class="secondary${state.grade === x ? ' cur' : ''}" type="button" data-g="${x}">${x}</button>`).join('')}</div>
+    <p class="note">${esc(t('grpAfter'))}</p>
+    <button class="link" id="grpBack" type="button">${esc(t('grpBack'))}</button>`;
+  $app.querySelectorAll('[data-g]').forEach(btn => btn.onclick = async () => {
+    const ng = btn.dataset.g;
+    if (!confirm(t('grpAsk', { n: g.seals.length, g: ng }))) return;
+    try {
+      const r = await call('kSetGradeMany', [state.deviceId, g.seals, ng], 'saving');
+      toast(t('grpDone', { n: r.updated, g: ng }));
+      state.grpEdit = null;
+      openBoard(state.board.id);
+    } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
+  });
+  document.getElementById('grpBack').onclick = () => { state.grpEdit = null; state.screen = 'board'; render(); };
 }
 
 function symListHtml(list, mode) {
