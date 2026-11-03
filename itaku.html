@@ -269,6 +269,18 @@ function loadSealQueue() {
     return old ? [old] : [];
   } catch (e) { return []; }
 }
+// サーバーでシールの番号が初期化されていたら（初期化した回数が変わっていたら）、控えの番号を捨てる
+function checkSealEpoch(ep) {
+  if (ep === undefined || ep === null) return false;
+  ep = String(ep);
+  let cur = null;
+  try { cur = localStorage.getItem('itaku_seal_epoch'); } catch (e) {}
+  if (cur === ep) return false;
+  try { localStorage.setItem('itaku_seal_epoch', ep); } catch (e) {}
+  if (!state.sealQueue.length) return false;
+  state.sealQueue = []; saveSealQueue();
+  return true;
+}
 function saveSealQueue() {
   state.nextSeal = state.sealQueue[0] || '';
   try { localStorage.setItem('itaku_seal_queue', JSON.stringify(state.sealQueue)); localStorage.removeItem('itaku_next_seal'); } catch (e) {}
@@ -407,6 +419,7 @@ function start() {
   call('kInit', [state.deviceId]).then(r => {
     if (r.status === 'new' || r.status === 'pending') { state.screen = r.status === 'new' ? 'request' : 'pending'; return render(); }
     state.owner = r.owner; setMaster(r.master); state.photoNeed = r.photoNeed || 3;
+    checkSealEpoch(r.sealEpoch);
     try { localStorage.setItem(LS_KMASTER, JSON.stringify(r.master)); } catch (e) {}
     if (INIT.s) return openSeal(INIT.s);
     if (INIT.k) return openBoard(INIT.k);
@@ -478,11 +491,17 @@ function ensureNextSeal() {
   if (need <= 0) return Promise.resolve();
   const wasEmpty = !state.nextSeal;
   state.nextErr = '';
+  let reset = false;
   gettingSeal = call('kNextSeal', [state.deviceId, need]).then(r => {
+    reset = checkSealEpoch(r.sealEpoch);   // 初期化されていたら、古い控えを捨ててから、新しい番号を入れる
     (r.seals || [r.seal]).forEach(x => { if (x && !state.sealQueue.includes(x)) state.sealQueue.push(x); });
     saveSealQueue();
   }).catch(e => { if (!state.nextSeal) state.nextErr = String(e.message || e); })   // 控えが受け取れないだけなら、知らせない
-    .then(() => { gettingSeal = null; if (state.screen === 'board' && (wasEmpty || state.nextErr)) render(); });
+    .then(() => {
+      gettingSeal = null;
+      if (state.screen === 'board' && (wasEmpty || reset || state.nextErr)) render();
+      if (reset) ensureNextSeal();         // 捨てた分の控えを、受け取り直す
+    });
   return gettingSeal;
 }
 // 指示した番号で、新しい台の登録を始める
@@ -501,6 +520,7 @@ async function openBoard(id, scanNext) {
   try {
     const r = await call('kLoadBoard', [state.deviceId, normId(id)], 'loading');
     state.board = r.board; state.boardUnits = r.units || [];
+    checkSealEpoch(r.sealEpoch);
     const pc = r.photoCounts || {};
     Object.keys(state.photoCounts).forEach(k => { if (state.board.name && (pc[k] || 0) < state.photoCounts[k] && state.lastBoardBase === baseName(state.board.name)) pc[k] = state.photoCounts[k]; });
     state.photoCounts = pc; state.lastBoardBase = baseName(state.board.name || '');
