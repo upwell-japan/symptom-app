@@ -244,7 +244,7 @@ const WORKTYPE_BLOCKS = [
 ];
 
 const WORKTYPE_BLOCKS_EC = [
-  ["o 案件管理作成","b 荷受","p AC荷受","c 検査","d 外磨き","e 内磨き","f AC磨き","g OSインストール","h OS検査"],
+  ["o 案件管理作成","b 荷受","p AC荷受","q エアー","c 検査","d 外磨き","e 内磨き","f AC磨き","g OSインストール","h OS検査"],
   ["i ロケーション管理","j ピッキング","k 梱包","l 棚卸し"],
   ["m 通販サイトの作成","n 専門学校販売に関する打合せ"]
 ];
@@ -256,7 +256,7 @@ const WORKTYPE_BLOCKS_SONOTA = [
 ];
 
 const WORKTYPE_BLOCKS_EO = [
-  ["Λ 案件管理作成","Β 荷受","Ξ AC荷受","Θ シール剥がし","Γ 梱包","Δ ロケーション管理"],
+  ["Λ 案件管理作成","Β 荷受","Ξ AC荷受","Σ エアー","Θ シール剥がし","Γ 梱包","Δ ロケーション管理"],
   ["Ζ パーツ抜き","Η パーツ管理"]
 ];
 
@@ -551,7 +551,7 @@ function esc(v){
 // ・画面は GitHub Pages、データの保存は作業時間の Apps Script（API.gs の doPost）
 // ・呼び出しは「端末の許可」シートで許可した端末からだけ受け付ける
 // ===============================================================
-const API_URL = 'https://script.google.com/macros/s/AKfycbyLaWH2vChhT15PMQDuaigT3-txXTqdDtn4GAQXx0Rx9PoCayGeo9jMaeqzFTVvonu6/exec';
+const API_URL = 'https://script.google.com/macros/library/d/1NWPwo399tTGVI3zLUaqGp9enkqHS3YlOVUCDeXsEtizTW-D4-VU30uXq/4';
 const LS_DEVICE = 'sagyo_device_id';
 const LS_HOME = 'sagyo_home_cache';     // 前回の案件一覧などを覚えておき、開いたらすぐ表示する
 
@@ -866,7 +866,7 @@ function showToast(msg, type){
 
 const QUOTA_WORKTYPES = [
   "C 荷受","D エアー","E 検査","F 修理","H 外磨き","J パーツ抜き","M ダンボール作り","N メモリ増設・減設",
-  "b 荷受","c 検査","d 外磨き","e 内磨き","f AC磨き","g OSインストール","h OS検査","j ピッキング","k 梱包"
+  "b 荷受","q エアー","c 検査","d 外磨き","e 内磨き","f AC磨き","g OSインストール","h OS検査","j ピッキング","k 梱包"
 ];
 
 // 基準UPHは「設定」シートの値（記号＝作業内容の先頭1文字で引く）
