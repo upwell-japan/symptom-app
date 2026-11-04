@@ -41,7 +41,10 @@ h2{font-size:18px;font-weight:700;margin:16px 0 10px}
 .primary{background:var(--ink);color:#fff;border:0}
 .primary:disabled{opacity:.45}
 .secondary{background:#fff;color:var(--ink);border:1px solid var(--ink)}
-.back{background:none;border:0;color:var(--ink2);font:inherit;font-size:15px;padding:8px 0;cursor:pointer}
+.navbar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:-4px 0 8px}
+.navbar button{background:#fff;border:1px solid var(--ink);border-radius:999px;min-height:44px;padding:0 16px;font:inherit;font-size:16px;font-weight:700;cursor:pointer}
+.hdhome{flex:none;background:#fff;color:var(--ink);border:0;border-radius:999px;padding:7px 12px;font:inherit;font-size:14px;font-weight:700;margin-left:6px}
+.back{display:none}   /* 上の「‹ 戻る」「⌂ ホーム」の帯に置き換えた（古いボタンは隠す） */
 .card{border:1px solid var(--rule);border-radius:14px;padding:16px;margin-top:12px}
 .big{font-size:20px;font-weight:700;margin:0 0 4px}
 .note{color:var(--ink2);font-size:14px;line-height:1.7;margin:8px 0}
@@ -152,6 +155,8 @@ const T = {
   qrWrong:   { ja: 'このQRは使えません。', en: 'This QR cannot be used here.', id: 'QR ini tidak bisa dipakai di sini.' },
   cancel:    { ja: 'やめる', en: 'Cancel', id: 'Batal' },
   back:      { ja: '‹ 戻る', en: '‹ Back', id: '‹ Kembali' },
+  homeBtn:   { ja: '⌂ ホーム', en: '⌂ Home', id: '⌂ Beranda' },
+  leaveAsk:  { ja: '入力中の内容は保存されません。戻りますか？', en: 'Your unsaved input will be lost. Go back?', id: 'Input yang belum disimpan akan hilang. Kembali?' },
   boardMissing: { ja: '看板の情報がまだ届いていません（案件管理で看板を発行すると届きます）。登録はできます。', en: 'Board details have not arrived yet (they arrive when the board is issued). You can still register.', id: 'Data papan belum masuk (masuk saat papan diterbitkan). Tetap bisa mendaftar.' },
   boardInfo: { ja: '入荷日 {d} ／ 入荷数 {q}台', en: 'Arrival {d} / Qty {q}', id: 'Tiba {d} / Jumlah {q}' },
   grpTitle:  { ja: '分類と症状のまとまり（内訳の行と同じ）', en: 'Groups by grade and defects (same as the breakdown rows)', id: 'Kelompok per grade dan cacat (sama dengan baris rincian)' },
@@ -900,7 +905,9 @@ function renderHeader() {
   }
   const n = getOutbox().length + uploadJobs.size;
   const pend = n ? `<span class="pill sync">${esc(t('pendingN', { n: n }))}</span>` : '';
-  hd.innerHTML = `${left}<button class="lang" id="langBtn" type="button">🌐 ${LANG_LABEL[state.lang]}</button>${pend}`;
+  const showHome = !['home', 'loading', 'error', 'request', 'pending'].includes(S);
+  hd.innerHTML = `${left}<button class="lang" id="langBtn" type="button">🌐 ${LANG_LABEL[state.lang]}</button>${showHome ? `<button class="hdhome" id="hdHome" type="button">⌂</button>` : ''}${pend}`;
+  const hh = document.getElementById('hdHome'); if (hh) hh.onclick = goHome;
   document.getElementById('langBtn').onclick = () => {
     state.lang = LANGS[(LANGS.indexOf(state.lang) + 1) % LANGS.length];
     try { localStorage.setItem(LS_LANG, state.lang); } catch (e) {}
@@ -918,6 +925,55 @@ function render() {
               board: renderBoard, unit: renderUnit, cat: renderCat, sym: renderSym, mark: renderMark,
               grade: renderGrade, repair: renderRepair, photo: renderSym, stock: renderStock, gradeMany: renderGradeMany, spec: renderSpec };
   (R[S] || renderHome)();
+  addNavBar(S);
+}
+
+// ===============================================================
+// どの画面でも「‹ 戻る」と「⌂ ホーム」を押せるようにする（誤操作したときに戻れるように）
+// ===============================================================
+// 入力の途中の画面（戻ると、保存していない入力が消える画面）
+const NAV_EDITING = ['cat', 'sym', 'photo', 'mark', 'grade', 'repair', 'spec', 'stock', 'gradeMany'];
+function hasUnsaved() {
+  const S = state.screen;
+  if (S === 'spec') return !!(state.spec && Object.keys(state.spec.edits).length);
+  if (S === 'stock') return !!(state.stock && (state.stock.photo || state.stock.boxes.some(x => x.per || x.n)));
+  if (['cat', 'sym', 'photo', 'mark'].includes(S)) return state.adds.size > 0 || state.removes.size > 0;
+  if (S === 'repair') return state.repairSel.size > 0;
+  return false;
+}
+// 画面ごとの「戻る」先
+function goBack() {
+  const S = state.screen;
+  if (hasUnsaved() && !confirm(t('leaveAsk'))) return;
+  const toBoardOrHome = () => { state.screen = state.board ? 'board' : 'home'; };
+  if (S === 'board') { state.screen = 'home'; }
+  else if (S === 'unit') { state.screen = (state.board && state.unit && state.unit.board && state.unit.board.id === state.board.id) ? 'board' : 'home'; }
+  else if (S === 'cat') { resetEdit(); if (state.unit && state.unit.registered) state.screen = 'unit'; else { state.unit = null; toBoardOrHome(); } }
+  else if (S === 'sym' || S === 'photo') { state.screen = 'cat'; }
+  else if (S === 'mark') { state.screen = 'sym'; }
+  else if (S === 'grade' || S === 'repair') { resetEdit(); state.screen = 'unit'; }
+  else if (S === 'gradeMany') { state.grpEdit = null; state.screen = 'board'; }
+  else if (S === 'spec') { state.spec = null; state.screen = 'home'; }
+  else if (S === 'stock') { state.stock = null; state.screen = 'home'; }
+  else { state.screen = 'home'; }
+  render(); window.scrollTo(0, 0);
+}
+function goHome() {
+  const S = state.screen;
+  if (NAV_EDITING.includes(S) && hasUnsaved() && !confirm(t('leaveAsk'))) return;
+  stopCamera();
+  resetEdit();
+  state.spec = null; state.stock = null; state.grpEdit = null;
+  scanPurpose = 'any'; scanBack = 'home';
+  state.screen = 'home';
+  render(); window.scrollTo(0, 0);
+}
+function addNavBar(S) {
+  if (['home', 'loading', 'error', 'request', 'pending', 'scan', 'camera'].includes(S)) return;
+  $app.insertAdjacentHTML('afterbegin', `<div class="navbar"><button type="button" id="navBack">${esc(t('back'))}</button>
+    <button type="button" id="navHome">${esc(t('homeBtn'))}</button></div>`);
+  document.getElementById('navBack').onclick = goBack;
+  document.getElementById('navHome').onclick = goHome;
 }
 
 function renderLoading() { $app.innerHTML = `<p class="note">${esc(t('loading'))}</p>`; }
