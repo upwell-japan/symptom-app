@@ -59,6 +59,20 @@ input[type=text]{width:100%;font:inherit;font-size:18px;padding:12px;border:1px 
 .stick{border:3px solid var(--amber);background:var(--amber-soft);text-align:center}
 .sealno{font-size:56px;font-weight:700;letter-spacing:.06em;margin:6px 0;font-variant-numeric:tabular-nums}
 details.note summary{cursor:pointer;padding:8px 0}
+.modes{display:grid;gap:10px}
+.modes button{min-height:72px;font-size:20px}
+.spec{list-style:none;padding:0;margin:0 0 10px}
+.spec li{background:#fff;border:1px solid var(--rule);border-radius:12px;margin-bottom:8px;overflow:hidden}
+.spec .sh{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;min-height:56px}
+.spec .sl{flex:1;font-weight:700;font-size:16px}
+.spec .sv{font-size:17px}
+.spec .sv.need{background:var(--amber-soft);border:2px solid var(--amber);border-radius:8px;padding:2px 8px;font-weight:700}
+.spec .sv.new{background:#e6f4ea;border:2px solid #1d6b2e;border-radius:8px;padding:2px 8px;font-weight:700}
+.spec .sb{display:flex;flex-wrap:wrap;gap:8px;padding:0 14px 14px}
+.spec .sb button{min-height:48px;min-width:64px;padding:0 12px;font-size:16px}
+.spec .sb button.cur{background:var(--amber-soft);border:3px solid var(--amber)}
+.spec .sb input{font:inherit;font-size:18px;padding:10px;border:1px solid var(--ink);border-radius:10px;width:160px}
+.spec .by{font-size:12px;color:var(--ink2);padding:0 14px 8px}
 .grp{list-style:none;padding:0;margin:0 0 10px}
 .grp li{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--rule);border-radius:12px;padding:10px 12px;margin-bottom:8px}
 .grp .gs{flex:1;font-size:15px;line-height:1.5}
@@ -97,7 +111,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--amber);outline-
 // ===============================================================
 // ★ ここに 業務委託用の GAS のウェブアプリのURL（末尾が /exec）を貼る（通販のURLとは別）
 // ===============================================================
-const API_URL = 'https://script.google.com/macros/s/AKfycbxQNpelUbbsIixIPD0ftLah_uww13ISkyVS-3KKma5nX0eVb9FkWxi76FDw5UdVlmA/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzMq_YboZgaEs_-I8NzMx3qjt3lBQao_b1aCyc4dAEptMopFnM-A6bkMRQDCCwlXvq1/exec';
 
 // QRのURLの「?k=看板ID」「?s=シール番号」を受け取る
 const INIT = (() => {
@@ -210,6 +224,26 @@ const T = {
   repair:    { ja: '修理を記録（修理担当）', en: 'Record repair', id: 'Catat perbaikan' },
   next:      { ja: '次のQRを読み取る', en: 'Scan the next QR', id: 'Pindai QR berikutnya' },
   toBoard:   { ja: 'この台の看板を開く', en: 'Open this board', id: 'Buka papan ini' },
+  modeSym:   { ja: '🔍 症状を入力する', en: '🔍 Enter defects', id: '🔍 Input cacat' },
+  modeSpec:  { ja: '📝 スペックを入力する', en: '📝 Enter specs', id: '📝 Input spesifikasi' },
+  modeStock: { ja: '📦 棚卸しをする', en: '📦 Stocktake', id: '📦 Stok opname' },
+  modeTitle: { ja: '何をしますか？', en: 'What will you do?', id: 'Apa yang akan dilakukan?' },
+  typeOpen:  { ja: '看板ID・シール番号を打って開く（症状の入力）', en: 'Type a board ID or sticker number (defects)', id: 'Ketik ID papan atau nomor stiker (cacat)' },
+  specScan:  { ja: 'スペックを入力する看板のQRを読み取ってください', en: 'Scan the QR on the board to enter specs', id: 'Pindai QR papan untuk input spesifikasi' },
+  specNeed:  { ja: '要確認の項目', en: 'Items to check', id: 'Item yang perlu dicek' },
+  specNoNeed:{ ja: '要確認の項目はありません', en: 'No items to check', id: 'Tidak ada item yang perlu dicek' },
+  specOther: { ja: 'ほかの項目も直す', en: 'Edit other items', id: 'Ubah item lain' },
+  specType:  { ja: 'その他（打つ）', en: 'Other (type)', id: 'Lainnya (ketik)' },
+  specNone:  { ja: '-（この商品には無い）', en: '- (not on this item)', id: '- (tidak ada)' },
+  specOk:    { ja: '決める', en: 'Set', id: 'Pakai' },
+  specUndo:  { ja: '元に戻す', en: 'Undo', id: 'Batal' },
+  specSave:  { ja: '保存して次の看板へ', en: 'Save and next board', id: 'Simpan dan papan berikutnya' },
+  specSaved: { ja: '{n}項目を保存しました。次の看板を読み取ってください', en: 'Saved {n} items. Scan the next board', id: '{n} item tersimpan. Pindai papan berikutnya' },
+  specNoEdit:{ ja: '変えた項目がありません', en: 'Nothing changed', id: 'Tidak ada perubahan' },
+  specByApp: { ja: 'アプリで入力：{w} {t}', en: 'Entered in app: {w} {t}', id: 'Diisi di aplikasi: {w} {t}' },
+  specAfter: { ja: '保存した値は、案件管理のロットファイルで Ctrl+Shift+N を実行すると、作業結果に書き込まれます。', en: 'Saved values are written to the work results when Ctrl+Shift+N is run in the lot file.', id: 'Nilai tersimpan ditulis ke hasil kerja saat Ctrl+Shift+N dijalankan di file lot.' },
+  specLeave: { ja: '保存していない変更があります。戻りますか？', en: 'You have unsaved changes. Go back?', id: 'Ada perubahan yang belum disimpan. Kembali?' },
+  specClockPh:{ ja: '例：2.40', en: 'e.g. 2.40', id: 'contoh: 2.40' },
   stockBtn:  { ja: '棚卸し', en: 'Stocktake', id: 'Stok opname' },
   stockScan: { ja: '数える看板（A看板・B・C・NG看板）のQRを読み取ってください', en: 'Scan the QR on the board (A board or B / C / NG board) you will count', id: 'Pindai QR papan (papan A atau B / C / NG) yang akan dihitung' },
   stockFile: { ja: '書き込む先：{f}', en: 'Saving to: {f}', id: 'Disimpan ke: {f}' },
@@ -474,6 +508,10 @@ let scanPurpose = 'any';
 function handleCode(code) {
   if (!code) return alert(t('qrFail'));
   if (code.type === 'ec') { toast(t('ecMove')); location.href = 'index.html?no=' + encodeURIComponent(code.no); return; }
+  if (scanPurpose === 'spec') {
+    if (code.type !== 'board') { alert(t('qrWrong')); return openScanner(t('specScan')); }
+    return openSpec(code.id);
+  }
   if (scanPurpose === 'stock') {
     if (code.type !== 'board') { alert(t('qrWrong')); return openScanner(t('stockScan')); }
     return openStock(code.id, code.g || 'A');
@@ -853,6 +891,8 @@ function renderHeader() {
   if (state.unit && ['unit', 'cat', 'sym', 'mark', 'grade', 'repair', 'camera'].includes(S)) {
     const nm = (state.unit.board && state.unit.board.name) || state.unit.name || '';
     left = `<span class="pill id">${esc(state.unit.seal)}</span>${nm ? `<span class="pill name">${esc(nm)}</span>` : ''}`;
+  } else if (state.spec && S === 'spec') {
+    left = `<span class="pill id">${esc(state.spec.board.id)}</span><span class="pill name">${esc(state.spec.board.name || '')}</span>`;
   } else if (state.stock && S === 'stock') {
     left = `<span class="pill id">${esc(state.stock.boardId)}</span><span class="pill name">${esc(state.stock.grade)}</span>`;
   } else if (state.board && (S === 'board' || S === 'gradeMany')) {
@@ -876,7 +916,7 @@ function render() {
   if (S === 'camera' || S === 'scan') return;
   const R = { loading: renderLoading, error: renderError, request: renderRequest, pending: renderPending, home: renderHome,
               board: renderBoard, unit: renderUnit, cat: renderCat, sym: renderSym, mark: renderMark,
-              grade: renderGrade, repair: renderRepair, photo: renderSym, stock: renderStock, gradeMany: renderGradeMany };
+              grade: renderGrade, repair: renderRepair, photo: renderSym, stock: renderStock, gradeMany: renderGradeMany, spec: renderSpec };
   (R[S] || renderHome)();
 }
 
@@ -904,14 +944,18 @@ function renderPending() {
 }
 
 function renderHome() {
-  $app.innerHTML = `<div class="card"><p class="big">${esc(t('homeTitle'))}</p><p class="note">${esc(t('homeDesc'))}</p>
-    <div class="actions"><button class="primary" id="scanBtn" type="button">${esc(t('scan'))}</button></div>
-    <label class="field" for="idInput">${esc(t('typeLabel'))}</label>
+  $app.innerHTML = `<div class="card"><p class="big">${esc(t('modeTitle'))}</p>
+    <div class="modes">
+      <button class="primary" id="scanBtn" type="button">${esc(t('modeSym'))}</button>
+      <button class="primary" id="specBtn" type="button">${esc(t('modeSpec'))}</button>
+      <button class="primary" id="stockBtn" type="button">${esc(t('modeStock'))}</button>
+    </div></div>
+    <div class="card"><label class="field" for="idInput">${esc(t('typeOpen'))}</label>
     <input type="text" id="idInput" autocomplete="off" autocapitalize="characters">
     <div class="err" id="idErr"></div>
-    <div class="actions"><button class="secondary" id="openBtn" type="button">${esc(t('open'))}</button></div></div>
-    <div class="card"><div class="actions"><button class="secondary" id="stockBtn" type="button">📦 ${esc(t('stockBtn'))}</button></div></div>`;
+    <div class="actions"><button class="secondary" id="openBtn" type="button">${esc(t('open'))}</button></div></div>`;
   document.getElementById('scanBtn').onclick = () => { scanPurpose = 'any'; scanBack = 'home'; openScanner(); };
+  document.getElementById('specBtn').onclick = () => { scanPurpose = 'spec'; scanBack = 'home'; openScanner(t('specScan')); };
   document.getElementById('stockBtn').onclick = () => { scanPurpose = 'stock'; scanBack = 'home'; openScanner(t('stockScan')); };
   document.getElementById('openBtn').onclick = () => {
     const code = parseCode(document.getElementById('idInput').value);
@@ -925,6 +969,128 @@ function gradeHtml(u) {
   const who = u.sales ? t('gradeSales') : t('gradeAuto');
   return `<p class="note">${esc(t('gradeNow'))}　<span class="grade ${esc(g)}">${esc(g)}</span>　<small>（${esc(who)}）</small></p>
     ${u.recheck ? `<p class="warn">${esc(t('recheck'))}</p>` : ''}`;
+}
+
+// ===============================================================
+// スペックの入力：看板のQR → 要確認の項目をボタンで選ぶ → 保存 → 次の看板
+//   保存した値は、ロットファイルの Ctrl+Shift+N で作業結果に書き込まれる
+// ===============================================================
+const SPEC_DEF = {
+  'CPU':          { opts: ['Ci3', 'Ci5', 'Ci7', 'Ci9', 'Cm3', 'Celeron', 'Pentium', 'Atom', 'Core Ultra 5', 'Core Ultra 7', 'Ryzen 3', 'Ryzen 5', 'Ryzen 7', 'Xeon'], other: true, en: 'CPU', id: 'CPU' },
+  'プロセッサーナンバー': { opts: [], text: 'text', en: 'Processor number', id: 'Nomor prosesor' },
+  'クロック':     { opts: [], text: 'clock', en: 'Clock', id: 'Clock' },
+  'メモリ':       { opts: ['2', '4', '6', '8', '12', '16', '24', '32', '64'], unit: 'GB', other: true, en: 'Memory', id: 'Memori' },
+  'ストレージタイプ': { opts: ['SSD', 'HDD'], en: 'Storage type', id: 'Jenis penyimpanan' },
+  '容量':         { opts: ['32', '64', '128', '160', '250', '256', '320', '500', '512', '1000', '2000'], unit: 'GB', other: true, en: 'Capacity', id: 'Kapasitas' },
+  '光学ドライブ': { opts: ['光学ドライブなし', 'DVD', 'DVDマルチ', 'SUPER', 'CD'], other: true, en: 'Optical drive', id: 'Drive optik' },
+  '液晶サイズ':   { opts: ['10.1', '11.6', '12.1', '12.5', '13.3', '14', '15.6', '17'], unit: 'inch', other: true, en: 'Screen size', id: 'Ukuran layar' },
+  '解像度':       { opts: ['1366*768', '1600*900', '1920*1080', '1920*1200', '2560*1440', '2560*1600', '2880*1920'], other: true, en: 'Resolution', id: 'Resolusi' },
+  'WIFI':         { opts: ['無線LAN', '無線LANなし'], en: 'Wi-Fi', id: 'Wi-Fi' },
+  '10key':        { opts: ['10key', '10keyなし'], en: '10-key', id: '10-key' },
+  'Webｶﾒﾗ':       { opts: ['Webカメラ', 'Webカメラなし'], en: 'Webcam', id: 'Webcam' },
+  'AC口型':       { opts: ['丸口', '細丸', '四角口', 'タイプC'], other: true, en: 'AC connector', id: 'Konektor AC' },
+  'W':            { opts: ['45', '65', '90', '120', '135', '170'], unit: 'W', other: true, en: 'Watt', id: 'Watt' }
+};
+function specLabel(item) {
+  const d = SPEC_DEF[item] || {};
+  return item + (state.lang !== 'ja' && d[state.lang] ? '（' + d[state.lang] + '）' : '');
+}
+function specShow(item, v) {
+  v = String(v == null ? '' : v);
+  const d = SPEC_DEF[item] || {};
+  return (v && v !== '-' && v !== '要確認' && d.unit && /^[0-9.]+$/.test(v)) ? v + d.unit : v;
+}
+function specNorm(item, v) {
+  v = String(v || '').trim().replace(/\u3000/g, ' ');
+  const d = SPEC_DEF[item] || {};
+  if (v === '-' || v === '') return v;
+  if (d.text === 'clock') { const n = v.replace(/[^0-9.]/g, ''); return n ? Number(n).toFixed(2) + 'GHz' : ''; }
+  if (d.unit) return v.replace(/[^0-9.]/g, '');
+  if (item === '解像度') return v.replace(/[x×X＊]/g, '*').replace(/\s/g, '');
+  return v;
+}
+async function openSpec(boardId) {
+  try {
+    const r = await call('kLoadSpec', [state.deviceId, boardId], 'loading');
+    state.spec = { board: r.board, excel: r.excel || {}, inputs: r.inputs || {}, items: r.items || Object.keys(SPEC_DEF), edits: {}, open: null };
+    state.screen = 'spec'; render(); window.scrollTo(0, 0);
+  } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); openScanner(t('specScan')); }
+}
+function specCurrent(item) {
+  const sp = state.spec;
+  if (item in sp.edits) return sp.edits[item];
+  if (sp.inputs[item]) return sp.inputs[item].value;
+  return sp.excel[item] == null ? '' : String(sp.excel[item]);
+}
+function specIsNeed(item) {
+  const v = state.spec.excel[item];
+  return v == null || String(v) === '' || String(v) === '要確認';
+}
+function specRowHtml(item) {
+  const sp = state.spec, d = SPEC_DEF[item] || { opts: [] };
+  const cur = specCurrent(item);
+  const edited = item in sp.edits;
+  const cls = edited ? 'new' : ((cur === '' || cur === '要確認') ? 'need' : '');
+  const open = sp.open === item;
+  let body = '';
+  if (open) {
+    const btn = v => `<button class="secondary${cur === v ? ' cur' : ''}" type="button" data-sv="${esc(v)}">${esc(specShow(item, v))}</button>`;
+    body = `<div class="sb">${d.opts.map(btn).join('')}
+      ${d.text ? `<input type="${d.text === 'clock' ? 'number' : 'text'}" ${d.text === 'clock' ? 'step="0.01" inputmode="decimal"' : 'autocapitalize="characters"'} id="specIn" placeholder="${d.text === 'clock' ? esc(t('specClockPh')) : ''}"><button class="secondary" type="button" id="specInOk">${esc(t('specOk'))}</button>` : ''}
+      ${d.other ? `<button class="secondary" type="button" id="specOtherBtn">${esc(t('specType'))}</button>` : ''}
+      <button class="secondary${cur === '-' ? ' cur' : ''}" type="button" data-sv="-">${esc(t('specNone'))}</button>
+      ${edited ? `<button class="link" type="button" id="specUndo">${esc(t('specUndo'))}</button>` : ''}</div>`;
+  }
+  const inp = sp.inputs[item];
+  return `<li><div class="sh" data-si="${esc(item)}"><span class="sl">${esc(specLabel(item))}</span>
+    <span class="sv ${cls}">${esc(specShow(item, cur) || '要確認')}</span></div>
+    ${inp && !edited ? `<div class="by">${esc(t('specByApp', { w: inp.by, t: inp.at }))}</div>` : ''}${body}</li>`;
+}
+function renderSpec() {
+  const sp = state.spec;
+  const need = sp.items.filter(specIsNeed), other = sp.items.filter(i => !specIsNeed(i));
+  const nEdit = Object.keys(sp.edits).length;
+  const otherOpen = !need.length || other.some(i => sp.open === i || i in sp.edits);
+  $app.innerHTML = `<div class="card"><p class="big">${esc(sp.board.name || sp.board.id)}</p><p class="note">${esc(sp.board.id)}</p>
+      ${sp.board.missing ? `<p class="warn">${esc(t('boardMissing'))}</p>` : ''}</div>
+    <h2>${esc(need.length ? t('specNeed') : t('specNoNeed'))}</h2>
+    <ul class="spec">${need.map(specRowHtml).join('')}</ul>
+    <details class="note" ${otherOpen ? 'open' : ''}><summary>${esc(t('specOther'))}</summary>
+      <ul class="spec">${other.map(specRowHtml).join('')}</ul></details>
+    <p class="note">${esc(t('specAfter'))}</p>
+    <div class="actions"><button class="primary" id="specSave" type="button" ${nEdit ? '' : 'disabled'}>${esc(t('specSave'))}${nEdit ? '（' + nEdit + '）' : ''}</button></div>
+    <button class="link" id="specHome" type="button">${esc(t('stockBack'))}</button>`;
+  $app.querySelectorAll('[data-si]').forEach(el => el.onclick = () => { sp.open = sp.open === el.dataset.si ? null : el.dataset.si; render(); });
+  const setVal = v => {
+    const item = sp.open; v = specNorm(item, v);
+    if (v === '') return;
+    const base = sp.inputs[item] ? sp.inputs[item].value : (sp.excel[item] == null ? '' : String(sp.excel[item]));
+    if (v === base) delete sp.edits[item]; else sp.edits[item] = v;
+    sp.open = null; render();
+  };
+  $app.querySelectorAll('[data-sv]').forEach(b => b.onclick = ev => { ev.stopPropagation(); setVal(b.dataset.sv); });
+  const ok = document.getElementById('specInOk');
+  if (ok) ok.onclick = () => setVal(document.getElementById('specIn').value);
+  const ob = document.getElementById('specOtherBtn');
+  if (ob) ob.onclick = () => { const v = prompt(specLabel(sp.open)); if (v != null) setVal(v); };
+  const ub = document.getElementById('specUndo');
+  if (ub) ub.onclick = () => { delete sp.edits[sp.open]; sp.open = null; render(); };
+  document.getElementById('specSave').onclick = saveSpec;
+  document.getElementById('specHome').onclick = () => {
+    if (Object.keys(sp.edits).length && !confirm(t('specLeave'))) return;
+    state.spec = null; state.screen = 'home'; render();
+  };
+}
+async function saveSpec() {
+  const sp = state.spec, n = Object.keys(sp.edits).length;
+  if (!n) return toast(t('specNoEdit'));
+  try {
+    await call('kSaveSpec', [state.deviceId, sp.board.id, sp.edits], 'saving');
+    toast(t('specSaved', { n: n }));
+    state.spec = null;
+    scanPurpose = 'spec'; scanBack = 'home';
+    openScanner(t('specScan'));   // そのまま次の看板を読む
+  } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
 }
 
 // ===============================================================
