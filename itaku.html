@@ -41,6 +41,10 @@ h2{font-size:18px;font-weight:700;margin:16px 0 10px}
 .primary{background:var(--ink);color:#fff;border:0}
 .primary:disabled{opacity:.45}
 .secondary{background:#fff;color:var(--ink);border:1px solid var(--ink)}
+.sealbar{background:var(--amber-soft);border:3px solid var(--amber);border-radius:12px;padding:8px 12px;margin:0 0 10px;text-align:center}
+.sealbar .lb{font-size:13px;color:var(--ink2);font-weight:700}
+.sealbar .no{font-size:34px;font-weight:700;letter-spacing:.06em;line-height:1.25;font-variant-numeric:tabular-nums;word-break:break-all}
+.sealbar .no.many{font-size:20px}
 .navbar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:-4px 0 8px}
 .navbar button{background:#fff;border:1px solid var(--ink);border-radius:999px;min-height:44px;padding:0 16px;font:inherit;font-size:16px;font-weight:700;cursor:pointer}
 .hdhome{flex:none;background:#fff;color:var(--ink);border:0;border-radius:999px;padding:7px 12px;font:inherit;font-size:14px;font-weight:700;margin-left:6px}
@@ -179,6 +183,24 @@ const T = {
   skipAsk:   { ja: '{s} を使わずに、次の番号にしますか？（{s} のシールは捨ててください）', en: 'Skip {s} and use the next number? (Throw away sticker {s})', id: 'Lewati {s} dan pakai nomor berikutnya? (Buang stiker {s})' },
   getting:   { ja: '番号を受け取っています…', en: 'Getting a number…', id: 'Mengambil nomor…' },
   getFail:   { ja: '番号を受け取れませんでした：{m}', en: 'Could not get a number: {m}', id: 'Gagal mengambil nomor: {m}' },
+  sealUsing: { ja: '使っているシール', en: 'Sticker in use', id: 'Stiker yang dipakai' },
+  sealUsingN:{ ja: '使っているシール（{n}台）', en: 'Stickers in use ({n})', id: 'Stiker yang dipakai ({n})' },
+  scanOwn:   { ja: '📷 手元のシールを読み取って登録する', en: '📷 Scan a sticker you have and register', id: '📷 Pindai stiker yang ada dan daftarkan' },
+  batchBtn:  { ja: '🗂 同じ症状の台をまとめて登録', en: '🗂 Register several units with the same defects', id: '🗂 Daftarkan beberapa unit dengan cacat sama' },
+  batchTitle:{ ja: '同じ症状の台をまとめて登録', en: 'Register units with the same defects', id: 'Daftarkan unit dengan cacat sama' },
+  batchDesc: { ja: '同じ症状の台の数を入れてください。ほかの人と重ならない続き番号のシールを、まとめて受け取ります。写真が必要な症状は、まとめて登録できません（1台ずつ登録してください）。', en: 'Enter the number of units with the same defects. You get consecutive sticker numbers that no one else uses. Defects that need a photo cannot be registered together.', id: 'Isi jumlah unit dengan cacat sama. Anda mendapat nomor stiker berurutan yang tidak dipakai orang lain. Cacat yang perlu foto tidak bisa didaftarkan bersama.' },
+  batchCount:{ ja: '台数', en: 'Number of units', id: 'Jumlah unit' },
+  batchGet:  { ja: '番号を受け取る', en: 'Get numbers', id: 'Ambil nomor' },
+  batchNeedN:{ ja: '台数を入れてください', en: 'Enter the number of units', id: 'Isi jumlah unit' },
+  batchAsk:  { ja: '{n}枚の番号を受け取ります。よろしいですか？', en: 'Get {n} numbers?', id: 'Ambil {n} nomor?' },
+  batchStick:{ ja: 'このシールを貼ってください（{n}枚）', en: 'Attach these stickers ({n})', id: 'Tempel stiker ini ({n})' },
+  batchStuck:{ ja: '貼った → 症状を選ぶ（{n}台）', en: 'Attached → choose defects ({n})', id: 'Sudah ditempel → pilih cacat ({n})' },
+  batchLeftover:{ ja: '途中でやめた場合、使わなかったシールは「手元のシールを読み取って登録する」で使えます。', en: 'If you stop, unused stickers can be used with "Scan a sticker you have".', id: 'Jika berhenti, stiker yang tersisa bisa dipakai lewat "Pindai stiker yang ada".' },
+  batchNow:  { ja: '{n}台をまとめて登録しています（{s}…）。写真が必要な症状は選べません。', en: 'Registering {n} units together ({s}…). Defects that need a photo cannot be chosen.', id: 'Mendaftarkan {n} unit sekaligus ({s}…). Cacat yang perlu foto tidak bisa dipilih.' },
+  batchNoPhoto:{ ja: '写真が必要な症状は、まとめて登録できません。1台ずつ登録してください。', en: 'Defects that need a photo cannot be registered together. Register one by one.', id: 'Cacat yang perlu foto tidak bisa didaftarkan bersama. Daftarkan satu per satu.' },
+  batchSaved:{ ja: '{n}台を登録しました', en: 'Registered {n} units', id: '{n} unit terdaftar' },
+  sealOther: { ja: 'シール {s} は、ほかの人の画面に「このシールを貼ってください」と出ている番号です。別のシールを使ってください。', en: 'Sticker {s} is shown on someone else\'s screen to attach. Use another sticker.', id: 'Stiker {s} sedang ditampilkan di layar orang lain. Pakai stiker lain.' },
+  sealNotPrinted:{ ja: 'シール {s} は、まだ印刷していない番号です。', en: 'Sticker {s} has not been printed yet.', id: 'Stiker {s} belum dicetak.' },
   verify:    { ja: '貼ったシールを読み取って登録する（番号が違うとき）', en: 'Scan the attached sticker instead (if the number is different)', id: 'Pindai stiker yang ditempel (jika nomornya berbeda)' },
   savedNext: { ja: '{s} を保存しました。次は {n} を貼ってください', en: '{s} saved. Next: attach {n}', id: '{s} tersimpan. Berikutnya: tempel {n}' },
   usedErr:   { ja: 'シール {s} は、すでに別の台に使われていたため保存できませんでした。この台のシールをはがして、もう一度登録してください。', en: 'Sticker {s} was already used on another unit, so it was not saved. Remove the sticker from this unit and register it again.', id: 'Stiker {s} sudah dipakai di unit lain, jadi tidak tersimpan. Lepas stiker dari unit ini lalu daftarkan lagi.' },
@@ -231,6 +253,32 @@ const T = {
   toBoard:   { ja: 'この台の看板を開く', en: 'Open this board', id: 'Buka papan ini' },
   modeSym:   { ja: '🔍 症状を入力する', en: '🔍 Enter defects', id: '🔍 Input cacat' },
   modeSpec:  { ja: '📝 スペックを入力する', en: '📝 Enter specs', id: '📝 Input spesifikasi' },
+  modeShip:  { ja: '🚚 出荷の確認', en: '🚚 Shipment check', id: '🚚 Cek pengiriman' },
+  shipPick:  { ja: '確認する出荷を選んでください', en: 'Choose the shipment to check', id: 'Pilih pengiriman yang dicek' },
+  shipPickNote:{ ja: '在庫リストの出荷予定・荷造済の行を、出荷日と出荷先ごとにまとめています。', en: 'Planned and packed shipments in the stock list, grouped by date and destination.', id: 'Rencana kirim di daftar stok, dikelompokkan per tanggal dan tujuan.' },
+  shipRows:  { ja: '{r}行・{n}台', en: '{r} rows / {n} units', id: '{r} baris / {n} unit' },
+  shipOpen:  { ja: '確認する', en: 'Check', id: 'Cek' },
+  shipNone:  { ja: '出荷予定がありません。', en: 'No planned shipments.', id: 'Tidak ada rencana kirim.' },
+  shipProgress:{ ja: '確認済み {d}／{n}行', en: 'Checked {d} / {n} rows', id: 'Sudah dicek {d} / {n} baris' },
+  shipNg:    { ja: '要確認 {n}件', en: '{n} to review', id: '{n} perlu dicek' },
+  shipScanBtn:{ ja: '看板のQRを読む', en: 'Scan board QR', id: 'Pindai QR papan' },
+  shipScanDesc:{ ja: '【{d} {s}】積む商品の看板（A看板・B・C・NG看板）のQRを読み取ってください', en: '[{d} {s}] Scan the QR on the board of the items to load', id: '[{d} {s}] Pindai QR papan barang yang akan dimuat' },
+  shipPlanN: { ja: '予定 {n}台', en: 'Plan {n}', id: 'Rencana {n}' },
+  shipNotYet:{ ja: 'まだ', en: 'Not yet', id: 'Belum' },
+  shipExtraTitle:{ ja: '予定にない商品（読んだもの）', en: 'Scanned items not in the plan', id: 'Barang di luar rencana (dipindai)' },
+  shipAfter: { ja: '在庫リストの状態（荷造済・出荷済）は変わりません。今までどおりSlackで変えてください。結果は業務委託_検査記録の「出荷確認」シートに残ります。', en: 'The stock list status does not change; use Slack as before. Results are kept in the 出荷確認 sheet.', id: 'Status daftar stok tidak berubah; pakai Slack seperti biasa. Hasil disimpan di sheet 出荷確認.' },
+  shipPlanned:{ ja: 'この出荷の予定', en: 'Planned for this shipment', id: 'Rencana pengiriman ini' },
+  shipNotInPlan:{ ja: 'この出荷の予定にない商品です。積まないでください。', en: 'This item is not in this shipment. Do not load it.', id: 'Barang ini tidak ada di pengiriman ini. Jangan dimuat.' },
+  shipOtherPlan:{ ja: '別の出荷の予定', en: 'Planned in another shipment', id: 'Rencana di pengiriman lain' },
+  shipOtherLine:{ ja: '{d} {s} {n}台', en: '{d} {s} {n}', id: '{d} {s} {n}' },
+  shipPrev:  { ja: '確認済み：{n}台（{b}）{w} {t}　保存すると上書きします', en: 'Already checked: {n} ({b}) {w} {t}. Saving overwrites.', id: 'Sudah dicek: {n} ({b}) {w} {t}. Menyimpan akan menimpa.' },
+  shipMatch: { ja: '予定どおりです', en: 'Matches the plan', id: 'Sesuai rencana' },
+  shipDiff:  { ja: '予定と {d}台 違います', en: 'Differs from plan by {d}', id: 'Selisih {d} dari rencana' },
+  shipSave:  { ja: '確認して次の看板へ', en: 'Confirm and next board', id: 'Konfirmasi dan papan berikutnya' },
+  shipZero:  { ja: '0台で記録しますか？（この商品が見つからないとき）', en: 'Record as 0 units?', id: 'Catat sebagai 0 unit?' },
+  shipSavedOk:{ ja: '✅ 予定どおり（{n}台）。次の看板を読み取ってください', en: '✅ Matches ({n}). Scan the next board', id: '✅ Sesuai ({n}). Pindai papan berikutnya' },
+  shipSavedDiff:{ ja: '⚠️ 予定と台数が違います（確認 {n}台／予定 {p}台）。記録しました。数え直すか、担当者に報告してください。', en: '⚠️ Count differs (checked {n} / plan {p}). Recorded. Recount or report.', id: '⚠️ Jumlah beda (cek {n} / rencana {p}). Tercatat. Hitung ulang atau laporkan.' },
+  shipSavedExtra:{ ja: '❌ 予定にない商品として記録しました。積まないでください。', en: '❌ Recorded as not in plan. Do not load it.', id: '❌ Tercatat di luar rencana. Jangan dimuat.' },
   modeStock: { ja: '📦 棚卸しをする', en: '📦 Stocktake', id: '📦 Stok opname' },
   modeTitle: { ja: '何をしますか？', en: 'What will you do?', id: 'Apa yang akan dilakukan?' },
   typeOpen:  { ja: '看板ID・シール番号を打って開く（症状の入力）', en: 'Type a board ID or sticker number (defects)', id: 'Ketik ID papan atau nomor stiker (cacat)' },
@@ -513,6 +561,10 @@ let scanPurpose = 'any';
 function handleCode(code) {
   if (!code) return alert(t('qrFail'));
   if (code.type === 'ec') { toast(t('ecMove')); location.href = 'index.html?no=' + encodeURIComponent(code.no); return; }
+  if (scanPurpose === 'ship') {
+    if (code.type !== 'board') { alert(t('qrWrong')); return shipScan(); }
+    return openShipItem(code.id, code.g || 'A');
+  }
   if (scanPurpose === 'spec') {
     if (code.type !== 'board') { alert(t('qrWrong')); return openScanner(t('specScan')); }
     return openSpec(code.id);
@@ -609,6 +661,8 @@ async function openSeal(seal, boardId) {
       state.screen = 'unit'; render(); window.scrollTo(0, 0); return;
     }
     if (!boardId) { alert(t('notReg')); state.screen = state.board ? 'board' : 'home'; return render(); }
+    if (u.notPrinted) { alert(t('sealNotPrinted', { s: seal })); state.screen = 'board'; return render(); }
+    if (u.assignedOther && !state.sealQueue.includes(seal)) { alert(t('sealOther', { s: seal })); state.screen = 'board'; return render(); }
     state.unit = { seal: seal, registered: false, current: [], repaired: [], board: state.board, fromNext: seal === state.nextSeal };
     state.screen = 'cat'; render(); toast(t('newUnit')); window.scrollTo(0, 0);
   } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); state.screen = state.board ? 'board' : 'home'; render(); }
@@ -634,6 +688,7 @@ function effective() {
 function pickSymptom(h) {
   const m = state.masterMap[h];
   if (!m || effective().some(e => e.symptom === h)) return;
+  if (m.photo && state.unit && state.unit.batch) { alert(t('batchNoPhoto')); return; }
   if (m.photo) {
     const have = state.photoCounts[h] || 0;
     if (have >= state.photoNeed) { addSymptom(h, ''); toast(t('photoSkipped', { s: h, n: have })); return; }
@@ -648,6 +703,7 @@ function addSymptom(h, photo) {
 function removeSymptom(h) { if (state.adds.has(h)) state.adds.delete(h); else state.removes.add(h); render(); }
 
 function saveSymptoms() {
+  if (state.unit && state.unit.batch) return saveBatch();
   const list = effective();
   if (!list.length && !state.unit.registered) return alert(t('needSym'));
   const boardId = (state.unit.board && state.unit.board.id) || (state.board && state.board.id) || '';
@@ -696,7 +752,7 @@ async function startCamera(w, h) {
 async function openCamera() {
   try { await startCamera(1280, 960); } catch (e) { document.getElementById('camPhoto').click(); return; }
   state.screen = 'camera'; renderHeader();
-  $app.innerHTML = `<div class="cam"><video id="vid" autoplay playsinline muted></video></div>
+  $app.innerHTML = `${sealBarHtml('camera')}<div class="cam"><video id="vid" autoplay playsinline muted></video></div>
     <div class="actions"><button class="primary" id="snap" type="button" aria-label="${esc(t('shoot'))}">📷</button></div>
     <button class="link" id="camCancel" type="button">${esc(t('cancel'))}</button>`;
   const v = document.getElementById('vid'); v.srcObject = camStream;
@@ -896,6 +952,8 @@ function renderHeader() {
   if (state.unit && ['unit', 'cat', 'sym', 'mark', 'grade', 'repair', 'camera'].includes(S)) {
     const nm = (state.unit.board && state.unit.board.name) || state.unit.name || '';
     left = `<span class="pill id">${esc(state.unit.seal)}</span>${nm ? `<span class="pill name">${esc(nm)}</span>` : ''}`;
+  } else if (state.ship && state.ship.sel && (S === 'ship' || S === 'shipItem')) {
+    left = `<span class="pill id">${esc(state.ship.sel.date)}</span><span class="pill name">${esc(state.ship.sel.dest)}</span>`;
   } else if (state.spec && S === 'spec') {
     left = `<span class="pill id">${esc(state.spec.board.id)}</span><span class="pill name">${esc(state.spec.board.name || '')}</span>`;
   } else if (state.stock && S === 'stock') {
@@ -923,7 +981,9 @@ function render() {
   if (S === 'camera' || S === 'scan') return;
   const R = { loading: renderLoading, error: renderError, request: renderRequest, pending: renderPending, home: renderHome,
               board: renderBoard, unit: renderUnit, cat: renderCat, sym: renderSym, mark: renderMark,
-              grade: renderGrade, repair: renderRepair, photo: renderSym, stock: renderStock, gradeMany: renderGradeMany, spec: renderSpec };
+              grade: renderGrade, repair: renderRepair, photo: renderSym, stock: renderStock, gradeMany: renderGradeMany, spec: renderSpec,
+              shipList: renderShipList, ship: renderShip, shipItem: renderShipItem,
+              batchCount: renderBatchCount, batch: renderBatch };
   (R[S] || renderHome)();
   addNavBar(S);
 }
@@ -932,13 +992,15 @@ function render() {
 // どの画面でも「‹ 戻る」と「⌂ ホーム」を押せるようにする（誤操作したときに戻れるように）
 // ===============================================================
 // 入力の途中の画面（戻ると、保存していない入力が消える画面）
-const NAV_EDITING = ['cat', 'sym', 'photo', 'mark', 'grade', 'repair', 'spec', 'stock', 'gradeMany'];
+const NAV_EDITING = ['cat', 'sym', 'photo', 'mark', 'grade', 'repair', 'spec', 'stock', 'gradeMany', 'shipItem', 'batch'];
 function hasUnsaved() {
   const S = state.screen;
   if (S === 'spec') return !!(state.spec && Object.keys(state.spec.edits).length);
   if (S === 'stock') return !!(state.stock && (state.stock.photo || state.stock.boxes.some(x => x.per || x.n)));
   if (['cat', 'sym', 'photo', 'mark'].includes(S)) return state.adds.size > 0 || state.removes.size > 0;
   if (S === 'repair') return state.repairSel.size > 0;
+  if (S === 'batch' || (['cat', 'sym'].includes(S) && state.unit && state.unit.batch)) return true;
+  if (S === 'shipItem') return !!(state.ship && state.ship.item && state.ship.item.boxes.some(x => x.per || x.n));
   return false;
 }
 // 画面ごとの「戻る」先
@@ -948,6 +1010,7 @@ function goBack() {
   const toBoardOrHome = () => { state.screen = state.board ? 'board' : 'home'; };
   if (S === 'board') { state.screen = 'home'; }
   else if (S === 'unit') { state.screen = (state.board && state.unit && state.unit.board && state.unit.board.id === state.board.id) ? 'board' : 'home'; }
+  else if (S === 'cat' && state.unit && state.unit.batch) { resetEdit(); state.unit = null; state.screen = 'batch'; }
   else if (S === 'cat') { resetEdit(); if (state.unit && state.unit.registered) state.screen = 'unit'; else { state.unit = null; toBoardOrHome(); } }
   else if (S === 'sym' || S === 'photo') { state.screen = 'cat'; }
   else if (S === 'mark') { state.screen = 'sym'; }
@@ -955,6 +1018,10 @@ function goBack() {
   else if (S === 'gradeMany') { state.grpEdit = null; state.screen = 'board'; }
   else if (S === 'spec') { state.spec = null; state.screen = 'home'; }
   else if (S === 'stock') { state.stock = null; state.screen = 'home'; }
+  else if (S === 'batchCount' || S === 'batch') { state.batch = null; state.screen = 'board'; }
+  else if (S === 'shipList') { state.ship = null; state.screen = 'home'; }
+  else if (S === 'ship') { state.screen = 'shipList'; openShipList(); return; }
+  else if (S === 'shipItem') { state.ship.item = null; state.screen = 'ship'; }
   else { state.screen = 'home'; }
   render(); window.scrollTo(0, 0);
 }
@@ -963,15 +1030,27 @@ function goHome() {
   if (NAV_EDITING.includes(S) && hasUnsaved() && !confirm(t('leaveAsk'))) return;
   stopCamera();
   resetEdit();
-  state.spec = null; state.stock = null; state.grpEdit = null;
+  state.spec = null; state.stock = null; state.grpEdit = null; state.ship = null; state.batch = null;
   scanPurpose = 'any'; scanBack = 'home';
   state.screen = 'home';
   render(); window.scrollTo(0, 0);
 }
+// 症状を入力する画面では、使っているシールの番号を大きく出す（何の番号で登録しているか分かるように）
+const SEAL_BAR_SCREENS = ['unit', 'cat', 'sym', 'mark', 'camera', 'grade', 'repair'];
+function sealBarHtml(S) {
+  if (!state.unit || !SEAL_BAR_SCREENS.includes(S)) return '';
+  const b = state.unit.batch;
+  if (b && b.length > 1) return `<div class="sealbar"><div class="lb">${esc(t('sealUsingN', { n: b.length }))}</div><div class="no many">${b.map(esc).join('　')}</div></div>`;
+  return `<div class="sealbar"><div class="lb">${esc(t('sealUsing'))}</div><div class="no">${esc(state.unit.seal)}</div></div>`;
+}
 function addNavBar(S) {
-  if (['home', 'loading', 'error', 'request', 'pending', 'scan', 'camera'].includes(S)) return;
+  const bar = sealBarHtml(S);
+  if (['home', 'loading', 'error', 'request', 'pending', 'scan', 'camera'].includes(S)) {
+    if (bar) $app.insertAdjacentHTML('afterbegin', bar);   // カメラの画面にも番号を出す
+    return;
+  }
   $app.insertAdjacentHTML('afterbegin', `<div class="navbar"><button type="button" id="navBack">${esc(t('back'))}</button>
-    <button type="button" id="navHome">${esc(t('homeBtn'))}</button></div>`);
+    <button type="button" id="navHome">${esc(t('homeBtn'))}</button></div>${bar}`);
   document.getElementById('navBack').onclick = goBack;
   document.getElementById('navHome').onclick = goHome;
 }
@@ -1005,6 +1084,7 @@ function renderHome() {
       <button class="primary" id="scanBtn" type="button">${esc(t('modeSym'))}</button>
       <button class="primary" id="specBtn" type="button">${esc(t('modeSpec'))}</button>
       <button class="primary" id="stockBtn" type="button">${esc(t('modeStock'))}</button>
+      <button class="primary" id="shipBtn" type="button">${esc(t('modeShip'))}</button>
     </div></div>
     <div class="card"><label class="field" for="idInput">${esc(t('typeOpen'))}</label>
     <input type="text" id="idInput" autocomplete="off" autocapitalize="characters">
@@ -1012,6 +1092,7 @@ function renderHome() {
     <div class="actions"><button class="secondary" id="openBtn" type="button">${esc(t('open'))}</button></div></div>`;
   document.getElementById('scanBtn').onclick = () => { scanPurpose = 'any'; scanBack = 'home'; openScanner(); };
   document.getElementById('specBtn').onclick = () => { scanPurpose = 'spec'; scanBack = 'home'; openScanner(t('specScan')); };
+  document.getElementById('shipBtn').onclick = openShipList;
   document.getElementById('stockBtn').onclick = () => { scanPurpose = 'stock'; scanBack = 'home'; openScanner(t('stockScan')); };
   document.getElementById('openBtn').onclick = () => {
     const code = parseCode(document.getElementById('idInput').value);
@@ -1025,6 +1106,169 @@ function gradeHtml(u) {
   const who = u.sales ? t('gradeSales') : t('gradeAuto');
   return `<p class="note">${esc(t('gradeNow'))}　<span class="grade ${esc(g)}">${esc(g)}</span>　<small>（${esc(who)}）</small></p>
     ${u.recheck ? `<p class="warn">${esc(t('recheck'))}</p>` : ''}`;
+}
+
+// ===============================================================
+// 同じ症状の台をまとめて登録：台数 → 続き番号をまとめて受け取る → 貼る → 症状を1回選ぶ → 全部の台を登録
+//   写真必須の症状は選べない（写真が必要な症状は、1台ずつ登録する）
+// ===============================================================
+function renderBatchCount() {
+  $app.innerHTML = `<div class="card"><p class="big">${esc(t('batchTitle'))}</p><p class="note">${esc(t('batchDesc'))}</p>
+    <label class="field" for="batchN">${esc(t('batchCount'))}</label>
+    <input type="number" id="batchN" inputmode="numeric" min="1" value="${esc(state.batchN || '')}" placeholder="5" style="width:100%;font:inherit;font-size:24px;padding:12px;border:1px solid var(--ink);border-radius:10px">
+    <div class="actions"><button class="primary" id="batchGet" type="button">${esc(t('batchGet'))}</button></div></div>`;
+  document.getElementById('batchGet').onclick = async () => {
+    const n = Math.floor(Number(document.getElementById('batchN').value) || 0);
+    if (n < 1) return alert(t('batchNeedN'));
+    if (n > 1 && !confirm(t('batchAsk', { n: n }))) return;
+    try {
+      const r = await call('kReserveBatch', [state.deviceId, n], 'loading');
+      state.batch = { seals: r.seals, board: state.board };
+      state.screen = 'batch'; render(); window.scrollTo(0, 0);
+    } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); }
+  };
+}
+function renderBatch() {
+  const b = state.batch;
+  $app.innerHTML = `<div class="card stick"><p class="big">${esc(t('batchStick', { n: b.seals.length }))}</p>
+      <p class="sealno" style="font-size:${b.seals.length > 6 ? 26 : 36}px;line-height:1.5">${b.seals.map(esc).join('　')}</p>
+      <p class="note">${esc(t('stickDesc'))}</p>
+      <div class="actions"><button class="primary" id="batchStuck" type="button">${esc(t('batchStuck', { n: b.seals.length }))}</button></div></div>
+    <p class="note">${esc(t('batchLeftover'))}</p>`;
+  document.getElementById('batchStuck').onclick = () => {
+    resetEdit();
+    state.unit = { seal: b.seals[0], registered: false, current: [], repaired: [], board: state.board, batch: b.seals.slice() };
+    state.screen = 'cat'; render(); window.scrollTo(0, 0);
+  };
+}
+function saveBatch() {
+  const u = state.unit, list = effective();
+  if (!list.length) return alert(t('needSym'));
+  const boardId = (u.board && u.board.id) || (state.board && state.board.id) || '';
+  const adds = [...state.adds].map(([symptom, photo]) => ({ symptom, photo: '' }));
+  const auto = list.every(e => state.masterMap[e.symptom] && state.masterMap[e.symptom].aOk) ? 'A' : 'NG';
+  const box = getOutbox();
+  u.batch.forEach(seal => {
+    box.push({ id: Date.now() + '_' + Math.random().toString(36).slice(2, 7), boardId, seal: seal, adds: adds, removes: [], grade: auto, newOnly: true });
+    if (!state.boardUnits.some(x => x.seal === seal)) state.boardUnits.push({ seal: seal, grade: auto, recheck: false });
+  });
+  setOutbox(box);
+  const n = u.batch.length;
+  state.lastSaved = { seal: u.batch[n - 1], t: Date.now() };
+  resetEdit(); state.unit = null; state.batch = null;
+  flushOutbox();
+  state.screen = 'board'; render(); window.scrollTo(0, 0);
+  toast(t('batchSaved', { n: n }));
+}
+
+// ===============================================================
+// 出荷の確認：出荷（出荷日＋出荷先）を選ぶ → 看板のQRを読む → 箱ごとの台数 → 予定と照らし合わせる
+//   在庫リストの出荷内訳は読むだけ（荷造済・出荷済への変更は、今までどおりSlackで行う）
+// ===============================================================
+async function openShipList() {
+  try {
+    const list = await call('kShipList', [state.deviceId], 'loading');
+    state.ship = { list: list, sel: null, plan: null, item: null };
+    state.screen = 'shipList'; render(); window.scrollTo(0, 0);
+  } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); state.screen = 'home'; render(); }
+}
+function renderShipList() {
+  const list = state.ship.list || [];
+  $app.innerHTML = `<div class="card"><p class="big">${esc(t('shipPick'))}</p><p class="note">${esc(t('shipPickNote'))}</p></div>
+    ${list.length ? `<ul class="grp">${list.map((x, i) => `<li><span class="gs"><b>${esc(x.date)}</b>　${esc(x.dest)}</span>
+      <span class="gn">${esc(t('shipRows', { r: x.rows, n: x.qty }))}</span>
+      <button class="secondary" type="button" data-sh="${i}">${esc(t('shipOpen'))}</button></li>`).join('')}</ul>`
+      : `<p class="warn">${esc(t('shipNone'))}</p>`}`;
+  $app.querySelectorAll('[data-sh]').forEach(b => b.onclick = () => { const x = list[Number(b.dataset.sh)]; openShip(x.date, x.dest); });
+}
+async function openShip(date, dest) {
+  try {
+    const r = await call('kShipLoad', [state.deviceId, date, dest], 'loading');
+    state.ship.sel = { date: date, dest: dest };
+    state.ship.plan = r;
+    state.screen = 'ship'; render(); window.scrollTo(0, 0);
+  } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); }
+}
+function shipMark(l) {
+  if (l.checked === null || l.checked === undefined) return `<span class="sv need">${esc(t('shipNotYet'))}</span>`;
+  if (l.result === '一致') return `<span class="sv new">✅ ${esc(l.checked)}</span>`;
+  return `<span class="sv need" style="border-color:var(--danger)">⚠️ ${esc(l.checked)}</span>`;
+}
+function renderShip() {
+  const p = state.ship.plan, sel = state.ship.sel;
+  const done = p.lines.filter(l => l.checked !== null && l.checked !== undefined).length;
+  const ng = p.lines.filter(l => l.result && l.result !== '一致').length + p.extra.length;
+  $app.innerHTML = `<div class="card"><p class="big">${esc(sel.date)}　${esc(sel.dest)}</p>
+      <p class="note">${esc(t('shipProgress', { d: done, n: p.lines.length }))}${ng ? '　<b style="color:var(--danger)">' + esc(t('shipNg', { n: ng })) + '</b>' : ''}</p></div>
+    <div class="actions"><button class="primary" id="shipScan" type="button">${esc(t('shipScanBtn'))}</button></div>
+    <ul class="spec">${p.lines.map(l => `<li><div class="sh"><span class="sl">${esc(l.name)}　<span class="grade ${esc(l.grade)}" style="font-size:14px;padding:2px 8px">${esc(l.grade)}</span></span>
+      <span class="gn">${esc(t('shipPlanN', { n: l.qty }))}</span>${shipMark(l)}</div>
+      ${l.checked !== null && l.checked !== undefined ? `<div class="by">${esc(l.by)} ${esc(l.at)}</div>` : ''}</li>`).join('')}</ul>
+    ${p.extra.length ? `<h2>${esc(t('shipExtraTitle'))}</h2><ul class="spec">${p.extra.map(x => `<li><div class="sh"><span class="sl">${esc(x.name)}　${esc(x.grade)}</span>
+      <span class="sv need" style="border-color:var(--danger)">❌ ${esc(x.count)}</span></div><div class="by">${esc(x.id)}　${esc(x.by)} ${esc(x.at)}</div></li>`).join('')}</ul>` : ''}
+    <p class="note">${esc(t('shipAfter'))}</p>`;
+  document.getElementById('shipScan').onclick = shipScan;
+}
+function shipScan() {
+  scanPurpose = 'ship'; scanBack = 'ship';
+  openScanner(t('shipScanDesc', { d: state.ship.sel.date, s: state.ship.sel.dest }));
+}
+async function openShipItem(boardId, grade) {
+  const sel = state.ship.sel;
+  try {
+    const r = await call('kShipLookup', [state.deviceId, sel.date, sel.dest, boardId, grade], 'loading');
+    state.ship.item = { info: r, boxes: [{ per: '', n: '' }] };
+    state.screen = 'shipItem'; render(); window.scrollTo(0, 0);
+  } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); shipScan(); }
+}
+function shipBoxes() {
+  return state.ship.item.boxes.map(x => ({ per: Math.floor(Number(x.per) || 0), n: Math.floor(Number(x.n) || 0) })).filter(x => x.per > 0 && x.n > 0);
+}
+function renderShipItem() {
+  const it = state.ship.item, r = it.info;
+  const total = shipBoxes().reduce((s, x) => s + x.per * x.n, 0);
+  const otherTxt = r.other.map(o => t('shipOtherLine', { d: o.date, s: o.dest, n: o.qty })).join(' / ');
+  $app.innerHTML = `<div class="card"><p class="big">${esc(r.board.name || r.board.id)}　<span class="grade ${esc(r.grade)}">${esc(r.grade)}</span></p>
+      <p class="note">${esc(r.board.id)}</p>
+      ${r.inPlan ? `<p class="note">${esc(t('shipPlanned'))}：<b style="font-size:24px">${esc(r.plan)}</b>台</p>`
+                 : `<p class="warn">❌ ${esc(t('shipNotInPlan'))}${otherTxt ? '<br>' + esc(t('shipOtherPlan')) + '：' + esc(otherTxt) : ''}</p>`}
+      ${r.prev ? `<p class="warn">${esc(t('shipPrev', { n: r.prev.count, b: r.prev.boxes || '-', w: r.prev.by, t: r.prev.at }))}</p>` : ''}
+    </div>
+    <div class="card"><p class="big">${esc(t('boxTitle'))}</p>
+      ${it.boxes.map((x, i) => `<div class="boxrow">
+        <input type="number" inputmode="numeric" min="0" data-i="${i}" data-f="per" value="${esc(x.per)}" placeholder="10"><span>${esc(t('boxPer'))}</span>
+        <input type="number" inputmode="numeric" min="0" data-i="${i}" data-f="n" value="${esc(x.n)}" placeholder="1"><span>${esc(t('boxN'))}</span>
+        ${it.boxes.length > 1 ? `<button class="secondary" type="button" data-del="${i}">${esc(t('boxDel'))}</button>` : ''}</div>`).join('')}
+      <button class="link" id="boxAdd" type="button">${esc(t('boxAdd'))}</button>
+      <p class="note">${esc(t('boxTotal'))}</p><p class="stocktotal" id="shipTotal">${total}</p>
+      ${r.inPlan ? `<p class="note" id="shipJudge"></p>` : ''}
+    </div>
+    <div class="actions"><button class="primary" id="shipSave" type="button">${esc(t('shipSave'))}</button></div>`;
+  const upd = () => {
+    const tt = shipBoxes().reduce((s, x) => s + x.per * x.n, 0);
+    document.getElementById('shipTotal').textContent = tt;
+    const j = document.getElementById('shipJudge');
+    if (j) { const d = tt - r.plan; j.innerHTML = tt === 0 ? '' : (d === 0 ? '✅ ' + esc(t('shipMatch')) : '<b style="color:var(--danger)">⚠️ ' + esc(t('shipDiff', { d: (d > 0 ? '+' : '') + d })) + '</b>'); }
+  };
+  $app.querySelectorAll('.boxrow input').forEach(inp => inp.oninput = () => { it.boxes[+inp.dataset.i][inp.dataset.f] = inp.value; upd(); });
+  $app.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { it.boxes.splice(+b.dataset.del, 1); render(); });
+  document.getElementById('boxAdd').onclick = () => { it.boxes.push({ per: '', n: '' }); render(); };
+  document.getElementById('shipSave').onclick = saveShipItem;
+  upd();
+}
+async function saveShipItem() {
+  const it = state.ship.item, r = it.info, sel = state.ship.sel;
+  const boxes = shipBoxes(), total = boxes.reduce((s, x) => s + x.per * x.n, 0);
+  if (total === 0 && !confirm(t('shipZero'))) return;
+  try {
+    const res = await call('kShipCheck', [state.deviceId, sel.date, sel.dest, r.board.id, r.grade, boxes], 'saving');
+    const msg = res.result === '一致' ? t('shipSavedOk', { n: res.total }) : res.result === '台数違い' ? t('shipSavedDiff', { n: res.total, p: res.plan }) : t('shipSavedExtra');
+    if (res.result === '一致') toast(msg); else alert(msg);
+    state.ship.item = null;
+    const p = await call('kShipLoad', [state.deviceId, sel.date, sel.dest]);   // チェック表を新しくする
+    state.ship.plan = p;
+    shipScan();   // そのまま次の看板を読む
+  } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
 }
 
 // ===============================================================
@@ -1237,7 +1481,8 @@ function renderBoard() {
       : state.nextErr ? `<p class="warn">${esc(t('getFail', { m: state.nextErr }))}</p><div class="actions"><button class="secondary" id="retryNo" type="button">${esc(t('retry'))}</button></div>`
       : `<p class="note">${esc(t('getting'))}</p>`}
     </div>
-    <button class="link" id="sealBtn" type="button">${esc(t('verify'))}</button>
+    <div class="actions"><button class="secondary" id="sealBtn" type="button">${esc(t('scanOwn'))}</button></div>
+    <div class="actions"><button class="secondary" id="batchBtn" type="button">${esc(t('batchBtn'))}</button></div>
     <details class="note"><summary>${esc(t('sealType'))}</summary>
       <input type="text" id="sealInput" autocomplete="off" autocapitalize="characters" placeholder="D00012">
       <div class="err" id="sealErr"></div>
@@ -1250,6 +1495,7 @@ function renderBoard() {
     <button class="link" id="homeBtn" type="button">${esc(t('next'))}</button>`;
   document.getElementById('slipBtn').onclick = () => openSlip(b.id);
   document.getElementById('sealBtn').onclick = scanSealForBoard;
+  document.getElementById('batchBtn').onclick = () => { state.batchN = ''; state.screen = 'batchCount'; render(); window.scrollTo(0, 0); };
   const sb = document.getElementById('stuckBtn'); if (sb) sb.onclick = startWithNextSeal;
   const sk = document.getElementById('skipSeal'); if (sk) sk.onclick = () => {
     if (!confirm(t('skipAsk', { s: state.nextSeal }))) return;
@@ -1354,7 +1600,7 @@ function renderCat() {
   const list = effective();
   const counts = {};
   list.forEach(e => { if (e.cat) counts[e.cat] = (counts[e.cat] || 0) + 1; });
-  $app.innerHTML = `${!state.unit.registered ? `<p class="note">${esc(t('newUnit'))}</p>` : ''}
+  $app.innerHTML = `${state.unit.batch ? `<p class="warn">${esc(t('batchNow', { n: state.unit.batch.length, s: state.unit.batch[0] }))}</p>` : (!state.unit.registered ? `<p class="note">${esc(t('newUnit'))}</p>` : '')}
     <h2>${esc(t('catTitle'))}</h2>
     <div class="group">${state.cats.map((c, i) => `<button class="btn" type="button" data-cat="${i}">${esc(c.cat)}${sub(trCat(c))}${counts[c.cat] ? `<span class="badge">${counts[c.cat]}</span>` : ''}</button>`).join('')}</div>
     <h2>${esc(t('selTitle'))}</h2>${symListHtml(list, 'edit')}
@@ -1376,7 +1622,7 @@ function renderSym() {
   const items = state.master.filter(m => m.cat === state.cat);
   $app.innerHTML = `<button class="back" id="backBtn" type="button">${esc(t('backCat'))}</button>
     <h2>${esc(state.cat)}${trCat(c) ? ` <span class="note">${esc(trCat(c))}</span>` : ''}</h2>
-    <div class="group">${items.map(m => `<button class="btn${eff.has(m.h) ? ' on' : ''}" type="button" data-h="${esc(m.h)}">${esc(m.h)}${sub(trSym(m.h))}${sub(m.desc)}${m.photo ? '<small>📷</small>' : ''}</button>`).join('')}</div>`;
+    <div class="group">${items.map(m => `<button class="btn${eff.has(m.h) ? ' on' : ''}" type="button" data-h="${esc(m.h)}"${m.photo && state.unit && state.unit.batch ? ' style="opacity:.35"' : ''}>${esc(m.h)}${sub(trSym(m.h))}${sub(m.desc)}${m.photo ? '<small>📷</small>' : ''}</button>`).join('')}</div>`;
   document.getElementById('backBtn').onclick = () => { state.screen = 'cat'; render(); window.scrollTo(0, 0); };
   $app.querySelectorAll('[data-h]').forEach(b => b.onclick = () => pickSymptom(b.dataset.h));
 }
