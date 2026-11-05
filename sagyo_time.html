@@ -374,6 +374,7 @@ const I18N = {
     backToList: '‹ 案件名一覧に戻る', npTitle: '一覧にない案件を追加',
     npIntro: '案件ファイル（例：【260924】DR.xlsm）をドライブの「案件管理」フォルダに保存すると、日付が変わったとき（毎日0時）に自動で一覧に出ます。<br>その日のうちに使いたいときは、下のボタンを押してください。',
     npRefresh: '案件管理フォルダを確認する', npManual: '▸ 案件ファイルがまだ無いとき（手入力）',
+    npPin: '📌 固定して表示する（古い案件でも、自動で一覧から外さない）', npOldWarn: n => `「${n}」は古い案件なので、📌を付けないと、追加してもすぐに一覧から外れます。📌を付けて追加しますか？`, npPinYes: '📌を付けて追加', pinOn: '固定を外す', pinOff: '固定する', pinTag: '📌固定',
     npDate: '入荷日（今日の日付ではなく、荷物が入荷した日）', npTapSource: '仕入先をタップ', npOther: '上記以外の仕入先', add: '追加',
     backToWork: '‹ 作業内容に戻る', timeTitle: '開始・終了時刻', start: '開始時刻', end: '終了時刻', hoursUnit: '時間',
     hoursAuto: '作業時間合計（自動計算）', hoursHint: '開始・終了時刻を入力すると自動計算されます', next: '次へ',
@@ -414,6 +415,7 @@ const I18N = {
     backToList: '‹ Back to case list', npTitle: 'Add a case not in the list',
     npIntro: 'When a case file (e.g. 【260924】DR.xlsm) is saved in the 案件管理 folder on Drive, it appears in the list automatically when the date changes (every day at 0:00).<br>To use it on the same day, press the button below.',
     npRefresh: 'Check the 案件管理 folder', npManual: '▸ If there is no case file yet (enter manually)',
+    npPin: '📌 Pin (keep this case in the list even if it is old)', npOldWarn: n => `"${n}" is an old case. Without 📌 it disappears from the list right after adding. Add it with 📌?`, npPinYes: 'Add with 📌', pinOn: 'Unpin', pinOff: 'Pin', pinTag: '📌Pinned',
     npDate: 'Arrival date (the day the goods arrived, not today)', npTapSource: 'Tap the supplier', npOther: 'Other supplier', add: 'Add',
     backToWork: '‹ Back to tasks', timeTitle: 'Start and end time', start: 'Start', end: 'End', hoursUnit: 'hours',
     hoursAuto: 'Total work time (calculated automatically)', hoursHint: 'Enter the start and end time to calculate', next: 'Next',
@@ -454,6 +456,7 @@ const I18N = {
     backToList: '‹ Kembali ke daftar kasus', npTitle: 'Tambah kasus yang tidak ada di daftar',
     npIntro: 'Jika file kasus (contoh: 【260924】DR.xlsm) disimpan di folder 案件管理 di Drive, kasus akan muncul di daftar secara otomatis saat tanggal berganti (setiap hari pukul 0:00).<br>Untuk memakainya di hari yang sama, tekan tombol di bawah.',
     npRefresh: 'Periksa folder 案件管理', npManual: '▸ Jika belum ada file kasus (isi manual)',
+    npPin: '📌 Sematkan (kasus lama tetap ada di daftar)', npOldWarn: n => `"${n}" adalah kasus lama. Tanpa 📌 akan hilang dari daftar setelah ditambahkan. Tambahkan dengan 📌?`, npPinYes: 'Tambah dengan 📌', pinOn: 'Lepas', pinOff: 'Sematkan', pinTag: '📌Disematkan',
     npDate: 'Tanggal masuk barang (bukan hari ini)', npTapSource: 'Ketuk pemasok', npOther: 'Pemasok lainnya', add: 'Tambah',
     backToWork: '‹ Kembali ke pekerjaan', timeTitle: 'Waktu mulai dan selesai', start: 'Mulai', end: 'Selesai', hoursUnit: 'jam',
     hoursAuto: 'Total waktu kerja (dihitung otomatis)', hoursHint: 'Isi waktu mulai dan selesai untuk menghitung', next: 'Lanjut',
@@ -765,12 +768,19 @@ function addProjectManual(sourceCode){
   }
   const name = `【${dateToCode(dateVal)}】${sourceCode}`;
   const isToday = dateVal === todayStr();
+  const pinEl = document.getElementById('newProjPin');
+  let pin = !!(pinEl && pinEl.checked);
+  // 古い案件を📌なしで追加すると、すぐに一覧から外れるので知らせる
+  if(!pin && isOldLot(name)){
+    showConfirmModal(t('npOldWarn', name), t('npPinYes'), ()=>{ if(pinEl) pinEl.checked = true; addProjectManual(sourceCode); }, 'ok');
+    return;
+  }
   showConfirmModal(
-    t('npConfirm', name, formatDateJp(dateVal), isToday),
+    t('npConfirm', name, formatDateJp(dateVal), isToday) + (pin ? '\n' + t('pinTag') : ''),
     t('npConfirmBtn'),
     async ()=>{
       try{
-        state.projects = await gsRun('apiAddProject', name);
+        state.projects = await gsRun('apiAddProject', name, pin);
       }catch(e){
         showToast(t('npAddFail'), 'error');
         return;
@@ -780,6 +790,16 @@ function addProjectManual(sourceCode){
     },
     'ok'
   );
+}
+
+// 追加しようとしている案件が、今の一覧の新しい3つより古いか（共通業務・固定の案件は数えない）
+function isOldLot(name){
+  const label = getSpecialLabel(name);
+  if(label === 'その他') return false;
+  const same = state.projects.filter(p => !p.pinned && getSpecialLabel(p.name) === label && p.name !== name);
+  if(same.length < 3) return false;
+  const nums = same.map(p => extractProjectNum(p.name)).sort((a, b) => b - a);
+  return extractProjectNum(name) < nums[2];
 }
 
 // 「案件管理フォルダを確認する」ボタン。ドライブを今すぐ確認して、新しい案件があれば一覧に追加する
@@ -1151,6 +1171,9 @@ function render(){
               <label>${t('npDate')}</label>
               <input type="date" id="newProjDate" value="">
             </div>
+            <label style="display:flex;align-items:center;gap:10px;margin-top:12px;font-size:15px;font-weight:700;">
+              <input type="checkbox" id="newProjPin" style="width:24px;height:24px;"> ${t('npPin')}
+            </label>
           </div>
           <div class="wt-ungrouped-label">${t('npTapSource')}</div>
           <div class="worktype-grid" id="sourceGrid" style="grid-template-columns:repeat(2,1fr);margin-bottom:12px;">
@@ -1487,6 +1510,7 @@ function renderAdmin(app){
           <div class="proj-row">
             <span class="name ${p.active?'':'inactive'}">${esc(p.name)}${(p.hasFile===false && getSpecialLabel(p.name)===null) ? '<span class="nofile-tag">案件ファイルなし</span>' : ''}</span>
             <div style="display:flex;align-items:center;gap:10px;">
+              <button class="del-proj" data-pin="${esc(p.name)}" title="${esc(p.pinned ? t('pinOn') : t('pinOff'))}" style="color:inherit;${p.pinned ? 'background:#FFF4D6;border-color:#F5A623;' : 'opacity:.35;'}">📌</button>
               <div class="switch ${p.active?'on':''}" data-name="${esc(p.name)}"><div class="knob"></div></div>
               <button class="del-proj" data-name="${esc(p.name)}" title="削除">✕</button>
             </div>
@@ -1502,7 +1526,15 @@ function renderAdmin(app){
         runProjectOp('apiSetProjectActive', [name, !proj.active]);
       };
     });
-    body.querySelectorAll('.del-proj').forEach(btn=>{
+    body.querySelectorAll('[data-pin]').forEach(btn=>{
+      btn.onclick = ()=>{
+        const name = btn.dataset.pin;
+        const proj = state.projects.find(p=>p.name===name);
+        if(!proj) return;
+        runProjectOp('apiSetProjectPinned', [name, !proj.pinned]);
+      };
+    });
+    body.querySelectorAll('.del-proj:not([data-pin])').forEach(btn=>{
       btn.onclick = ()=>{
         const name = btn.dataset.name;
         runProjectOp('apiDeleteProject', [name], `「${name}」を削除しました`);
