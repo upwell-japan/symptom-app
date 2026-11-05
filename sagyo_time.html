@@ -239,7 +239,7 @@
 // （画面での並び順はこの配列の順番で決まるので、記号の順番とは関係なく自由に並べてよい）
 // 基準UPHはコード.gs側（スプレッドシートの「設定」シート）から読み込んで使う。
 const WORKTYPE_BLOCKS = [
-  ["B 案件管理作成","C 荷受","P AC荷受","D エアー","E 検査","F 修理","G 作業結果入力","H 外磨き","I グレーディング","J パーツ抜き","K 荷造り"],
+  ["B 案件管理作成","C 荷受","P AC荷受","D エアー","E 検査","F 修理","G 作業結果入力","H 外磨き","Q 内磨き","I グレーディング","J パーツ抜き","K 荷造り"],
   ["M ダンボール作り","N メモリ増設・減設","O 棚卸し"]
 ];
 
@@ -551,7 +551,7 @@ function esc(v){
 // ・画面は GitHub Pages、データの保存は作業時間の Apps Script（API.gs の doPost）
 // ・呼び出しは「端末の許可」シートで許可した端末からだけ受け付ける
 // ===============================================================
-const API_URL = 'https://script.google.com/macros/library/d/1NWPwo399tTGVI3zLUaqGp9enkqHS3YlOVUCDeXsEtizTW-D4-VU30uXq/4';
+const API_URL = '★ ここに作業時間の Apps Script のウェブアプリのURL（末尾が /exec）を貼る';
 const LS_DEVICE = 'sagyo_device_id';
 const LS_HOME = 'sagyo_home_cache';     // 前回の案件一覧などを覚えておき、開いたらすぐ表示する
 
@@ -865,7 +865,7 @@ function showToast(msg, type){
 }
 
 const QUOTA_WORKTYPES = [
-  "C 荷受","D エアー","E 検査","F 修理","H 外磨き","J パーツ抜き","M ダンボール作り","N メモリ増設・減設",
+  "C 荷受","D エアー","E 検査","F 修理","H 外磨き","Q 内磨き","J パーツ抜き","M ダンボール作り","N メモリ増設・減設",
   "b 荷受","q エアー","c 検査","d 外磨き","e 内磨き","f AC磨き","g OSインストール","h OS検査","j ピッキング","k 梱包"
 ];
 
