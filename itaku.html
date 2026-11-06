@@ -221,7 +221,8 @@ const T = {
   done:      { ja: '完了', en: 'Done', id: 'Selesai' },
   needSym:   { ja: '症状を1つ以上選んでください', en: 'Choose at least one defect', id: 'Pilih minimal satu cacat' },
   backCat:   { ja: '‹ カテゴリに戻る', en: '‹ Back to categories', id: '‹ Kembali ke kategori' },
-  photoSkipped:{ ja: '「{s}」は写真が{n}枚そろっているので、撮影を省きました。', en: '“{s}” already has {n} photos, so no photo was taken.', id: '“{s}” sudah punya {n} foto, jadi tidak difoto.' },
+  photoSkipped:{ ja: '「{s}」は写真が{n}枚そろっているので、撮影を省きました。撮りたいときは、下の一覧の「📷 撮る」を押してください。', en: '“{s}” already has {n} photos, so no photo was taken. To take one anyway, tap “📷 Take” in the list below.', id: '“{s}” sudah punya {n} foto, jadi tidak difoto. Jika ingin memotret, ketuk “📷 Foto” di daftar bawah.' },
+  photoOpt:  { ja: '📷 撮る', en: '📷 Take', id: '📷 Foto' },
   pendingN:  { ja: '送信待ち {n}', en: 'Sending {n}', id: 'Mengirim {n}' },
   sendFail:  { ja: 'まだ保存できていない記録があります。通信が戻ると自動で送ります。', en: 'Some records are not saved yet. They will be sent when the connection is back.', id: 'Ada data yang belum tersimpan. Akan dikirim saat koneksi kembali.' },
   sendErr:   { ja: 'シール {s} の記録は保存できませんでした：{m}', en: 'The record for sticker {s} could not be saved: {m}', id: 'Data stiker {s} tidak bisa disimpan: {m}' },
@@ -1567,7 +1568,10 @@ function symListHtml(list, mode) {
     const tags = (e.kind === '部品取り' ? `<span class="tag">${esc(t('donorTag'))}</span>` : '') +
       (e.photo ? (isPending(e.photo) ? `<span class="tag">${esc(t('hasPhoto'))}…</span>` : `<a class="tag" href="${esc(e.photo)}" target="_blank" rel="noopener">${esc(t('hasPhoto'))}</a>`) : '') +
       (e.isNew ? `<span class="tag new">${esc(t('isNew'))}</span>` : '');
-    const tail = mode === 'edit' ? `<button class="x" type="button" data-rm="${esc(e.symptom)}" aria-label="×">×</button>`
+    // 写真必須の症状で、写真がそろっていて撮らずに追加したものは、任意で撮れる
+    const opt = (mode === 'edit' && m && m.photo && !e.photo && state.adds.has(e.symptom) && !(state.unit && state.unit.batch))
+      ? `<button class="tag" type="button" data-shoot="${esc(e.symptom)}" style="cursor:pointer;border:1px solid var(--ink);background:#fff;font:inherit;font-size:13px">${esc(t('photoOpt'))}</button>` : '';
+    const tail = mode === 'edit' ? `${opt}<button class="x" type="button" data-rm="${esc(e.symptom)}" aria-label="×">×</button>`
       : mode === 'repair' ? `<input class="chk" type="checkbox" data-fix="${esc(e.symptom)}" ${state.repairSel.has(e.symptom) ? 'checked' : ''}>` : '';
     return `<li><span>${esc(e.symptom)}${sub(trSym(e.symptom) || (m && m.hy !== e.symptom ? m.hy : ''))}</span>${tags}${tail}</li>`;
   }).join('')}</ul>`;
@@ -1608,6 +1612,7 @@ function renderCat() {
     <button class="link" id="cancelBtn" type="button">${esc(t('cancel'))}</button>`;
   $app.querySelectorAll('[data-cat]').forEach(b => b.onclick = () => { state.cat = state.cats[Number(b.dataset.cat)].cat; state.screen = 'sym'; render(); window.scrollTo(0, 0); });
   $app.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => removeSymptom(b.dataset.rm));
+  $app.querySelectorAll('[data-shoot]').forEach(b => b.onclick = () => { state.photoFor = b.dataset.shoot; openCamera(); });   // 任意の写真
   document.getElementById('doneBtn').onclick = saveSymptoms;
   document.getElementById('cancelBtn').onclick = () => {
     resetEdit();
