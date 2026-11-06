@@ -290,6 +290,35 @@ const T = {
   moveSame:  { ja: '同じ看板です。移す先の看板を読み取ってください。', en: 'Same board. Scan the target board.', id: 'Papan sama. Pindai papan tujuan.' },
   moveAsk:   { ja: '{n}台を、{from} から {to}（{name}）へ移します。よろしいですか？', en: 'Move {n} units from {from} to {to} ({name})?', id: 'Pindahkan {n} unit dari {from} ke {to} ({name})?' },
   moveDone:  { ja: '{n}台を {to} へ移しました', en: 'Moved {n} units to {to}', id: '{n} unit dipindah ke {to}' },
+  modePick:  { ja: '🧺 ピッキング', en: '🧺 Picking', id: '🧺 Picking' },
+  pickNew:   { ja: '新しいピッキングを始める', en: 'Start a new picking', id: 'Mulai picking baru' },
+  pickDest:  { ja: '出荷先', en: 'Destination', id: 'Tujuan' },
+  pickDate:  { ja: 'ピッキング日（出荷日ではありません。出荷日は、出荷したときにSlackで決まります）', en: 'Picking date (not the ship date)', id: 'Tanggal picking (bukan tanggal kirim)' },
+  pickStart: { ja: 'はじめる', en: 'Start', id: 'Mulai' },
+  pickNeedDate:{ ja: 'ピッキング日を選んでください', en: 'Choose the picking date', id: 'Pilih tanggal picking' },
+  pickLists: { ja: '作業中・作ったピッキング', en: 'Picking lists', id: 'Daftar picking' },
+  pickRows:  { ja: '{r}行・{n}台', en: '{r} rows / {n} units', id: '{r} baris / {n} unit' },
+  pickOpen:  { ja: '開く', en: 'Open', id: 'Buka' },
+  pickMade:  { ja: 'ファイル作成済み：{f}', en: 'File made: {f}', id: 'File dibuat: {f}' },
+  pickTotal: { ja: '{r}行・合計{n}台', en: '{r} rows / {n} units', id: '{r} baris / {n} unit' },
+  pickScanBtn:{ ja: 'ピッキングした商品の看板のQRを読む', en: 'Scan the board of picked items', id: 'Pindai papan barang yang diambil' },
+  pickScanDesc:{ ja: '【{d} {s}】ピッキングした商品の看板（A看板・B・C・NG看板）のQRを読み取ってください', en: '[{d} {s}] Scan the board of picked items', id: '[{d} {s}] Pindai papan barang yang diambil' },
+  pickEmpty: { ja: 'まだ何も読んでいません。', en: 'Nothing scanned yet.', id: 'Belum ada yang dipindai.' },
+  pickDelAsk:{ ja: '「{s}」をリストから消しますか？', en: 'Remove “{s}” from the list?', id: 'Hapus “{s}” dari daftar?' },
+  pickMake:  { ja: '出荷依頼のファイルを作る', en: 'Make the shipping request file', id: 'Buat file permintaan kirim' },
+  pickMakeAsk:{ ja: '{r}行・合計{n}台で、出荷依頼のファイルを作ります。よろしいですか？', en: 'Make the file with {r} rows / {n} units?', id: 'Buat file dengan {r} baris / {n} unit?' },
+  pickMadeOk:{ ja: '出荷依頼フォルダに「{f}」を作りました（{r}行・{n}台）。\nSlackで「出荷依頼フォルダのファイルを、出荷予定にしてください」と送ってください。', en: 'Made “{f}” in the request folder ({r} rows / {n} units). Then send the request in Slack.', id: 'File “{f}” dibuat ({r} baris / {n} unit). Lalu kirim permintaan di Slack.' },
+  pickAfter: { ja: 'ファイルを作ったあとに商品を足したり消したりしたときは、もう一度「出荷依頼のファイルを作る」を押すと、作り直します。', en: 'If you change the list after making the file, make it again.', id: 'Jika daftar diubah, buat file lagi.' },
+  pickStock: { ja: '{g}品の在庫：{n}台', en: 'Stock ({g}): {n}', id: 'Stok ({g}): {n}' },
+  pickPrev:  { ja: '読み済み：{n}台（{w} {t}）。保存すると上書きします', en: 'Already scanned: {n} ({w} {t}). Saving overwrites.', id: 'Sudah dipindai: {n} ({w} {t}). Menyimpan akan menimpa.' },
+  pickNoStock:{ ja: 'このグレードの在庫がありません（出荷済み・出荷予定の可能性があります）。', en: 'No stock for this grade.', id: 'Tidak ada stok grade ini.' },
+  pickQty:   { ja: 'ピッキングした台数', en: 'Units picked', id: 'Jumlah diambil' },
+  pickQtyNote:{ ja: '全部を取ったときは、そのまま「保存」を押してください（在庫の台数が入っています）。', en: 'If you took all, just tap Save (stock count is filled in).', id: 'Jika diambil semua, langsung Simpan.' },
+  pickSave:  { ja: '保存して次の看板へ', en: 'Save and next board', id: 'Simpan dan papan berikutnya' },
+  pickNeedQty:{ ja: '台数を入れてください', en: 'Enter the number of units', id: 'Isi jumlah unit' },
+  pickTooMany:{ ja: '{g}品の在庫（{n}台）より多いです', en: 'More than stock ({g}: {n})', id: 'Lebih dari stok ({g}: {n})' },
+  pickPartAsk:{ ja: '在庫{n}台のうち{q}台だけを取ります。よろしいですか？\n（Slackの出荷予定の登録は、キーの台数が全部でないと登録できません）', en: 'Take only {q} of {n}? (Slack registration needs the whole key)', id: 'Ambil {q} dari {n}? (Slack perlu seluruh kunci)' },
+  pickSaved: { ja: '{s}：{n}台を保存しました。次の看板を読み取ってください', en: 'Saved {s}: {n}. Scan the next board', id: '{s}: {n} tersimpan. Pindai papan berikutnya' },
   modeGrade: { ja: '🔀 グレーディングを変える', en: '🔀 Change grades', id: '🔀 Ubah grade' },
   modeSlip:  { ja: '🏷 不具合看板を出す', en: '🏷 Print defect boards', id: '🏷 Cetak papan cacat' },
   gradeScanDesc:{ ja: 'グレーディングを変える看板のQRを読み取ってください', en: 'Scan the board QR to change grades', id: 'Pindai QR papan untuk mengubah grade' },
@@ -617,6 +646,10 @@ let scanPurpose = 'any';
 function handleCode(code) {
   if (!code) return alert(t('qrFail'));
   if (code.type === 'ec') { toast(t('ecMove')); location.href = 'index.html?no=' + encodeURIComponent(code.no); return; }
+  if (scanPurpose === 'pick') {
+    if (code.type !== 'board') { alert(t('qrWrong')); return pickScan(); }
+    return openPickItem(code.id, code.g || 'A');
+  }
   if (scanPurpose === 'moveTo') {
     if (code.type !== 'board') { alert(t('qrWrong')); state.screen = 'gradeBoard'; return render(); }
     return moveToBoard(code.id);
@@ -1017,6 +1050,8 @@ function renderHeader() {
   if (state.unit && ['unit', 'cat', 'sym', 'mark', 'grade', 'repair', 'camera'].includes(S)) {
     const nm = (state.unit.board && state.unit.board.name) || state.unit.name || '';
     left = `<span class="pill id">${esc(state.unit.seal)}</span>${nm ? `<span class="pill name">${esc(nm)}</span>` : ''}`;
+  } else if (state.pick && state.pick.sel && (S === 'pick' || S === 'pickItem')) {
+    left = `<span class="pill id">${esc(state.pick.sel.date)}</span><span class="pill name">${esc(state.pick.sel.dest)}</span>`;
   } else if (state.board && (S === 'gradeBoard' || S === 'gradeMany')) {
     left = `<span class="pill id">${esc(state.board.id)}</span><span class="pill name">${esc(state.board.name || '')}</span>`;
   } else if (state.ship && state.ship.sel && (S === 'ship' || S === 'shipItem')) {
@@ -1051,7 +1086,8 @@ function render() {
               grade: renderGrade, repair: renderRepair, photo: renderSym, stock: renderStock, gradeMany: renderGradeMany, spec: renderSpec,
               shipList: renderShipList, ship: renderShip, shipItem: renderShipItem,
               batchCount: renderBatchCount, batch: renderBatch,
-              gradeBoard: renderGradeBoard, slipList: renderSlipList, slipPrint: renderSlipPrint };
+              gradeBoard: renderGradeBoard, slipList: renderSlipList, slipPrint: renderSlipPrint,
+              pickLists: renderPickLists, pick: renderPick, pickItem: renderPickItem };
   (R[S] || renderHome)();
   addNavBar(S);
 }
@@ -1085,6 +1121,9 @@ function goBack() {
   else if (S === 'grade' || S === 'repair') { resetEdit(); state.screen = 'unit'; }
   else if (S === 'gradeMany') { state.grpEdit = null; state.screen = 'gradeBoard'; }
   else if (S === 'gradeBoard') { state.screen = 'home'; }
+  else if (S === 'pickLists') { state.pick = null; state.screen = 'home'; }
+  else if (S === 'pick') { openPickLists(); return; }
+  else if (S === 'pickItem') { state.pick.item = null; state.screen = 'pick'; }
   else if (S === 'slipList') { state.slip = null; state.screen = 'home'; }
   else if (S === 'slipPrint') { state.screen = 'slipList'; }
   else if (S === 'spec') { state.spec = null; state.screen = 'home'; }
@@ -1101,7 +1140,7 @@ function goHome() {
   if (NAV_EDITING.includes(S) && hasUnsaved() && !confirm(t('leaveAsk'))) return;
   stopCamera();
   resetEdit();
-  state.spec = null; state.stock = null; state.grpEdit = null; state.ship = null; state.batch = null; state.slip = null;
+  state.spec = null; state.stock = null; state.grpEdit = null; state.ship = null; state.batch = null; state.slip = null; state.pick = null;
   scanPurpose = 'any'; scanBack = 'home';
   state.screen = 'home';
   render(); window.scrollTo(0, 0);
@@ -1157,6 +1196,7 @@ function renderHome() {
       <button class="primary" id="gradeBtn" type="button">${esc(t('modeGrade'))}</button>
       <button class="primary" id="slipListBtn" type="button">${esc(t('modeSlip'))}</button>
       <button class="primary" id="stockBtn" type="button">${esc(t('modeStock'))}</button>
+      <button class="primary" id="pickBtn" type="button">${esc(t('modePick'))}</button>
       <button class="primary" id="shipBtn" type="button">${esc(t('modeShip'))}</button>
     </div></div>
     <div class="card"><label class="field" for="idInput">${esc(t('typeOpen'))}</label>
@@ -1166,6 +1206,7 @@ function renderHome() {
   document.getElementById('scanBtn').onclick = () => { scanPurpose = 'any'; scanBack = 'home'; openScanner(); };
   document.getElementById('specBtn').onclick = () => { scanPurpose = 'spec'; scanBack = 'home'; openScanner(t('specScan')); };
   document.getElementById('shipBtn').onclick = openShipList;
+  document.getElementById('pickBtn').onclick = openPickLists;
   document.getElementById('gradeBtn').onclick = gradeScan;
   document.getElementById('slipListBtn').onclick = () => { state.slip = null; openSlipList(); };
   document.getElementById('stockBtn').onclick = () => { scanPurpose = 'stock'; scanBack = 'home'; openScanner(t('stockScan')); };
@@ -1210,6 +1251,106 @@ function renderGradeBoard() {
     state.grpEdit = g; state.grade = g.grade; state.screen = 'gradeMany'; render(); window.scrollTo(0, 0);
   });
   document.getElementById('gradeNext').onclick = gradeScan;
+}
+
+// ===============================================================
+// 🧺 ピッキング：出荷先＋出荷日を選ぶ → ピッキングした商品の看板を読む（台数は在庫数が最初から入る）
+//   → 出荷依頼のファイルを作る → Slackで「出荷依頼フォルダのファイルを、出荷予定にしてください」
+// ===============================================================
+function pickToday() { const d = new Date(); return d.getFullYear() + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + String(d.getDate()).padStart(2, '0'); }
+async function openPickLists() {
+  try {
+    const r = await call('kPickLists', [state.deviceId], 'loading');
+    state.pick = { lists: r.lists || [], dests: r.dests || [], sel: null, items: [], item: null, newDest: '', newDate: pickToday() };
+    state.screen = 'pickLists'; render(); window.scrollTo(0, 0);
+  } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); state.screen = 'home'; render(); }
+}
+function renderPickLists() {
+  const p = state.pick;
+  $app.innerHTML = `<div class="card"><p class="big">${esc(t('pickNew'))}</p>
+      <p class="note">${esc(t('pickDest'))}</p>
+      <div class="grades">${p.dests.map(d => `<button class="secondary${p.newDest === d ? ' cur' : ''}" type="button" data-pd="${esc(d)}">${esc(d)}</button>`).join('')}</div>
+      <label class="field" for="pickDate">${esc(t('pickDate'))}</label>
+      <input type="date" id="pickDate" value="${esc(p.newDate.replace(/\//g, '-'))}" style="width:100%;font:inherit;font-size:20px;padding:10px;border:1px solid var(--ink);border-radius:10px">
+      <div class="actions"><button class="primary" id="pickStart" type="button" ${p.newDest ? '' : 'disabled'}>${esc(t('pickStart'))}</button></div></div>
+    ${p.lists.length ? `<h2>${esc(t('pickLists'))}</h2><ul class="grp">${p.lists.map((x, i) => `<li><span class="gs"><b>${esc(x.date)}</b>　${esc(x.dest)}${x.file ? '<br><span class="note">' + esc(t('pickMade', { f: x.file })) + '</span>' : ''}</span>
+      <span class="gn">${esc(t('pickRows', { r: x.lines, n: x.qty }))}</span><button class="secondary" type="button" data-pl="${i}">${esc(t('pickOpen'))}</button></li>`).join('')}</ul>` : ''}`;
+  $app.querySelectorAll('[data-pd]').forEach(b => b.onclick = () => { p.newDest = b.dataset.pd; p.newDate = (document.getElementById('pickDate').value || '').replace(/-/g, '/') || p.newDate; render(); });
+  document.getElementById('pickDate').onchange = e => { p.newDate = (e.target.value || '').replace(/-/g, '/'); };
+  document.getElementById('pickStart').onclick = () => {
+    const d = (document.getElementById('pickDate').value || '').replace(/-/g, '/');
+    if (!/^\d{4}\/\d{2}\/\d{2}$/.test(d)) return alert(t('pickNeedDate'));
+    openPick(p.newDest, d);
+  };
+  $app.querySelectorAll('[data-pl]').forEach(b => b.onclick = () => { const x = p.lists[Number(b.dataset.pl)]; openPick(x.dest, x.date); });
+}
+async function openPick(dest, date) {
+  try {
+    const r = await call('kPickLoad', [state.deviceId, dest, date], 'loading');
+    state.pick.sel = { dest: dest, date: date }; state.pick.items = r.items || [];
+    state.screen = 'pick'; render(); window.scrollTo(0, 0);
+  } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); }
+}
+function renderPick() {
+  const p = state.pick, sel = p.sel;
+  const total = p.items.reduce((s, x) => s + x.qty, 0);
+  $app.innerHTML = `<div class="card"><p class="big">${esc(sel.date)}　${esc(sel.dest)}</p>
+      <p class="note">${esc(t('pickTotal', { r: p.items.length, n: total }))}</p></div>
+    <div class="actions"><button class="primary" id="pickScan" type="button">${esc(t('pickScanBtn'))}</button></div>
+    ${p.items.length ? `<ul class="spec">${p.items.map((x, i) => `<li><div class="sh" style="cursor:default"><span class="sl">${esc(x.name)}　<span class="grade ${esc(x.grade)}" style="font-size:14px;padding:2px 8px">${esc(x.grade)}</span><br><span class="note" style="font-weight:400">${esc(x.board)}　${esc(x.by)} ${esc(x.at)}</span></span>
+      <span class="gn">${esc(t('slipN', { n: x.qty }))}</span><button class="secondary" type="button" data-pdel="${i}">×</button></div></li>`).join('')}</ul>` : `<p class="note">${esc(t('pickEmpty'))}</p>`}
+    <div class="actions"><button class="primary" id="pickMake" type="button" ${p.items.length ? '' : 'disabled'}>${esc(t('pickMake'))}</button></div>
+    <p class="note">${esc(t('pickAfter'))}</p>`;
+  document.getElementById('pickScan').onclick = pickScan;
+  $app.querySelectorAll('[data-pdel]').forEach(b => b.onclick = async () => {
+    const x = p.items[Number(b.dataset.pdel)];
+    if (!confirm(t('pickDelAsk', { s: x.name + ' ' + x.grade }))) return;
+    try { const r = await call('kPickDelete', [state.deviceId, sel.dest, sel.date, x.key, x.grade], 'saving'); p.items = r.items || []; render(); }
+    catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
+  });
+  document.getElementById('pickMake').onclick = async () => {
+    if (!confirm(t('pickMakeAsk', { r: p.items.length, n: total }))) return;
+    try {
+      const r = await call('kPickMakeFile', [state.deviceId, sel.dest, sel.date], 'saving');
+      alert(t('pickMadeOk', { f: r.name, r: r.lines, n: r.qty }));
+      openPick(sel.dest, sel.date);
+    } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
+  };
+}
+function pickScan() { scanPurpose = 'pick'; scanBack = 'pick'; openScanner(t('pickScanDesc', { d: state.pick.sel.date, s: state.pick.sel.dest })); }
+async function openPickItem(boardId, grade) {
+  const sel = state.pick.sel;
+  try {
+    const r = await call('kPickLookup', [state.deviceId, sel.dest, sel.date, boardId, grade], 'loading');
+    state.pick.item = { info: r, qty: String(r.prev ? r.prev.qty : r.stock) };   // ふつうは全部を取るので、在庫数を最初から入れる
+    state.screen = 'pickItem'; render(); window.scrollTo(0, 0);
+  } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); pickScan(); }
+}
+function renderPickItem() {
+  const it = state.pick.item, r = it.info;
+  $app.innerHTML = `<div class="card"><p class="big">${esc(r.inv.name || r.board.name)}　<span class="grade ${esc(r.grade)}">${esc(r.grade)}</span></p>
+      <p class="note">${esc(r.board.id)}　${esc(r.inv.date)}　${esc(r.inv.supplier)}</p>
+      <p class="note">${esc(t('pickStock', { g: r.grade, n: r.stock }))}</p>
+      ${r.prev ? `<p class="warn">${esc(t('pickPrev', { n: r.prev.qty, w: r.prev.by, t: r.prev.at }))}</p>` : ''}
+      ${r.stock === 0 ? `<p class="warn">${esc(t('pickNoStock'))}</p>` : ''}</div>
+    <div class="card"><label class="field" for="pickQty">${esc(t('pickQty'))}</label>
+      <input type="number" id="pickQty" inputmode="numeric" min="1" value="${esc(it.qty)}" style="width:100%;font:inherit;font-size:28px;padding:12px;border:1px solid var(--ink);border-radius:10px">
+      <p class="note">${esc(t('pickQtyNote'))}</p></div>
+    <div class="actions"><button class="primary" id="pickSave" type="button" ${r.stock === 0 ? 'disabled' : ''}>${esc(t('pickSave'))}</button></div>`;
+  document.getElementById('pickQty').oninput = e => { it.qty = e.target.value; };
+  document.getElementById('pickSave').onclick = async () => {
+    const q = Math.floor(Number(it.qty) || 0);
+    if (q <= 0) return alert(t('pickNeedQty'));
+    if (q > r.stock) return alert(t('pickTooMany', { g: r.grade, n: r.stock }));
+    if (q < r.stock && !confirm(t('pickPartAsk', { q: q, n: r.stock }))) return;
+    const sel = state.pick.sel;
+    try {
+      const res = await call('kPickSave', [state.deviceId, sel.dest, sel.date, r.board.id, r.grade, q], 'saving');
+      state.pick.items = res.items || []; state.pick.item = null;
+      toast(t('pickSaved', { s: (r.inv.name || r.board.name) + ' ' + r.grade, n: q }));
+      pickScan();   // そのまま次の看板を読む
+    } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
+  };
 }
 
 // ===============================================================
