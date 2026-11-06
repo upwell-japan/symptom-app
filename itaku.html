@@ -41,6 +41,33 @@ h2{font-size:18px;font-weight:700;margin:16px 0 10px}
 .primary{background:var(--ink);color:#fff;border:0}
 .primary:disabled{opacity:.45}
 .secondary{background:#fff;color:var(--ink);border:1px solid var(--ink)}
+.printarea{display:flex;flex-direction:column;gap:10px;align-items:flex-start;overflow-x:auto}
+.sheet{width:210mm;height:148mm;background:#fff;color:#000;position:relative;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.25);flex:none}
+.sheet .in{position:absolute;left:12.7mm;top:7mm;width:184.9mm}
+.sheet .head{display:flex;height:27.3mm;align-items:center;font-size:28pt;font-weight:700;white-space:nowrap}
+.sheet .head .l{width:94.7mm;overflow:hidden}
+.sheet .head .r{width:90.2mm;overflow:hidden}
+.sheet .mid{display:flex;height:37.2mm;border-top:1mm dashed #000}
+.sheet .mid .g{width:71.2mm;display:flex;align-items:center;justify-content:center;font-size:60pt;font-weight:700;line-height:1}
+.sheet .mid .m{width:113.7mm;display:flex;align-items:center;font-size:18pt;font-weight:700;line-height:1.25;overflow:hidden;word-break:break-all}
+.sheet table.tb{border-collapse:collapse;table-layout:fixed;width:184.7mm}
+.sheet table.tb td{border:0.5mm solid #000;padding:0;text-align:center;vertical-align:middle;overflow:hidden}
+.sheet table.tb .lab{color:#b4b4b4;font-weight:700;font-size:10.5pt}
+.sheet table.tb .id{font-size:20pt;font-weight:700;letter-spacing:.02em}
+.sheet table.tb .cnt{font-size:28pt;font-weight:700}
+.sheet table.tb tr.r1{height:35.3mm}
+.sheet table.tb tr.r2{height:21.3mm}
+.sheet table.tb .qr svg{width:32mm;height:32mm;display:block;margin:0 auto}
+@media print{
+  @page{size:210mm 148mm;margin:0}
+  body.printing > *{display:none!important}
+  body.printing{background:#fff;margin:0;padding:0}
+  body.printing #app{display:block!important;padding:0;margin:0;max-width:none}
+  body.printing #app > *{display:none!important}
+  body.printing #app > #printArea{display:block!important;overflow:visible}
+  body.printing .sheet{box-shadow:none;height:147mm;break-after:page;page-break-after:always}
+  body.printing .sheet:last-child{break-after:auto;page-break-after:auto}
+}
 .sealbar{background:var(--amber-soft);border:3px solid var(--amber);border-radius:12px;padding:8px 12px;margin:0 0 10px;text-align:center}
 .sealbar .lb{font-size:13px;color:var(--ink2);font-weight:700}
 .sealbar .no{font-size:34px;font-weight:700;letter-spacing:.06em;line-height:1.25;font-variant-numeric:tabular-nums;word-break:break-all}
@@ -254,6 +281,34 @@ const T = {
   toBoard:   { ja: 'この台の看板を開く', en: 'Open this board', id: 'Buka papan ini' },
   modeSym:   { ja: '🔍 症状を入力する', en: '🔍 Enter defects', id: '🔍 Input cacat' },
   modeSpec:  { ja: '📝 スペックを入力する', en: '📝 Enter specs', id: '📝 Input spesifikasi' },
+  boardRetired:{ ja: '看板 {id} は使われていない看板です（案件管理で消されました）。正しい看板のQRを読み取ってください。', en: 'Board {id} is no longer used (removed in the case file). Scan the correct board.', id: 'Papan {id} tidak dipakai lagi (dihapus). Pindai papan yang benar.' },
+  retiredNote:{ ja: 'この看板は使われていません（案件管理で消されました）。登録されている台は、下の「台を別の看板へ移す」で、正しい看板へ移してください。', en: 'This board is no longer used. Move its units to the correct board below.', id: 'Papan ini tidak dipakai lagi. Pindahkan unitnya ke papan yang benar di bawah.' },
+  moveTitle: { ja: '台を別の看板へ移す', en: 'Move units to another board', id: 'Pindahkan unit ke papan lain' },
+  moveDesc:  { ja: '間違った看板で登録した台を選んで、正しい看板へ移します。', en: 'Choose units registered on the wrong board and move them.', id: 'Pilih unit yang terdaftar di papan salah, lalu pindahkan.' },
+  moveBtn:   { ja: '選んだ台を移す（{n}台）→ 移す先の看板のQRを読む', en: 'Move selected ({n}) → scan the target board', id: 'Pindahkan ({n}) → pindai papan tujuan' },
+  moveScan:  { ja: '{n}台を移す先の看板のQRを読み取ってください', en: 'Scan the board to move {n} units to', id: 'Pindai papan tujuan untuk {n} unit' },
+  moveSame:  { ja: '同じ看板です。移す先の看板を読み取ってください。', en: 'Same board. Scan the target board.', id: 'Papan sama. Pindai papan tujuan.' },
+  moveAsk:   { ja: '{n}台を、{from} から {to}（{name}）へ移します。よろしいですか？', en: 'Move {n} units from {from} to {to} ({name})?', id: 'Pindahkan {n} unit dari {from} ke {to} ({name})?' },
+  moveDone:  { ja: '{n}台を {to} へ移しました', en: 'Moved {n} units to {to}', id: '{n} unit dipindah ke {to}' },
+  modeGrade: { ja: '🔀 グレーディングを変える', en: '🔀 Change grades', id: '🔀 Ubah grade' },
+  modeSlip:  { ja: '🏷 不具合看板を出す', en: '🏷 Print defect boards', id: '🏷 Cetak papan cacat' },
+  gradeScanDesc:{ ja: 'グレーディングを変える看板のQRを読み取ってください', en: 'Scan the board QR to change grades', id: 'Pindai QR papan untuk mengubah grade' },
+  gradeNext: { ja: '次の看板のQRを読む', en: 'Scan the next board', id: 'Pindai papan berikutnya' },
+  slipTitle: { ja: '不具合看板（B・C・NG看板）を出す', en: 'Print defect boards (B / C / NG)', id: 'Cetak papan cacat (B / C / NG)' },
+  slipDesc:  { ja: 'まだ出していない看板だけを出しています。出したい看板にチェックを付けて、印刷してください。', en: 'Only boards not printed yet are shown. Check the ones to print.', id: 'Hanya papan yang belum dicetak. Centang yang akan dicetak.' },
+  slipQ:     { ja: 'しぼり込み（看板ID・品名の一部）', en: 'Filter (board ID or model)', id: 'Saring (ID papan atau model)' },
+  slipAll:   { ja: '出した看板も表示する（刷り直し）', en: 'Also show printed boards (reprint)', id: 'Tampilkan juga yang sudah dicetak' },
+  slipLoad:  { ja: '表示する', en: 'Show', id: 'Tampilkan' },
+  slipN:     { ja: '{n}台', en: '{n} units', id: '{n} unit' },
+  slipIssued:{ ja: '出した：{n}台 {t}', en: 'printed: {n} {t}', id: 'dicetak: {n} {t}' },
+  slipNone:  { ja: '出す看板はありません。', en: 'No boards to print.', id: 'Tidak ada papan untuk dicetak.' },
+  slipPrint: { ja: '選んだ看板を印刷する（{n}枚）', en: 'Print selected ({n})', id: 'Cetak yang dipilih ({n})' },
+  slipPrintTitle:{ ja: '不具合看板 {n}枚', en: '{n} defect boards', id: '{n} papan cacat' },
+  slipPrintNote:{ ja: '印刷の画面で、用紙は「A5」・向きは「横」・倍率は「100%」にしてください。印刷できたら「発行済みにする」を押してください。', en: 'Use A5 landscape at 100%. After printing, tap “Mark as printed”.', id: 'Pakai A5 lanskap 100%. Setelah dicetak, ketuk “Tandai sudah dicetak”.' },
+  slipDoPrint:{ ja: '印刷する', en: 'Print', id: 'Cetak' },
+  slipDone:  { ja: '印刷できたので「発行済み」にする', en: 'Mark as printed', id: 'Tandai sudah dicetak' },
+  slipDoneAsk:{ ja: '{n}枚を「発行済み」にします。全部きれいに印刷できましたか？', en: 'Mark {n} as printed?', id: 'Tandai {n} sudah dicetak?' },
+  slipDoneOk:{ ja: '{n}枚を発行済みにしました', en: 'Marked {n} as printed', id: '{n} ditandai sudah dicetak' },
   modeShip:  { ja: '🚚 出荷の確認', en: '🚚 Shipment check', id: '🚚 Cek pengiriman' },
   shipPick:  { ja: '確認する出荷を選んでください', en: 'Choose the shipment to check', id: 'Pilih pengiriman yang dicek' },
   shipPickNote:{ ja: '在庫リストの出荷予定・荷造済の行を、出荷日と出荷先ごとにまとめています。', en: 'Planned and packed shipments in the stock list, grouped by date and destination.', id: 'Rencana kirim di daftar stok, dikelompokkan per tanggal dan tujuan.' },
@@ -562,6 +617,14 @@ let scanPurpose = 'any';
 function handleCode(code) {
   if (!code) return alert(t('qrFail'));
   if (code.type === 'ec') { toast(t('ecMove')); location.href = 'index.html?no=' + encodeURIComponent(code.no); return; }
+  if (scanPurpose === 'moveTo') {
+    if (code.type !== 'board') { alert(t('qrWrong')); state.screen = 'gradeBoard'; return render(); }
+    return moveToBoard(code.id);
+  }
+  if (scanPurpose === 'grade') {
+    if (code.type !== 'board') { alert(t('qrWrong')); return gradeScan(); }
+    return openGradeBoard(code.id);
+  }
   if (scanPurpose === 'ship') {
     if (code.type !== 'board') { alert(t('qrWrong')); return shipScan(); }
     return openShipItem(code.id, code.g || 'A');
@@ -630,6 +693,7 @@ function scanSealForBoard() {
 async function openBoard(id, scanNext) {
   try {
     const r = await call('kLoadBoard', [state.deviceId, normId(id)], 'loading');
+    if (r.board && r.board.retired) { alert(t('boardRetired', { id: r.board.id })); state.screen = 'home'; render(); return; }
     state.board = r.board; state.boardUnits = r.units || [];
     checkSealEpoch(r.sealEpoch);
     const pc = r.photoCounts || {};
@@ -953,6 +1017,8 @@ function renderHeader() {
   if (state.unit && ['unit', 'cat', 'sym', 'mark', 'grade', 'repair', 'camera'].includes(S)) {
     const nm = (state.unit.board && state.unit.board.name) || state.unit.name || '';
     left = `<span class="pill id">${esc(state.unit.seal)}</span>${nm ? `<span class="pill name">${esc(nm)}</span>` : ''}`;
+  } else if (state.board && (S === 'gradeBoard' || S === 'gradeMany')) {
+    left = `<span class="pill id">${esc(state.board.id)}</span><span class="pill name">${esc(state.board.name || '')}</span>`;
   } else if (state.ship && state.ship.sel && (S === 'ship' || S === 'shipItem')) {
     left = `<span class="pill id">${esc(state.ship.sel.date)}</span><span class="pill name">${esc(state.ship.sel.dest)}</span>`;
   } else if (state.spec && S === 'spec') {
@@ -984,7 +1050,8 @@ function render() {
               board: renderBoard, unit: renderUnit, cat: renderCat, sym: renderSym, mark: renderMark,
               grade: renderGrade, repair: renderRepair, photo: renderSym, stock: renderStock, gradeMany: renderGradeMany, spec: renderSpec,
               shipList: renderShipList, ship: renderShip, shipItem: renderShipItem,
-              batchCount: renderBatchCount, batch: renderBatch };
+              batchCount: renderBatchCount, batch: renderBatch,
+              gradeBoard: renderGradeBoard, slipList: renderSlipList, slipPrint: renderSlipPrint };
   (R[S] || renderHome)();
   addNavBar(S);
 }
@@ -1016,7 +1083,10 @@ function goBack() {
   else if (S === 'sym' || S === 'photo') { state.screen = 'cat'; }
   else if (S === 'mark') { state.screen = 'sym'; }
   else if (S === 'grade' || S === 'repair') { resetEdit(); state.screen = 'unit'; }
-  else if (S === 'gradeMany') { state.grpEdit = null; state.screen = 'board'; }
+  else if (S === 'gradeMany') { state.grpEdit = null; state.screen = 'gradeBoard'; }
+  else if (S === 'gradeBoard') { state.screen = 'home'; }
+  else if (S === 'slipList') { state.slip = null; state.screen = 'home'; }
+  else if (S === 'slipPrint') { state.screen = 'slipList'; }
   else if (S === 'spec') { state.spec = null; state.screen = 'home'; }
   else if (S === 'stock') { state.stock = null; state.screen = 'home'; }
   else if (S === 'batchCount' || S === 'batch') { state.batch = null; state.screen = 'board'; }
@@ -1031,7 +1101,7 @@ function goHome() {
   if (NAV_EDITING.includes(S) && hasUnsaved() && !confirm(t('leaveAsk'))) return;
   stopCamera();
   resetEdit();
-  state.spec = null; state.stock = null; state.grpEdit = null; state.ship = null; state.batch = null;
+  state.spec = null; state.stock = null; state.grpEdit = null; state.ship = null; state.batch = null; state.slip = null;
   scanPurpose = 'any'; scanBack = 'home';
   state.screen = 'home';
   render(); window.scrollTo(0, 0);
@@ -1084,6 +1154,8 @@ function renderHome() {
     <div class="modes">
       <button class="primary" id="scanBtn" type="button">${esc(t('modeSym'))}</button>
       <button class="primary" id="specBtn" type="button">${esc(t('modeSpec'))}</button>
+      <button class="primary" id="gradeBtn" type="button">${esc(t('modeGrade'))}</button>
+      <button class="primary" id="slipListBtn" type="button">${esc(t('modeSlip'))}</button>
       <button class="primary" id="stockBtn" type="button">${esc(t('modeStock'))}</button>
       <button class="primary" id="shipBtn" type="button">${esc(t('modeShip'))}</button>
     </div></div>
@@ -1094,6 +1166,8 @@ function renderHome() {
   document.getElementById('scanBtn').onclick = () => { scanPurpose = 'any'; scanBack = 'home'; openScanner(); };
   document.getElementById('specBtn').onclick = () => { scanPurpose = 'spec'; scanBack = 'home'; openScanner(t('specScan')); };
   document.getElementById('shipBtn').onclick = openShipList;
+  document.getElementById('gradeBtn').onclick = gradeScan;
+  document.getElementById('slipListBtn').onclick = () => { state.slip = null; openSlipList(); };
   document.getElementById('stockBtn').onclick = () => { scanPurpose = 'stock'; scanBack = 'home'; openScanner(t('stockScan')); };
   document.getElementById('openBtn').onclick = () => {
     const code = parseCode(document.getElementById('idInput').value);
@@ -1107,6 +1181,162 @@ function gradeHtml(u) {
   const who = u.sales ? t('gradeSales') : t('gradeAuto');
   return `<p class="note">${esc(t('gradeNow'))}　<span class="grade ${esc(g)}">${esc(g)}</span>　<small>（${esc(who)}）</small></p>
     ${u.recheck ? `<p class="warn">${esc(t('recheck'))}</p>` : ''}`;
+}
+
+// ===============================================================
+// 🔀 グレーディングを変える：看板のQR → 分類と症状のまとまり → まとめて分類を変える
+//   シールの番号は配らない（症状の入力の画面を通らない）
+// ===============================================================
+async function openGradeBoard(id) {
+  if (!state.board || normId(id) !== state.board.id) state.moveSel = new Set();
+  try {
+    const r = await call('kLoadBoard', [state.deviceId, normId(id)], 'loading');
+    state.board = r.board; state.boardUnits = r.units || [];
+    checkSealEpoch(r.sealEpoch);
+    state.screen = 'gradeBoard'; render(); window.scrollTo(0, 0);
+  } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); gradeScan(); }
+}
+function gradeScan() { scanPurpose = 'grade'; scanBack = 'home'; openScanner(t('gradeScanDesc')); }
+function renderGradeBoard() {
+  const b = state.board, units = state.boardUnits || [];
+  $app.innerHTML = `<div class="card"><p class="big">${esc(b.name || b.id)}</p><p class="note">${esc(b.id)}</p>
+      ${b.missing ? `<p class="warn">${esc(t('boardMissing'))}</p>` : ''}${b.retired ? `<p class="warn">${esc(t('retiredNote'))}</p>` : ''}</div>
+    ${b.retired ? '' : (boardGroupsHtml(units) || `<p class="note">${esc(t('noUnits'))}</p>`)}
+    ${moveSectionHtml(units.filter(u => u.sym !== undefined))}
+    <div class="actions"><button class="primary" id="gradeNext" type="button">${esc(t('gradeNext'))}</button></div>`;
+  bindMoveSection();
+  $app.querySelectorAll('[data-grp]').forEach(btn => btn.onclick = () => {
+    const g = state.boardGroups[Number(btn.dataset.grp)];
+    state.grpEdit = g; state.grade = g.grade; state.screen = 'gradeMany'; render(); window.scrollTo(0, 0);
+  });
+  document.getElementById('gradeNext').onclick = gradeScan;
+}
+
+// ===============================================================
+// 台を別の看板へ移す（グレーディングを変えるの画面から）
+//   間違った看板（案件管理で消した看板など）で登録した台を、正しい看板へ移す
+// ===============================================================
+function moveSectionHtml(units) {
+  if (!units.length) return '';
+  const sel = state.moveSel || (state.moveSel = new Set());
+  return `<h2>${esc(t('moveTitle'))}</h2><p class="note">${esc(t('moveDesc'))}</p>
+    <ul class="spec">${units.map(u => `<li><label class="sh" style="gap:12px"><input type="checkbox" data-mv="${esc(u.seal)}" ${sel.has(u.seal) ? 'checked' : ''} style="width:24px;height:24px">
+      <span class="sl">${esc(u.seal)}　<span class="grade ${esc(u.grade)}" style="font-size:14px;padding:2px 8px">${esc(u.grade)}</span></span>
+      <span class="note">${esc(u.sym || '')}</span></label></li>`).join('')}</ul>
+    <div class="actions"><button class="secondary" id="moveBtn" type="button" ${sel.size ? '' : 'disabled'}>${esc(t('moveBtn', { n: sel.size }))}</button></div>`;
+}
+function bindMoveSection() {
+  $app.querySelectorAll('[data-mv]').forEach(c => c.onchange = () => {
+    if (c.checked) state.moveSel.add(c.dataset.mv); else state.moveSel.delete(c.dataset.mv);
+    const b = document.getElementById('moveBtn');
+    if (b) { b.disabled = !state.moveSel.size; b.textContent = t('moveBtn', { n: state.moveSel.size }); }
+  });
+  const mb = document.getElementById('moveBtn');
+  if (mb) mb.onclick = () => { scanPurpose = 'moveTo'; scanBack = 'gradeBoard'; openScanner(t('moveScan', { n: state.moveSel.size })); };
+}
+async function moveToBoard(toId) {
+  const from = state.board, seals = [...(state.moveSel || [])];
+  toId = normId(toId);
+  if (!seals.length) { state.screen = 'gradeBoard'; return render(); }
+  if (toId === from.id) { alert(t('moveSame')); state.screen = 'gradeBoard'; return render(); }
+  try {
+    const r = await call('kLoadBoard', [state.deviceId, toId], 'loading');
+    if (r.board.missing) { alert(t('boardMissing')); state.screen = 'gradeBoard'; return render(); }
+    if (r.board.retired) { alert(t('boardRetired', { id: toId })); state.screen = 'gradeBoard'; return render(); }
+    if (!confirm(t('moveAsk', { n: seals.length, from: from.id, to: toId, name: r.board.name || '' }))) { state.screen = 'gradeBoard'; return render(); }
+    const res = await call('kMoveUnits', [state.deviceId, seals, toId], 'saving');
+    toast(t('moveDone', { n: res.moved, to: toId }));
+    state.moveSel = new Set();
+    openGradeBoard(from.id);
+  } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); state.screen = 'gradeBoard'; render(); }
+}
+
+// ===============================================================
+// 🏷 不具合看板を出す：B・C・NGの台がある看板のうち、まだ出していない「看板ID×グレード」を一覧にして、まとめて印刷する
+//   出したあとに数が変わっても、もう一度は出さない（看板の数は手書きで直す決まり）
+// ===============================================================
+async function openSlipList() {
+  const sl = state.slip || { q: '', all: false, sel: {} };
+  try {
+    const list = await call('kSlipList', [state.deviceId, { q: sl.q, all: sl.all }], 'loading');
+    state.slip = { q: sl.q, all: sl.all, sel: {}, list: list };
+    state.screen = 'slipList'; render(); window.scrollTo(0, 0);
+  } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); state.screen = 'home'; render(); }
+}
+function slipKey(id, g) { return id + '\t' + g; }
+function renderSlipList() {
+  const sl = state.slip, list = sl.list || [];
+  const nSel = Object.keys(sl.sel).length;
+  $app.innerHTML = `<div class="card"><p class="big">${esc(t('slipTitle'))}</p><p class="note">${esc(t('slipDesc'))}</p>
+      <label class="field" for="slipQ">${esc(t('slipQ'))}</label>
+      <input type="text" id="slipQ" value="${esc(sl.q)}" placeholder="261027SS" autocapitalize="characters">
+      <label class="note" style="display:flex;gap:8px;align-items:center;margin-top:8px"><input type="checkbox" id="slipAll" ${sl.all ? 'checked' : ''} style="width:22px;height:22px"> ${esc(t('slipAll'))}</label>
+      <div class="actions"><button class="secondary" id="slipLoad" type="button">${esc(t('slipLoad'))}</button></div></div>
+    ${list.length ? `<ul class="spec">${list.map((b, i) => `<li><div class="sh" style="cursor:default"><span class="sl">${esc(b.name || b.id)}<br><span class="note" style="font-weight:400">${esc(b.id)}</span></span></div>
+      <div class="sb">${b.grades.map(g => `<label class="secondary" style="display:flex;align-items:center;gap:8px;border:1px solid var(--ink);border-radius:10px;padding:8px 12px;min-height:48px">
+        <input type="checkbox" data-sk="${esc(slipKey(b.id, g.grade))}" ${sl.sel[slipKey(b.id, g.grade)] ? 'checked' : ''} style="width:22px;height:22px">
+        <b>${esc(g.grade)}</b> ${esc(t('slipN', { n: g.count }))}${g.issued ? `<span class="note">（${esc(t('slipIssued', { n: g.issuedCount, t: g.issuedAt }))}）</span>` : ''}</label>`).join('')}</div></li>`).join('')}</ul>`
+      : `<p class="note">${esc(t('slipNone'))}</p>`}
+    <div class="actions"><button class="primary" id="slipPrint" type="button" ${nSel ? '' : 'disabled'}>${esc(t('slipPrint', { n: nSel }))}</button></div>`;
+  document.getElementById('slipLoad').onclick = () => { sl.q = document.getElementById('slipQ').value.trim(); sl.all = document.getElementById('slipAll').checked; openSlipList(); };
+  $app.querySelectorAll('[data-sk]').forEach(c => c.onchange = () => { if (c.checked) sl.sel[c.dataset.sk] = true; else delete sl.sel[c.dataset.sk]; render(); });
+  document.getElementById('slipPrint').onclick = () => { state.screen = 'slipPrint'; render(); window.scrollTo(0, 0); };
+}
+function slipItems() {
+  const sl = state.slip, out = [];
+  (sl.list || []).forEach(b => b.grades.forEach(g => { if (sl.sel[slipKey(b.id, g.grade)]) out.push({ b: b, g: g }); }));
+  return out;
+}
+// 看板のQRコード（qrcode-generator を、はじめて使うときに読み込む）
+let qrLibLoading = null;
+function loadQrLib() {
+  if (window.qrcode) return Promise.resolve();
+  if (qrLibLoading) return qrLibLoading;
+  qrLibLoading = new Promise((ok, ng) => { const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js'; s.onload = ok; s.onerror = () => { qrLibLoading = null; ng(new Error('QRコードの部品を読み込めませんでした')); }; document.head.appendChild(s); });
+  return qrLibLoading;
+}
+function slipQrSvg(text) {
+  const qr = qrcode(0, 'M'); qr.addData(text); qr.make();
+  const n = qr.getModuleCount(), q = 3; let d = '';
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) d += `M${c} ${r}h1v1h-1z`;
+  return `<svg viewBox="${-q} ${-q} ${n + 2 * q} ${n + 2 * q}" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="${-q}" y="${-q}" width="${n + 2 * q}" height="${n + 2 * q}" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;
+}
+function slipDate(d) { const s = String(d || '').trim(), n = s.replace(/\D/g, ''); return n.length === 8 ? n.slice(2) : (n.length === 6 ? n : s); }
+function slipSheetHtml(b, g) {
+  const url = location.origin + location.pathname + '?k=' + encodeURIComponent(b.id) + '&g=' + encodeURIComponent(g.grade);
+  const n = String(b.name || '').length, fs = n > 40 ? 12 : n > 26 ? 15 : 18;
+  return `<div class="sheet"><div class="in">
+    <div class="head"><div class="l">入荷日: ${esc(slipDate(b.date))}</div><div class="r">仕入先：${esc(b.supplier || '')}</div></div>
+    <div class="mid"><div class="g">${esc(g.grade)}</div><div class="m"><div style="font-size:${fs}pt">型番：${esc(b.name || '')}</div></div></div>
+    <table class="tb"><colgroup><col style="width:22.7mm"><col style="width:24.5mm"><col style="width:23.9mm"><col style="width:23.5mm"><col style="width:22.5mm"><col style="width:22.4mm"><col style="width:22.4mm"><col style="width:22.8mm"></colgroup>
+      <tr class="r1"><td class="lab">看板ID</td><td class="id" colspan="3">${esc(b.id)}</td><td class="qr" colspan="2">${slipQrSvg(url)}</td></tr>
+      <tr class="r2"><td class="lab">数量</td><td class="cnt">${esc(g.count)}</td>${'<td></td>'.repeat(6)}</tr></table>
+  </div></div>`;
+}
+function renderSlipPrint() {
+  const items = slipItems();
+  $app.innerHTML = `<div class="card"><p class="big">${esc(t('slipPrintTitle', { n: items.length }))}</p>
+      <p class="note">${esc(t('slipPrintNote'))}</p>
+      <div class="actions"><button class="primary" id="slipDoPrint" type="button">${esc(t('slipDoPrint'))}</button></div>
+      <div class="actions"><button class="secondary" id="slipDone" type="button">${esc(t('slipDone'))}</button></div></div>
+    <div id="printArea" class="printarea"><p class="note">${esc(t('loading'))}</p></div>`;
+  loadQrLib().then(() => {
+    const pa = document.getElementById('printArea');
+    if (pa) pa.innerHTML = items.map(x => slipSheetHtml(x.b, x.g)).join('');
+  }).catch(e => alert(e.message || e));
+  document.getElementById('slipDoPrint').onclick = () => {
+    document.body.classList.add('printing');
+    setTimeout(() => { window.print(); setTimeout(() => document.body.classList.remove('printing'), 500); }, 50);
+  };
+  document.getElementById('slipDone').onclick = async () => {
+    if (!confirm(t('slipDoneAsk', { n: items.length }))) return;
+    try {
+      await call('kSlipIssued', [state.deviceId, items.map(x => ({ id: x.b.id, grade: x.g.grade, count: x.g.count }))], 'saving');
+      toast(t('slipDoneOk', { n: items.length }));
+      state.slip.sel = {};
+      openSlipList();
+    } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
+  };
 }
 
 // ===============================================================
@@ -1313,6 +1543,7 @@ function specNorm(item, v) {
 async function openSpec(boardId) {
   try {
     const r = await call('kLoadSpec', [state.deviceId, boardId], 'loading');
+    if (r.board && r.board.retired) { alert(t('boardRetired', { id: r.board.id })); return openScanner(t('specScan')); }
     state.spec = { board: r.board, excel: r.excel || {}, inputs: r.inputs || {}, items: r.items || Object.keys(SPEC_DEF), edits: {}, open: null };
     state.screen = 'spec'; render(); window.scrollTo(0, 0);
   } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); openScanner(t('specScan')); }
@@ -1488,13 +1719,12 @@ function renderBoard() {
       <input type="text" id="sealInput" autocomplete="off" autocapitalize="characters" placeholder="D00012">
       <div class="err" id="sealErr"></div>
       <div class="actions"><button class="secondary" id="sealOpen" type="button">${esc(t('open'))}</button></div></details>
-    ${boardGroupsHtml(units)}
     <h2>${esc(t('regUnits', { n: units.length }))}</h2>
     ${units.length ? `<div class="units">${units.map((u, i) => `<button class="btn" type="button" data-i="${i}">${esc(u.seal)}<small><span class="grade ${esc(u.grade)}" style="font-size:14px;padding:2px 8px">${esc(u.grade)}</span>${u.recheck ? ' ⚠' : ''}</small></button>`).join('')}</div>`
       : `<div class="empty">${esc(t('noUnits'))}</div>`}
-    <div class="actions"><button class="secondary" id="slipBtn" type="button">${esc(t('slipBtn'))}</button></div>
+
     <button class="link" id="homeBtn" type="button">${esc(t('next'))}</button>`;
-  document.getElementById('slipBtn').onclick = () => openSlip(b.id);
+
   document.getElementById('sealBtn').onclick = scanSealForBoard;
   document.getElementById('batchBtn').onclick = () => { state.batchN = ''; state.screen = 'batchCount'; render(); window.scrollTo(0, 0); };
   const sb = document.getElementById('stuckBtn'); if (sb) sb.onclick = startWithNextSeal;
@@ -1555,10 +1785,10 @@ function renderGradeMany() {
       const r = await call('kSetGradeMany', [state.deviceId, g.seals, ng], 'saving');
       toast(t('grpDone', { n: r.updated, g: ng }));
       state.grpEdit = null;
-      openBoard(state.board.id);
+      openGradeBoard(state.board.id);
     } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
   });
-  document.getElementById('grpBack').onclick = () => { state.grpEdit = null; state.screen = 'board'; render(); };
+  document.getElementById('grpBack').onclick = () => { state.grpEdit = null; state.screen = 'gradeBoard'; render(); };
 }
 
 function symListHtml(list, mode) {
@@ -1588,7 +1818,7 @@ function renderUnit() {
     <div class="actions"><button class="primary" id="editBtn" type="button">${esc(t('editSym'))}</button></div>
     <div class="actions"><button class="secondary" id="gradeBtn" type="button">${esc(t('setGrade'))}</button></div>
     <div class="actions"><button class="secondary" id="repBtn" type="button">${esc(t('repair'))}</button></div>
-    ${u.board && u.board.id ? `<div class="actions"><button class="secondary" id="slipBtn" type="button">${esc(t('slipBtn'))}</button></div>` : ''}
+
     <div class="actions"><button class="secondary" id="nextBtn" type="button">${esc(t('next'))}</button></div>
     ${u.board && !u.board.missing ? `<button class="link" id="boardBtn" type="button">${esc(t('toBoard'))}</button>` : ''}`;
   state.repairMsg = '';
@@ -1596,7 +1826,7 @@ function renderUnit() {
   document.getElementById('gradeBtn').onclick = () => { state.grade = u.sales || u.auto || 'A'; state.screen = 'grade'; render(); };
   document.getElementById('repBtn').onclick = () => { resetEdit(); state.screen = 'repair'; render(); };
   document.getElementById('nextBtn').onclick = () => { scanPurpose = 'any'; scanBack = 'unit'; openScanner(); };
-  const sl = document.getElementById('slipBtn'); if (sl) sl.onclick = () => openSlip(u.board.id, u.grade);
+
   const bb = document.getElementById('boardBtn'); if (bb) bb.onclick = () => openBoard(u.board.id);
 }
 

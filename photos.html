@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>内訳の写真</title>
+<style>
+:root{--ink:#1d2024;--ink2:#5b6168;--rule:#d9dcd6;--paper:#f6f6f2;--amber:#f5a623}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Noto Sans JP",Meiryo,sans-serif}
+header{background:var(--ink);color:#fff;padding:12px 16px;font-weight:700}
+main{max-width:1100px;margin:0 auto;padding:16px}
+.card{background:#fff;border:1px solid var(--rule);border-radius:12px;padding:14px 16px;margin-bottom:14px}
+.big{font-size:20px;font-weight:700;margin:0 0 4px}
+.note{color:var(--ink2);font-size:14px;margin:4px 0}
+h2{font-size:18px;margin:6px 0 10px}
+.grid{display:flex;flex-wrap:wrap;gap:12px}
+.ph{width:220px;text-decoration:none;color:inherit}
+.ph img{width:220px;height:165px;object-fit:cover;border-radius:8px;border:1px solid var(--rule);background:#eee;display:block}
+.ph span{display:block;font-size:13px;margin-top:4px;color:var(--ink2)}
+.ref{border-left:4px solid var(--amber);padding-left:10px;margin-top:8px}
+.err{color:#b00020;font-weight:700}
+</style>
+</head>
+<body>
+<header>内訳の写真</header>
+<main id="app"><p class="note">読み込み中…</p></main>
+<script>
+// ===============================================================
+// 内訳の写真（案件管理の内訳の「症状」のリンクから開く）
+// ・その行（看板×分類×症状）の台の写真を、症状ごとに並べる
+// ・写真の無い症状は、同じ品名・同じ症状の、ほかの台の写真を参考に出す
+// ・写真は共有ドライブにあるので、会社のアカウントでGoogleにログインしたブラウザで開く
+// ===============================================================
+const API_URL = 'https://script.google.com/macros/s/AKfycbxQNpelUbbsIixIPD0ftLah_uww13ISkyVS-3KKma5nX0eVb9FkWxi76FDw5UdVlmA/exec';
+const $app = document.getElementById('app');
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const q = new URLSearchParams(location.search);
+function thumb(p) {
+  const img = p.id ? `https://drive.google.com/thumbnail?id=${encodeURIComponent(p.id)}&sz=w600` : '';
+  return `<a class="ph" href="${esc(p.url)}" target="_blank" rel="noopener"><img src="${esc(img)}" alt="${esc(p.seal)}" loading="lazy"><span>${esc(p.seal)}</span></a>`;
+}
+(async () => {
+  try {
+    const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ fn: 'kPhotoView', args: [q.get('b') || '', q.get('g') || '', q.get('s') || '', q.get('t') || ''] }) });
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error || 'error');
+    const r = j.result;
+    document.title = (r.board.name || r.board.id) + ' の写真';
+    $app.innerHTML = `<div class="card"><p class="big">${esc(r.board.name || '')}</p>
+        <p class="note">${esc(r.board.id)}　分類：${esc(r.grade)}　${esc(r.count)}台（${esc(r.seals.join('、'))}）</p>
+        <p class="note">写真を押すと、大きく開きます。写真が表示されないときは、会社のアカウントでGoogleにログインしてから開き直してください。</p></div>
+      ${r.symptoms.map(s => `<div class="card"><h2>${esc(s.hy)}</h2>
+        ${s.photos.length ? `<div class="grid">${s.photos.map(thumb).join('')}</div>`
+          : `<p class="note">この行の台の写真はありません。</p>${s.ref.length ? `<div class="ref"><p class="note">参考：同じ品名・同じ症状の、ほかの台の写真</p><div class="grid">${s.ref.map(thumb).join('')}</div></div>` : ''}`}
+      </div>`).join('') || '<p class="note">症状がありません。</p>'}`;
+  } catch (e) {
+    $app.innerHTML = `<p class="err">写真を読み込めませんでした：${esc(e.message || e)}</p>`;
+  }
+})();
+</script>
+</body>
+</html>
