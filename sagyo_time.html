@@ -1543,7 +1543,9 @@ function renderAdmin(app){
     document.getElementById('addProjBtn').onclick = ()=>{
       const name = document.getElementById('newProjInput').value.trim();
       if(!name) return;
-      runProjectOp('apiAddProject', [name], '案件名を追加しました');
+      // 古い案件は、📌（固定）を付けて追加する（付けないと、追加してもすぐに一覧から外れるため）
+      const pin = isOldLot(name);
+      runProjectOp('apiAddProject', [name, pin], pin ? '案件名を追加しました（古い案件なので📌固定にしました）' : '案件名を追加しました');
     };
     return;
   }
