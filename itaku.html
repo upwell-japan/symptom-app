@@ -338,7 +338,20 @@ const T = {
   slipDone:  { ja: '印刷できたので「発行済み」にする', en: 'Mark as printed', id: 'Tandai sudah dicetak' },
   slipDoneAsk:{ ja: '{n}枚を「発行済み」にします。全部きれいに印刷できましたか？', en: 'Mark {n} as printed?', id: 'Tandai {n} sudah dicetak?' },
   slipDoneOk:{ ja: '{n}枚を発行済みにしました', en: 'Marked {n} as printed', id: '{n} ditandai sudah dicetak' },
-  modeShip:  { ja: '🚚 出荷の確認', en: '🚚 Shipment check', id: '🚚 Cek pengiriman' },
+  modeShip:  { ja: '🚚 出荷日を入れる', en: '🚚 Set ship date', id: '🚚 Isi tanggal kirim' },
+  sdPick:    { ja: '出荷日を入れるファイルを選んでください', en: 'Choose the request file', id: 'Pilih file permintaan' },
+  sdPickNote:{ ja: 'Slackで出荷予定に登録した出荷依頼のファイル（出荷依頼_処理済み）です。新しい順に並んでいます。', en: 'Request files already registered in Slack (newest first).', id: 'File yang sudah didaftarkan di Slack (terbaru dulu).' },
+  sdUpdated: { ja: '更新 {t}', en: 'updated {t}', id: 'diperbarui {t}' },
+  sdNone:    { ja: '処理済みのファイルがありません。', en: 'No processed files.', id: 'Tidak ada file.' },
+  sdDest:    { ja: '出荷先：{d}', en: 'Destination: {d}', id: 'Tujuan: {d}' },
+  sdMissing: { ja: '出荷予定がない', en: 'No plan', id: 'Tidak ada rencana' },
+  sdMissingNote:{ ja: '{n}行は、出荷予定・荷造済の行が見つかりません（出荷済み、または取り消された可能性があります）。この行の出荷日は変わりません。', en: '{n} rows have no planned shipment and will not change.', id: '{n} baris tidak punya rencana kirim dan tidak berubah.' },
+  sdDate:    { ja: '出荷日', en: 'Ship date', id: 'Tanggal kirim' },
+  sdSet:     { ja: 'この出荷日を入れる（{n}行）', en: 'Set this date ({n} rows)', id: 'Isi tanggal ini ({n} baris)' },
+  sdNote:    { ja: '在庫リストの出荷内訳の「出荷日」だけを書き換えます。出荷予定・荷造済・出荷済の状態は変わりません（今までどおりSlackで変えてください）。', en: 'Only the ship date in the stock list changes; status does not.', id: 'Hanya tanggal kirim yang berubah; status tidak.' },
+  sdNeedDate:{ ja: '出荷日を選んでください', en: 'Choose the ship date', id: 'Pilih tanggal kirim' },
+  sdAsk:     { ja: '{n}行の出荷日を {d} にします。よろしいですか？', en: 'Set the ship date of {n} rows to {d}?', id: 'Ubah tanggal kirim {n} baris menjadi {d}?' },
+  sdDone:    { ja: '{n}行の出荷日を {d} にしました', en: 'Set {n} rows to {d}', id: '{n} baris diubah ke {d}' },
   shipPick:  { ja: '確認する出荷を選んでください', en: 'Choose the shipment to check', id: 'Pilih pengiriman yang dicek' },
   shipPickNote:{ ja: '在庫リストの出荷予定・荷造済の行を、出荷日と出荷先ごとにまとめています。', en: 'Planned and packed shipments in the stock list, grouped by date and destination.', id: 'Rencana kirim di daftar stok, dikelompokkan per tanggal dan tujuan.' },
   shipRows:  { ja: '{r}行・{n}台', en: '{r} rows / {n} units', id: '{r} baris / {n} unit' },
@@ -1087,7 +1100,8 @@ function render() {
               shipList: renderShipList, ship: renderShip, shipItem: renderShipItem,
               batchCount: renderBatchCount, batch: renderBatch,
               gradeBoard: renderGradeBoard, slipList: renderSlipList, slipPrint: renderSlipPrint,
-              pickLists: renderPickLists, pick: renderPick, pickItem: renderPickItem };
+              pickLists: renderPickLists, pick: renderPick, pickItem: renderPickItem,
+              shipFiles: renderShipFiles, shipFile: renderShipFile };
   (R[S] || renderHome)();
   addNavBar(S);
 }
@@ -1121,6 +1135,8 @@ function goBack() {
   else if (S === 'grade' || S === 'repair') { resetEdit(); state.screen = 'unit'; }
   else if (S === 'gradeMany') { state.grpEdit = null; state.screen = 'gradeBoard'; }
   else if (S === 'gradeBoard') { state.screen = 'home'; }
+  else if (S === 'shipFiles') { state.sd = null; state.screen = 'home'; }
+  else if (S === 'shipFile') { state.screen = 'shipFiles'; }
   else if (S === 'pickLists') { state.pick = null; state.screen = 'home'; }
   else if (S === 'pick') { openPickLists(); return; }
   else if (S === 'pickItem') { state.pick.item = null; state.screen = 'pick'; }
@@ -1140,7 +1156,7 @@ function goHome() {
   if (NAV_EDITING.includes(S) && hasUnsaved() && !confirm(t('leaveAsk'))) return;
   stopCamera();
   resetEdit();
-  state.spec = null; state.stock = null; state.grpEdit = null; state.ship = null; state.batch = null; state.slip = null; state.pick = null;
+  state.spec = null; state.stock = null; state.grpEdit = null; state.ship = null; state.batch = null; state.slip = null; state.pick = null; state.sd = null;
   scanPurpose = 'any'; scanBack = 'home';
   state.screen = 'home';
   render(); window.scrollTo(0, 0);
@@ -1205,7 +1221,7 @@ function renderHome() {
     <div class="actions"><button class="secondary" id="openBtn" type="button">${esc(t('open'))}</button></div></div>`;
   document.getElementById('scanBtn').onclick = () => { scanPurpose = 'any'; scanBack = 'home'; openScanner(); };
   document.getElementById('specBtn').onclick = () => { scanPurpose = 'spec'; scanBack = 'home'; openScanner(t('specScan')); };
-  document.getElementById('shipBtn').onclick = openShipList;
+  document.getElementById('shipBtn').onclick = openShipFiles;
   document.getElementById('pickBtn').onclick = openPickLists;
   document.getElementById('gradeBtn').onclick = gradeScan;
   document.getElementById('slipListBtn').onclick = () => { state.slip = null; openSlipList(); };
@@ -1349,6 +1365,58 @@ function renderPickItem() {
       state.pick.items = res.items || []; state.pick.item = null;
       toast(t('pickSaved', { s: (r.inv.name || r.board.name) + ' ' + r.grade, n: q }));
       pickScan();   // そのまま次の看板を読む
+    } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
+  };
+}
+
+// ===============================================================
+// 🚚 出荷日を入れる：Slackで出荷予定に登録したファイル（出荷依頼_処理済み）を選ぶ → 出荷日を入れる
+//   在庫リストの出荷内訳の、そのファイルの商品の出荷予定・荷造済の行の「出荷日」だけを書き換える（状態は変えない）
+// ===============================================================
+async function openShipFiles() {
+  try {
+    const files = await call('kShipDateFiles', [state.deviceId], 'loading');
+    state.sd = { files: files, plan: null, date: pickToday() };
+    state.screen = 'shipFiles'; render(); window.scrollTo(0, 0);
+  } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); state.screen = 'home'; render(); }
+}
+function renderShipFiles() {
+  const f = state.sd.files || [];
+  $app.innerHTML = `<div class="card"><p class="big">${esc(t('sdPick'))}</p><p class="note">${esc(t('sdPickNote'))}</p></div>
+    ${f.length ? `<ul class="grp">${f.map((x, i) => `<li><span class="gs">${esc(x.name)}<br><span class="note">${esc(t('sdUpdated', { t: x.updated }))}</span></span>
+      <button class="secondary" type="button" data-sf="${i}">${esc(t('pickOpen'))}</button></li>`).join('')}</ul>` : `<p class="note">${esc(t('sdNone'))}</p>`}`;
+  $app.querySelectorAll('[data-sf]').forEach(b => b.onclick = () => openShipFile(f[Number(b.dataset.sf)].id));
+}
+async function openShipFile(id) {
+  try {
+    const r = await call('kShipDateLoad', [state.deviceId, id], 'loading');
+    state.sd.plan = r;
+    state.screen = 'shipFile'; render(); window.scrollTo(0, 0);
+  } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); }
+}
+function renderShipFile() {
+  const sd = state.sd, p = sd.plan;
+  const nRows = p.lines.reduce((s, l) => s + l.rows.length, 0);
+  const missing = p.lines.filter(l => !l.rows.length);
+  $app.innerHTML = `<div class="card"><p class="big">${esc(p.file.name)}</p><p class="note">${esc(t('sdDest', { d: p.dest || '—' }))}</p></div>
+    <ul class="spec">${p.lines.map(l => `<li><div class="sh" style="cursor:default"><span class="sl">${esc(l.name)}　<span class="grade ${esc(l.grade)}" style="font-size:14px;padding:2px 8px">${esc(l.grade)}</span></span>
+      <span class="gn">${esc(t('slipN', { n: l.qty }))}</span>
+      ${l.rows.length ? `<span class="sv">${esc(l.rows.map(r => r.date + '・' + r.note).join(' / '))}</span>` : `<span class="sv need" style="border-color:var(--danger)">${esc(t('sdMissing'))}</span>`}</div></li>`).join('')}</ul>
+    ${missing.length ? `<p class="warn">${esc(t('sdMissingNote', { n: missing.length }))}</p>` : ''}
+    <div class="card"><label class="field" for="sdDate">${esc(t('sdDate'))}</label>
+      <input type="date" id="sdDate" value="${esc(sd.date.replace(/\//g, '-'))}" style="width:100%;font:inherit;font-size:22px;padding:10px;border:1px solid var(--ink);border-radius:10px">
+      <div class="actions"><button class="primary" id="sdSet" type="button" ${nRows ? '' : 'disabled'}>${esc(t('sdSet', { n: nRows }))}</button></div>
+      <p class="note">${esc(t('sdNote'))}</p></div>`;
+  document.getElementById('sdDate').onchange = e => { sd.date = (e.target.value || '').replace(/-/g, '/'); };
+  document.getElementById('sdSet').onclick = async () => {
+    const d = (document.getElementById('sdDate').value || '').replace(/-/g, '/');
+    if (!/^\d{4}\/\d{2}\/\d{2}$/.test(d)) return alert(t('sdNeedDate'));
+    if (!confirm(t('sdAsk', { n: nRows, d: d }))) return;
+    try {
+      const r = await call('kShipDateSet', [state.deviceId, p.file.id, d], 'saving');
+      sd.plan = r.plan; sd.date = d;
+      toast(t('sdDone', { n: r.rows, d: d }));
+      render();
     } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
   };
 }
