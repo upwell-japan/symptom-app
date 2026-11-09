@@ -1,1512 +1,876 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>作業時間入力</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#1d2024">
+<meta name="robots" content="noindex, nofollow">
+<title>症状入力</title>
 <style>
-  :root{
-    --bg:#FFFFFF;
-    --surface:#FFFFFF;
-    --ink:#1B1F23;
-    --muted:#6B7280;
-    --border:#E1E2DE;
-    --accent:#F5A623;
-    --accent-ink:#5C3A00;
-    --success:#2F9E44;
-    --danger:#D64545;
-    --radius:14px;
-    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
-  }
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);}
-  body{padding-bottom:96px;min-height:100vh;}
-  .app{max-width:640px;margin:0 auto;position:relative;}
-
-  header.top{
-    position:sticky;top:0;z-index:10;
-    background:var(--ink);color:#fff;
-    padding:14px 16px;
-    display:flex;align-items:center;justify-content:space-between;
-    gap:10px;
-  }
-  header.top .who{display:flex;flex-direction:row;align-items:center;gap:8px;flex-wrap:wrap;}
-  header.top .who b{font-size:17px;letter-spacing:.02em;line-height:1;}
-  header.top .chip-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px;}
-  header.top .chip{
-    font-size:11px;background:rgba(255,255,255,0.18);color:#fff;
-    padding:3px 9px;border-radius:10px;white-space:nowrap;line-height:1.4;
-  }
-  header.top .gear{
-    background:none;border:none;color:#fff;font-size:20px;cursor:pointer;
-    padding:4px 8px;flex:none;
-  }
-
-  main{padding:16px;}
-
-  .card{
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:var(--radius);
-    padding:16px;
-    margin-bottom:14px;
-  }
-
-  .time-row{display:flex;align-items:center;gap:10px;}
-  .time-box{flex:1;}
-  .time-box label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;}
-  .time-box input[type=time]{
-    width:100%;font-size:30px;padding:14px 8px;border-radius:10px;
-    border:1px solid var(--border);background:#fafafa;
-    font-variant-numeric:tabular-nums;font-weight:700;
-    font-family:"Meiryo","メイリオ",-apple-system,sans-serif;
-  }
-  .arrow{color:var(--muted);font-size:18px;padding-top:18px;}
-
-  .hours-display{
-    text-align:center;margin-top:16px;padding:18px 0;
-    border-top:1px dashed var(--border);
-  }
-  .hours-display .num{
-    font-size:44px;font-weight:800;font-variant-numeric:tabular-nums;
-    color:var(--accent-ink);letter-spacing:-0.02em;
-    font-family:"Meiryo","メイリオ",-apple-system,sans-serif;
-  }
-  .hours-display .num span{font-size:20px;font-weight:600;margin-left:4px;}
-  .hours-display .hint{font-size:12px;color:var(--muted);margin-top:4px;}
-
-  details.more{margin-top:4px;}
-  details.more summary{
-    list-style:none;cursor:pointer;font-size:14px;color:var(--muted);
-    padding:6px 2px;
-  }
-  details.more summary::-webkit-details-marker{display:none;}
-  .field{margin-top:10px;}
-  .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;}
-  .field input, .field textarea{
-    width:100%;font-size:15px;padding:10px;border-radius:10px;
-    border:1px solid var(--border);background:#fafafa;font-family:inherit;
-  }
-
-  footer.bar{
-    position:fixed;bottom:0;left:0;right:0;
-    background:var(--surface);border-top:1px solid var(--border);
-    padding:12px 16px calc(12px + env(safe-area-inset-bottom));
-    max-width:640px;margin:0 auto;
-  }
-  button.primary{
-    width:100%;padding:16px;font-size:17px;font-weight:700;
-    background:var(--accent);color:var(--accent-ink);border:none;border-radius:12px;
-    cursor:pointer;
-  }
-  button.primary:disabled{background:#E7E4DC;color:var(--muted);cursor:not-allowed;}
-  button.primary:active:not(:disabled){transform:scale(0.98);}
-
-  /* name grid */
-  .name-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:20px 16px;}
-  .name-btn{
-    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
-    padding:26px 10px;text-align:center;font-size:18px;font-weight:700;cursor:pointer;
-  }
-  .name-btn:active{background:#f0ede4;}
-
-  .toast{
-    position:fixed;top:16px;left:50%;transform:translateX(-50%);
-    background:var(--success);color:#fff;padding:10px 18px;border-radius:24px;
-    font-size:14px;font-weight:600;z-index:100;opacity:0;transition:opacity .2s;
-    pointer-events:none;max-width:90vw;text-align:center;
-  }
-  .toast.error{background:var(--danger);}
-  .toast.show{opacity:1;}
-
-  /* step flow */
-  .stepbar{display:flex;gap:6px;padding:10px 16px 0;}
-  .stepbar .dot{flex:1;height:4px;border-radius:2px;background:var(--border);}
-  .stepbar .dot.active{background:var(--accent);}
-  .stepbar .dot.done{background:var(--ink);}
-  .backlink{padding:12px 16px 0;}
-  .backlink button{background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:4px 0;}
-  .steptitle{padding:10px 16px 2px;font-size:19px;font-weight:800;}
-  .prow{
-    padding:14px 12px;font-size:16px;cursor:pointer;background:var(--surface);
-    border-radius:10px;margin-bottom:8px;border:1px solid #000000;
-  }
-  .prow-special{
-    display:flex;align-items:center;justify-content:space-between;gap:10px;
-  }
-  .special-tag{
-    background:var(--ink);color:#fff;font-size:11px;font-weight:700;
-    padding:3px 9px;border-radius:20px;flex:none;white-space:nowrap;
-  }
-  .prow:active{background:#f0ede4;}
-  .paddnew{
-    padding:14px;color:var(--accent-ink);font-weight:700;cursor:pointer;
-    border:1px dashed var(--accent);border-radius:10px;margin-bottom:10px;text-align:center;
-  }
-  .summary-card .row{display:flex;justify-content:space-between;padding:7px 0;font-size:14px;border-bottom:1px solid var(--border);gap:10px;}
-  .summary-card .row:last-child{border-bottom:none;}
-  .summary-card .row .k{color:var(--muted);flex:none;}
-
-  .worktype-grid{
-    display:grid;grid-template-columns:repeat(4,1fr);gap:8px;
-  }
-  .wt-block{
-    background:#EDE9DE;border:1px solid var(--border);border-radius:16px;
-    padding:10px;margin-bottom:14px;
-  }
-  .wt-ungrouped-label{
-    font-size:12px;color:var(--muted);padding:2px 2px 8px;
-  }
-  .worktype-btn{
-    background:var(--surface);border:1px solid #000000;border-radius:10px;
-    padding:12px 4px;text-align:center;font-size:15px;font-weight:700;
-    cursor:pointer;line-height:1.3;min-height:72px;
-    display:flex;align-items:center;justify-content:center;
-    word-break:break-all;
-  }
-  .worktype-btn:active{background:#f0ede4;}
-  .worktype-btn{flex-direction:column;}
-  .wt-tr{display:block;font-size:11px;font-weight:500;color:var(--muted);margin-top:4px;line-height:1.25;word-break:normal;}
-  .whobtn{background:none;border:none;color:#fff;padding:0;cursor:pointer;display:flex;align-items:baseline;gap:4px;font:inherit;}
-  .whobtn b{font-size:17px;letter-spacing:.02em;line-height:1;}
-  .whobtn span{font-size:11px;color:rgba(255,255,255,0.75);text-decoration:underline;}
-  .langbtn{background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:13px;border-radius:14px;padding:5px 10px;cursor:pointer;flex:none;}
-  .rulebox{font-size:13px;line-height:1.55;background:#FFF4D6;border:1px solid #F5A623;border-radius:10px;padding:10px 12px;margin-top:10px;}
-
-  /* admin */
-  .admin-tabs{display:flex;gap:8px;padding:10px 16px 0;}
-  .admin-tabs button{
-    flex:1;padding:10px;border-radius:10px;border:1px solid var(--border);
-    background:var(--surface);font-size:13px;cursor:pointer;
-  }
-  .admin-tabs button.active{background:var(--ink);color:#fff;border-color:var(--ink);}
-  .proj-row{
-    display:flex;align-items:center;justify-content:space-between;
-    padding:12px 4px;border-bottom:1px solid var(--border);font-size:14px;
-  }
-  .nofile-tag{
-    display:inline-block;margin-left:6px;font-size:11px;font-weight:700;color:var(--danger);
-    border:1px solid var(--danger);border-radius:10px;padding:1px 7px;vertical-align:middle;
-    text-decoration:none;
-  }
-  .proj-row .name.inactive{color:var(--muted);text-decoration:line-through;}
-  .switch{
-    width:42px;height:24px;border-radius:12px;background:#ddd;position:relative;cursor:pointer;flex:none;
-  }
-  .switch.on{background:var(--success);}
-  .switch .knob{
-    position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;
-    background:#fff;transition:left .15s;
-  }
-  .switch.on .knob{left:20px;}
-  .del-proj{
-    background:none;border:1px solid #000000;border-radius:6px;color:var(--danger);
-    font-size:15px;font-weight:900;width:26px;height:26px;cursor:pointer;flex:none;
-    line-height:1;
-  }
-  table.data{width:100%;border-collapse:collapse;font-size:15px;}
-  table.data th,table.data td{border:1px solid #000000;padding:14px 8px;text-align:center;white-space:nowrap;}
-  table.data thead{background:#f0ede4;}
-  .uph-table tbody td:nth-child(1),
-  .uph-table tbody td:nth-child(2){font-weight:700;}
-  .tablewrap{overflow-x:auto;}
-
-  /* modal */
-  .modal-overlay{
-    position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:80;
-    display:flex;align-items:center;justify-content:center;padding:24px;
-  }
-  .modal-box{
-    background:var(--surface);border-radius:16px;padding:22px;max-width:340px;width:100%;
-  }
-  .modal-msg{font-size:15px;line-height:1.6;margin-bottom:18px;}
-  .modal-actions{display:flex;gap:10px;}
-  .modal-btn{
-    flex:1;padding:12px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;border:1px solid #000000;
-  }
-  .modal-btn.cancel{background:var(--surface);color:var(--ink);}
-  .modal-btn.danger{background:var(--danger);color:#fff;}
-  .modal-btn.ok{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);}
+:root{--ink:#1d2024;--ink2:#5b6168;--pill:#3a3f46;--sand:#ece7dd;--rule:#d9d4ca;--amber:#e9a320;--amber-soft:#fdf1d8;--danger:#b3261e;}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Noto Sans JP',system-ui,-apple-system,sans-serif;background:#fff;color:var(--ink);-webkit-tap-highlight-color:transparent}
+header{background:var(--ink);color:#fff;display:flex;align-items:center;gap:8px;padding:10px 12px;position:sticky;top:0;z-index:5;min-height:56px}
+.title{font-weight:700;font-size:18px}
+.pill{background:var(--pill);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill.no{font-size:16px;flex:none}
+.pill.name{min-width:0}
+.pill.sync{background:var(--amber);color:var(--ink);flex:none}
+.lang{margin-left:auto;flex:none;background:var(--pill);color:#fff;border:0;border-radius:999px;padding:7px 12px;font:inherit;font-size:14px;font-weight:700}
+main{padding:12px 14px 40px;max-width:760px;margin:0 auto}
+h2{font-size:18px;font-weight:700;margin:16px 0 10px}
+.group{background:var(--sand);border-radius:14px;padding:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.btn{background:#fff;border:1px solid var(--ink);border-radius:10px;min-height:64px;padding:10px 8px;font:inherit;font-weight:700;font-size:15px;color:var(--ink);position:relative;line-height:1.3;cursor:pointer}
+.btn small{display:block;font-weight:400;font-size:12px;color:var(--ink2);margin-top:3px}
+.btn.other{border-style:dashed;color:var(--ink2)}
+.btn.on{background:var(--amber-soft);border:2px solid var(--amber);cursor:default}
+.btn.on::after{content:"✓";position:absolute;top:4px;right:8px;font-size:14px}
+.badge{position:absolute;top:-7px;right:-7px;background:var(--amber);color:var(--ink);border-radius:999px;min-width:24px;height:24px;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 7px}
+.sel{list-style:none;padding:0;margin:0;border:1px solid var(--rule);border-radius:12px;overflow:hidden}
+.sel li{display:flex;align-items:center;gap:10px;padding:10px 12px;border-top:1px solid #eee;font-weight:700}
+.sel li:first-child{border-top:0}
+.sel small{display:block;font-weight:400;font-size:12px;color:var(--ink2)}
+.tag{font-size:11px;font-weight:700;border:1px solid var(--ink2);color:var(--ink2);border-radius:6px;padding:1px 6px;flex:none}
+.tag.new{border-color:var(--amber);color:#8a5a00;background:var(--amber-soft)}
+.x{margin-left:auto;flex:none;width:40px;height:40px;border-radius:8px;border:1px solid var(--rule);background:#fff;font-size:20px;color:var(--ink)}
+.empty{color:var(--ink2);font-size:14px;padding:12px;border:1px dashed var(--rule);border-radius:12px}
+.actions{display:flex;gap:10px;margin:20px 0 8px}
+.primary,.secondary{flex:1;border-radius:12px;min-height:58px;font:inherit;font-weight:700;font-size:17px;cursor:pointer}
+.primary{background:var(--ink);color:#fff;border:0}
+.secondary{background:#fff;color:var(--ink);border:1px solid var(--ink)}
+.back{background:none;border:0;color:var(--ink2);font:inherit;font-size:15px;padding:8px 0;cursor:pointer}
+.card{border:1px solid var(--rule);border-radius:14px;padding:16px;margin-top:12px}
+.big{font-size:20px;font-weight:700;margin:0 0 4px}
+.note{color:var(--ink2);font-size:14px;line-height:1.7;margin:8px 0}
+label.field{display:block;font-size:14px;color:var(--ink2);margin:14px 0 6px}
+input[type=text]{width:100%;font:inherit;font-size:18px;padding:12px;border:1px solid var(--ink);border-radius:10px}
+.err{color:var(--danger);font-size:14px;margin-top:6px;min-height:1em}
+.link{background:none;border:0;color:var(--ink);text-decoration:underline;font:inherit;font-size:14px;padding:10px 0;cursor:pointer}
+.cam{position:relative;border-radius:12px;overflow:hidden;background:#000}
+.cam video{display:block;width:100%;max-height:62vh;object-fit:cover}
+.cam .frame{position:absolute;inset:18% 22%;border:3px solid var(--amber);border-radius:12px;pointer-events:none}
+button:focus-visible,input:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+#busy{position:fixed;inset:0;background:rgba(255,255,255,.88);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;z-index:20}
+#busy[hidden]{display:none}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:30}
+#toast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){#toast{transition:none}}
 </style>
 </head>
 <body>
-<div class="app" id="app"></div>
-<div class="toast" id="toast"></div>
-
+<header id="hd"></header>
+<main id="app"></main>
+<input type="file" id="camPhoto" accept="image/*" capture="environment" hidden>
+<input type="file" id="galPhoto" accept="image/*" hidden>
+<input type="file" id="camQr" accept="image/*" capture="environment" hidden>
+<div id="busy" hidden></div>
+<div id="toast" role="status"></div>
 <script>
-// ★注意★ 作業内容の「記号＋名前」は、コード.gs の BUSINESS_SYMBOL_TABLE と必ず一致させること。
-// 記号は過去の記録と結びついているので、新しい作業には未使用の記号を使い、廃止した記号は使い回さない。
-// （画面での並び順はこの配列の順番で決まるので、記号の順番とは関係なく自由に並べてよい）
-// 基準UPHはコード.gs側（スプレッドシートの「設定」シート）から読み込んで使う。
-const WORKTYPE_BLOCKS = [
-  ["B 案件管理作成","C 荷受","P AC荷受","D エアー","E 検査","F 修理","G 作業結果入力","H 外磨き","Q 内磨き","I グレーディング","J パーツ抜き","K 荷造り"],
-  ["M ダンボール作り","N メモリ増設・減設","O 棚卸し"]
-];
+// ===============================================================
+// ★ ここに GAS のウェブアプリのURL（末尾が /exec）を貼る
+// ===============================================================
+const API_URL = 'https://script.google.com/macros/s/AKfycbx2iYguWWJr08QSthZjJcnxo15en0kgEBGBcuvYMoiV2XQuOPQlqX55XIUK1NtIqVeo/exec';
 
-const WORKTYPE_BLOCKS_EC = [
-  ["o 案件管理作成","b 荷受","p AC荷受","q エアー","c 検査","d 外磨き","e 内磨き","f AC磨き","g OSインストール","h OS検査"],
-  ["i ロケーション管理","j ピッキング","k 梱包","l 棚卸し"],
-  ["m 通販サイトの作成","n 専門学校販売に関する打合せ"]
-];
-
-// 荷降ろし・荷積みは複数の案件にまたがって行うため、共通業務として扱う
-const WORKTYPE_BLOCKS_SONOTA = [
-  ["ε 荷積み・荷降ろし"],
-  ["α 打合せ","β その他","γ 清掃"]
-];
-
-const WORKTYPE_BLOCKS_EO = [
-  ["Λ 案件管理作成","Β 荷受","Ξ AC荷受","Σ エアー","Θ シール剥がし","Γ 梱包","Δ ロケーション管理"],
-  ["Ζ パーツ抜き","Η パーツ管理"]
-];
-
-// 作業内容の選択画面（事業区分ごと）。以前は4つの画面を別々に書いていたのを1つにまとめた。
-const WORKTYPE_SCREENS = {
-  worktype:        { title:'作業内容を選択',             blocks: WORKTYPE_BLOCKS },
-  worktype_ec:     { title:'作業内容を選択（EC）',       blocks: WORKTYPE_BLOCKS_EC },
-  worktype_sonota: { title:'作業内容を選択（共通業務）', blocks: WORKTYPE_BLOCKS_SONOTA },
-  worktype_eo:     { title:'作業内容を選択（EO）',       blocks: WORKTYPE_BLOCKS_EO }
-};
-
-// ダンボールのサイズと箱数を入力できる作業（共通業務の「ε 荷積み・荷降ろし」）
-// 荷積み・荷降ろしは1つの作業にまとめたため、箱数は荷積みで出荷したときだけ入力する（荷降ろしのときは空欄でよい）
-// ※以前は業務委託の「A 荷降ろし」で入力していた
-const UNLOADING_WORKTYPE = 'ε 荷積み・荷降ろし';
-const BOX_WORKTYPES = ['A 荷降ろし', 'δ 荷降ろし', 'ε 荷積み', 'ε 荷積み・荷降ろし'];   // 管理画面の箱数の小計に含める作業（過去の記録も含む）
-
-const NAMES = ["ラハマン","ダロ","ルスタリ","レヴィ","テスト"];
-const EC_FIXED_PROJECT = '【260101】EC';   // ECの梱包を記録する固定の案件（常に一覧に表示される）
-const EC_PACKING_WORKTYPE = 'k 梱包';
-
-// 案件名の末尾で事業区分を判定する（ECもEOと同じく、日付ごとのロット【yymmdd】ECを扱える）
-function getSpecialLabel(name){
-  // 【】の直後から判定する（「【260701】JEMTEC」のような仕入先をECと間違えないため）。番号付き（EO2など）も同じ区分
-  if(/】共通業務$/.test(name)) return "その他";
-  if(/】EC\d*$/.test(name)) return "EC";
-  if(/】EO\d*$/.test(name)) return "EO";
-  return null;
-}
-// 案件名から、どの作業内容選択画面を出すかを決める
-function worktypeScreenFor(project){
-  const label = getSpecialLabel(project);
-  if(label === 'EC') return 'worktype_ec';
-  if(label === 'その他') return 'worktype_sonota';
-  if(label === 'EO') return 'worktype_eo';
-  return 'worktype';
-}
-// 並び順のカテゴリ: 業務委託(通常)が一番上、以下 EO → EC → 共通業務(その他) の順に
-// 必ず下に来るようにする。同じカテゴリ内では日付(案件番号)の新しい順。
-function getSortCategoryRank(name){
-  const label = getSpecialLabel(name);
-  if(label === 'その他') return 3;
-  if(label === 'EC') return 2;
-  if(label === 'EO') return 1;
-  return 0;
-}
-function compareProjects(a,b){
-  const ra = getSortCategoryRank(a), rb = getSortCategoryRank(b);
-  if(ra !== rb) return ra - rb;
-  return extractProjectNum(b) - extractProjectNum(a);
-}
+// QRのURLの「?no=564-03&name=…」を受け取る
+const INIT = (() => {
+  const q = new URLSearchParams(location.search);
+  return { no: (q.get('no') || '').trim(), name: (q.get('name') || '').trim() };
+})();
 
 // ===============================================================
-// ===== 表示する言語（日本語／English／Bahasa Indonesia） =====
+// 表示する言語（日本語／English／Bahasa Indonesia）
+// ・保存されるデータは、どの言語で操作しても日本語のまま
 // ===============================================================
-// ・画面右上の 🌐 ボタンで切り替える。選んだ言語は、その人の名前ごとにこの端末に記憶される。
-// ・作業内容のボタンは「日本語＋翻訳」を並べて表示する（作業内容の定義（Word）の英語版・インドネシア語版と同じ訳）。
-// ・保存される作業内容・案件名はいつも日本語なので、スプレッドシートの集計には影響しない。
 const LANGS = ['ja', 'en', 'id'];
 const LANG_LABEL = { ja: '日本語', en: 'English', id: 'Indonesia' };
-
-// 作業内容の訳（日本語の作業名 → 英語・インドネシア語）
-const WORK_TR = {
-  "案件管理作成": { en: "Case management", id: "Manajemen kasus" },
-  "荷受": { en: "Receiving", id: "Penerimaan barang" },
-  "AC荷受": { en: "AC adapter receiving", id: "Penerimaan adaptor AC" },
-  "エアー": { en: "Air blowing", id: "Penyemprotan udara" },
-  "検査": { en: "Inspection", id: "Pemeriksaan" },
-  "修理": { en: "Repair", id: "Perbaikan" },
-  "作業結果入力": { en: "Result entry", id: "Input hasil kerja" },
-  "外磨き": { en: "Exterior cleaning", id: "Pembersihan luar" },
-  "グレーディング": { en: "Grading", id: "Penilaian grade" },
-  "パーツ抜き": { en: "Parts removal", id: "Pelepasan komponen" },
-  "荷造り": { en: "Packing for shipment", id: "Pengemasan untuk pengiriman" },
-  "ダンボール作り": { en: "Box assembly", id: "Perakitan kardus" },
-  "メモリ増設・減設": { en: "Memory upgrade / downgrade", id: "Tambah/kurangi memori" },
-  "棚卸し": { en: "Stocktaking", id: "Stock opname" },
-  "内磨き": { en: "Interior cleaning", id: "Pembersihan dalam" },
-  "AC磨き": { en: "AC adapter cleaning", id: "Pembersihan adaptor AC" },
-  "OSインストール": { en: "OS installation", id: "Instalasi OS" },
-  "OS検査": { en: "OS check", id: "Pemeriksaan OS" },
-  "ロケーション管理": { en: "Location management", id: "Manajemen lokasi" },
-  "ピッキング": { en: "Picking", id: "Picking" },
-  "梱包": { en: "Packing", id: "Pengemasan" },
-  "通販サイトの作成": { en: "Online store work", id: "Pekerjaan toko online" },
-  "専門学校販売に関する打合せ": { en: "Vocational school sales meeting", id: "Rapat penjualan sekolah kejuruan" },
-  "シール剥がし": { en: "Sticker removal", id: "Pelepasan stiker" },
-  "パーツ管理": { en: "Parts management", id: "Manajemen komponen" },
-  "荷積み・荷降ろし": { en: "Loading / unloading", id: "Muat/bongkar barang" },
-  "打合せ": { en: "Meeting", id: "Rapat" },
-  "その他": { en: "Other", id: "Lainnya" },
-  "清掃": { en: "Cleaning", id: "Kebersihan" }
+const T = {
+  title:      { ja: '症状入力', en: 'Defect entry', id: 'Input cacat' },
+  loading:    { ja: '読み込み中…', en: 'Loading…', id: 'Memuat…' },
+  reqTitle:   { ja: 'この端末の利用を申請', en: 'Request access for this device', id: 'Ajukan izin untuk perangkat ini' },
+  reqDesc:    { ja: '初めて使う端末です。端末の呼び名を入れて申請してください。管理者が許可すると使えるようになります。', en: 'This device is new. Enter a name for it and send a request. You can use the app after the manager approves it.', id: 'Perangkat ini baru. Masukkan nama perangkat lalu kirim permintaan. Aplikasi bisa dipakai setelah disetujui manajer.' },
+  reqLabel:   { ja: '端末の呼び名（例：現場スマホ1）', en: 'Device name (e.g. Floor phone 1)', id: 'Nama perangkat (contoh: HP lantai 1)' },
+  reqBtn:     { ja: '申請する', en: 'Send request', id: 'Kirim permintaan' },
+  reqEmpty:   { ja: '端末の呼び名を入力してください', en: 'Enter a device name', id: 'Masukkan nama perangkat' },
+  pendTitle:  { ja: '許可を待っています', en: 'Waiting for approval', id: 'Menunggu persetujuan' },
+  pendDesc:   { ja: '管理者が許可すると使えます。許可されたら「確認する」を押してください。', en: 'You can use the app after the manager approves this device. Then tap “Check again”.', id: 'Aplikasi bisa dipakai setelah manajer menyetujui perangkat ini. Lalu tekan “Periksa lagi”.' },
+  check:      { ja: '確認する', en: 'Check again', id: 'Periksa lagi' },
+  openTitle:  { ja: '台を開く', en: 'Open a unit', id: 'Buka unit' },
+  openDesc:   { ja: '「QRを読み取る」を押して、シールのQRにカメラを向けてください。在庫管理番号を入力して開くこともできます。', en: 'Tap “Scan QR” and point the camera at the QR on the sticker. You can also enter the stock number.', id: 'Tekan “Pindai QR” lalu arahkan kamera ke QR di stiker. Bisa juga memasukkan nomor stok.' },
+  scan:       { ja: 'QRを読み取る', en: 'Scan QR', id: 'Pindai QR' },
+  scanDesc:   { ja: 'QRを枠の中に入れてください。読み取ると自動で開きます。', en: 'Put the QR inside the frame. The unit opens automatically.', id: 'Masukkan QR ke dalam bingkai. Unit akan terbuka otomatis.' },
+  noLabel:    { ja: '在庫管理番号（例：564-03）', en: 'Stock number (e.g. 564-03)', id: 'Nomor stok (contoh: 564-03)' },
+  open:       { ja: '開く', en: 'Open', id: 'Buka' },
+  noInvalid:  { ja: '在庫管理番号を「564-03」の形で入力してください', en: 'Enter the stock number like “564-03”', id: 'Masukkan nomor stok seperti “564-03”' },
+  qrFail:     { ja: 'QRを読み取れませんでした。QRを大きく写して、もう一度撮影してください。', en: 'The QR could not be read. Take the photo again with the QR filling more of the picture.', id: 'QR tidak terbaca. Foto lagi dengan QR terlihat lebih besar.' },
+  camNg:      { ja: 'カメラを使えません。ブラウザの設定で、このページのカメラを「許可」にしてください。', en: 'The camera is not available. Allow camera access for this page in the browser settings.', id: 'Kamera tidak bisa dipakai. Izinkan kamera untuk halaman ini di pengaturan browser.' },
+  catTitle:   { ja: 'カテゴリを選択', en: 'Select a category', id: 'Pilih kategori' },
+  selTitle:   { ja: 'この台の症状', en: 'Defects on this unit', id: 'Cacat pada unit ini' },
+  selEmpty:   { ja: 'まだ症状はありません。カテゴリを押して症状を選んでください。', en: 'No defects yet. Tap a category to choose a defect.', id: 'Belum ada cacat. Tekan kategori untuk memilih cacat.' },
+  isNew:      { ja: '今回追加', en: 'New', id: 'Baru' },
+  hasPhoto:   { ja: '写真', en: 'Photo', id: 'Foto' },
+  done:       { ja: '完了', en: 'Done', id: 'Selesai' },
+  none:       { ja: '症状なし', en: 'No defects', id: 'Tidak ada cacat' },
+  backCat:    { ja: '‹ カテゴリに戻る', en: '‹ Back to categories', id: '‹ Kembali ke kategori' },
+  photoReq:   { ja: 'この症状は写真が必要です。瑕疵がはっきり分かるように撮影してください。', en: 'This defect needs a photo. Take a photo that clearly shows the defect.', id: 'Cacat ini perlu foto. Ambil foto yang memperlihatkan cacat dengan jelas.' },
+  photoOpt:   { ja: '同じ型番で写真が{n}枚そろっているので、撮影は任意です。', en: 'This model already has {n} photos of this defect, so a photo is optional.', id: 'Model ini sudah punya {n} foto untuk cacat ini, jadi foto tidak wajib.' },
+  shoot:      { ja: 'カメラで撮影', en: 'Open camera', id: 'Buka kamera' },
+  pick:       { ja: '写真を選ぶ（撮影済みの写真）', en: 'Choose a photo', id: 'Pilih foto' },
+  skip:       { ja: '撮影しないで進む', en: 'Continue without photo', id: 'Lanjut tanpa foto' },
+  cancel:     { ja: 'やめる', en: 'Cancel', id: 'Batal' },
+  uploading:  { ja: '写真を保存しています…', en: 'Saving the photo…', id: 'Menyimpan foto…' },
+  saving:     { ja: '保存しています…', en: 'Saving…', id: 'Menyimpan…' },
+  saved:      { ja: '保存しました', en: 'Saved', id: 'Tersimpan' },
+  retake:     { ja: 'もう一度撮影してください', en: 'Please take the photo again', id: 'Silakan ambil foto lagi' },
+  resNone:    { ja: '症状なしで記録しました。', en: 'Recorded as no defects.', id: 'Dicatat tanpa cacat.' },
+  count:      { ja: '{n}件', en: '{n} items', id: '{n} item' },
+  next:       { ja: '次の台を読み取る', en: 'Scan the next unit', id: 'Pindai unit berikutnya' },
+  fix:        { ja: '修正する', en: 'Edit', id: 'Ubah' },
+  byNumber:   { ja: '在庫管理番号を入力して開く', en: 'Open by stock number', id: 'Buka dengan nomor stok' },
+  errSave:    { ja: '保存できませんでした。通信を確認して、もう一度押してください。', en: 'Could not save. Check the connection and tap again.', id: 'Gagal menyimpan. Periksa koneksi lalu tekan lagi.' },
+  errLoad:    { ja: '読み込めませんでした。通信を確認して、もう一度開いてください。', en: 'Could not load. Check the connection and open the app again.', id: 'Gagal memuat. Periksa koneksi lalu buka aplikasi lagi.' },
+  retry:      { ja: 'もう一度読み込む', en: 'Load again', id: 'Muat ulang' },
+  other:      { ja: 'その他（リストにない症状）', en: 'Other (not in the list)', id: 'Lainnya (tidak ada di daftar)' },
+  otherTitle: { ja: 'リストにない症状を入力', en: 'Enter a defect not in the list', id: 'Masukkan cacat yang tidak ada di daftar' },
+  otherDesc:  { ja: '症状を短く入力してください。英語やインドネシア語で入力しても、日本語に翻訳して記録します。このあと写真の撮影が必要です。', en: 'Describe the defect briefly. You can write in English or Indonesian; it will be translated into Japanese. A photo is required next.', id: 'Tulis cacatnya dengan singkat. Boleh dalam bahasa Inggris atau Indonesia; akan diterjemahkan ke bahasa Jepang. Setelah ini wajib ambil foto.' },
+  otherLabel: { ja: '症状（例：底面のゴム足の跡が黒い）', en: 'Defect (e.g. black marks under the rubber feet)', id: 'Cacat (contoh: bekas hitam di bawah kaki karet)' },
+  otherNext:  { ja: '写真を撮る', en: 'Take a photo', id: 'Ambil foto' },
+  otherEmpty: { ja: '症状を入力してください', en: 'Enter the defect', id: 'Masukkan cacatnya' },
+  otherDup:   { ja: 'この症状はすでに選ばれています', en: 'This defect is already selected', id: 'Cacat ini sudah dipilih' },
+  otherReq:   { ja: 'リストにない症状は、必ず写真を撮影してください。', en: 'A photo is required for a defect that is not in the list.', id: 'Cacat yang tidak ada di daftar wajib difoto.' },
+  otherTag:   { ja: 'その他', en: 'Other', id: 'Lainnya' },
+  unitLoading:{ ja: '登録済みの症状を読み込み中…', en: 'Loading registered defects…', id: 'Memuat cacat yang sudah terdaftar…' },
+  unitFail:   { ja: '登録済みの症状を読み込めませんでした。', en: 'Could not load registered defects.', id: 'Gagal memuat cacat yang sudah terdaftar.' },
+  waitLoad:   { ja: '読み込み中…', en: 'Loading…', id: 'Memuat…' },
+  pendingN:   { ja: '送信待ち {n}', en: 'Sending {n}', id: 'Mengirim {n}' },
+  sendFail:   { ja: 'まだ保存できていない記録があります。通信が戻ると自動で送ります。', en: 'Some records are not saved yet. They will be sent automatically when the connection is back.', id: 'Ada data yang belum tersimpan. Akan dikirim otomatis saat koneksi kembali.' }
 };
-function workTr(worktype){
-  const name = wtName(worktype);
-  const tr = WORK_TR[name];
-  return (state.lang !== 'ja' && tr) ? tr[state.lang] : '';
-}
-// 作業名を「日本語＋訳（小さい文字）」の形にする
-function workLabelHtml(worktype){
-  const tr = workTr(worktype);
-  return esc(wtName(worktype)) + (tr ? `<span class="wt-tr">${esc(tr)}</span>` : '');
-}
+function t(key, n) { const s = (T[key] && (T[key][state.lang] || T[key].ja)) || key; return n === undefined ? s : s.replace('{n}', n); }
 
-const I18N = {
-  ja: {
-    loading: '読み込み中…', appTitle: '作業時間入力', selectName: '名前を選択',
-    uphTitle: d => d ? `${d}の案件・作業内容別 UPH` : '案件・作業内容別 UPH',
-    thProject: '案件名', thWork: '作業内容', noRecords: 'まだ記録がありません',
-    backToName: '‹ 名前選択に戻る', selectProject: '案件名を選択', addProject: '＋ 一覧にない案件を追加',
-    tagCommon: '共通業務',
-    backToProject: '‹ 案件名に戻る', wtTitle: '作業内容を選択',
-    wtSuffix: { worktype: '', worktype_ec: '（EC）', worktype_sonota: '（共通業務）', worktype_eo: '（EO）' },
-    ecPackToast: p => `梱包は「${p}」で記録します`,
-    backToList: '‹ 案件名一覧に戻る', npTitle: '一覧にない案件を追加',
-    npIntro: '案件ファイル（例：【260924】DR.xlsm）をドライブの「案件管理」フォルダに保存すると、日付が変わったとき（毎日0時）に自動で一覧に出ます。<br>その日のうちに使いたいときは、下のボタンを押してください。',
-    npRefresh: '案件管理フォルダを確認する', npManual: '▸ 案件ファイルがまだ無いとき（手入力）',
-    npDate: '入荷日（今日の日付ではなく、荷物が入荷した日）', npTapSource: '仕入先をタップ', npOther: '上記以外の仕入先', add: '追加',
-    backToWork: '‹ 作業内容に戻る', timeTitle: '開始・終了時刻', start: '開始時刻', end: '終了時刻', hoursUnit: '時間',
-    hoursAuto: '作業時間合計（自動計算）', hoursHint: '開始・終了時刻を入力すると自動計算されます', next: '次へ',
-    backToTime: '‹ 時刻に戻る',
-    sumYHours: '昨日までの累計作業時間', sumYCount: '昨日までの累計作業数', sumUph: 'UPH（作業数/時間）',
-    boxTitle: '出荷した箱数（荷積みで出荷したときだけ）', boxSize: 'ダンボールのサイズ（荷降ろしのときは空欄のままでOK）',
-    selectPlease: '選択してください', size90: '90サイズ', size115: '115サイズ', boxCount: 'ダンボールの数（サイズを選んだときは必須）',
-    record: '記録する', saving: '保存中…',
-    countTitle: (memo, quota) => (memo ? '作業数・備考' : '作業数') + (quota ? '（必須）' : '（任意）'),
-    req: '必須', opt: '任意',
-    cumLabel: r => `累計作業数（このロットで今までに終わった台数の合計・${r}）`,
-    dailyLabel: r => `本日の作業数（今日の分・${r}）`,
-    rule: 'ほかの人がこのロットの数字をすでに入力していたら、「本日の作業数」に0を入れるか、同じ累計を入れてください。2人とも同じ「本日の作業数」を入れると、二重に数えられます。',
-    todayUnit: '本日の作業数', negWarn: '前回の累計より小さい値です。入力を確認してください。',
-    autoCalc: (cc, pc) => `累計${cc} − 前回累計${pc} で自動計算`, prevInfo: pc => `前回の累計：${pc}（この案件・作業の記録）`,
-    memo: '備考（任意）', saved: '記録しました', nextWork: '次の作業へ',
-    saveFail: '保存できませんでした。\n電波の届く場所で、もう一度「記録する」を押してください。\n（入力した内容はそのまま残っています）',
-    loadFail: 'データの読み込みに失敗しました。通信状況を確認してください',
-    npNeedDate: '先に入荷日を選んでください',
-    npConfirm: (n, d, today) => `「${n}」を追加します。\n入荷日は ${d}${today ? '（今日）' : ''} で間違いないですか？`,
-    npConfirmBtn: '追加する', npAddFail: '案件の追加に失敗しました。もう一度お試しください', npAdded: n => `「${n}」を追加しました`,
-    checking: '確認中…', npCheckFail: '案件管理フォルダを確認できませんでした', npAddedN: k => `${k}件の案件を追加しました`,
-    npNone: '新しい案件ファイルはありませんでした', netFail: '通信に失敗しました。もう一度お試しください', cancel: 'キャンセル', changeName: '（変更）'
-  },
-  en: {
-    loading: 'Loading…', appTitle: 'Work Time Entry', selectName: 'Select your name',
-    uphTitle: d => d ? `UPH by case and task (${d})` : 'UPH by case and task',
-    thProject: 'Case', thWork: 'Task', noRecords: 'No records yet',
-    backToName: '‹ Back to names', selectProject: 'Select a case', addProject: '＋ Add a case not in the list',
-    tagCommon: 'Common work',
-    backToProject: '‹ Back to cases', wtTitle: 'Select a task',
-    wtSuffix: { worktype: '', worktype_ec: ' (EC)', worktype_sonota: ' (Common work)', worktype_eo: ' (EO)' },
-    ecPackToast: p => `Packing is recorded under ${p}`,
-    backToList: '‹ Back to case list', npTitle: 'Add a case not in the list',
-    npIntro: 'When a case file (e.g. 【260924】DR.xlsm) is saved in the 案件管理 folder on Drive, it appears in the list automatically when the date changes (every day at 0:00).<br>To use it on the same day, press the button below.',
-    npRefresh: 'Check the 案件管理 folder', npManual: '▸ If there is no case file yet (enter manually)',
-    npDate: 'Arrival date (the day the goods arrived, not today)', npTapSource: 'Tap the supplier', npOther: 'Other supplier', add: 'Add',
-    backToWork: '‹ Back to tasks', timeTitle: 'Start and end time', start: 'Start', end: 'End', hoursUnit: 'hours',
-    hoursAuto: 'Total work time (calculated automatically)', hoursHint: 'Enter the start and end time to calculate', next: 'Next',
-    backToTime: '‹ Back to time',
-    sumYHours: 'Total hours until yesterday', sumYCount: 'Total quantity until yesterday', sumUph: 'UPH (quantity / hour)',
-    boxTitle: 'Boxes shipped (only when loading for shipment)', boxSize: 'Box size (leave blank for unloading)',
-    selectPlease: 'Select', size90: '90 size', size115: '115 size', boxCount: 'Number of boxes (required if you chose a size)',
-    record: 'Save', saving: 'Saving…',
-    countTitle: (memo, quota) => (memo ? 'Work quantity / notes' : 'Work quantity') + (quota ? ' (required)' : ' (optional)'),
-    req: 'required', opt: 'optional',
-    cumLabel: r => `Total so far (累計作業数) — all units finished in this lot, by everyone · ${r}`,
-    dailyLabel: r => `Today's quantity (本日の作業数) · ${r}`,
-    rule: 'If someone else already entered the number for this lot, enter 0 in Today\'s quantity, or enter the same total. If two people enter the same Today\'s quantity, it is counted twice.',
-    todayUnit: 'today', negWarn: 'This is smaller than the previous total. Please check.',
-    autoCalc: (cc, pc) => `Calculated: total ${cc} − previous total ${pc}`, prevInfo: pc => `Previous total: ${pc} (this case and task)`,
-    memo: 'Notes (備考, optional)', saved: 'Saved', nextWork: 'Next task',
-    saveFail: 'Could not save.\nMove to a place with a signal and press "Save" again.\n(Your input is still there.)',
-    loadFail: 'Could not load data. Please check the connection.',
-    npNeedDate: 'Select the arrival date first',
-    npConfirm: (n, d, today) => `Add "${n}".\nIs the arrival date ${d}${today ? ' (today)' : ''} correct?`,
-    npConfirmBtn: 'Add', npAddFail: 'Could not add the case. Please try again.', npAdded: n => `Added "${n}"`,
-    checking: 'Checking…', npCheckFail: 'Could not check the 案件管理 folder', npAddedN: k => `Added ${k} case(s)`,
-    npNone: 'No new case files', netFail: 'Connection failed. Please try again.', cancel: 'Cancel', changeName: '(change)'
-  },
-  id: {
-    loading: 'Memuat…', appTitle: 'Input Waktu Kerja', selectName: 'Pilih nama Anda',
-    uphTitle: d => d ? `UPH per kasus dan pekerjaan (${d})` : 'UPH per kasus dan pekerjaan',
-    thProject: 'Kasus', thWork: 'Pekerjaan', noRecords: 'Belum ada catatan',
-    backToName: '‹ Kembali ke nama', selectProject: 'Pilih kasus', addProject: '＋ Tambah kasus yang tidak ada di daftar',
-    tagCommon: 'Pekerjaan umum',
-    backToProject: '‹ Kembali ke kasus', wtTitle: 'Pilih pekerjaan',
-    wtSuffix: { worktype: '', worktype_ec: ' (EC)', worktype_sonota: ' (Pekerjaan umum)', worktype_eo: ' (EO)' },
-    ecPackToast: p => `Pengemasan dicatat di ${p}`,
-    backToList: '‹ Kembali ke daftar kasus', npTitle: 'Tambah kasus yang tidak ada di daftar',
-    npIntro: 'Jika file kasus (contoh: 【260924】DR.xlsm) disimpan di folder 案件管理 di Drive, kasus akan muncul di daftar secara otomatis saat tanggal berganti (setiap hari pukul 0:00).<br>Untuk memakainya di hari yang sama, tekan tombol di bawah.',
-    npRefresh: 'Periksa folder 案件管理', npManual: '▸ Jika belum ada file kasus (isi manual)',
-    npDate: 'Tanggal masuk barang (bukan hari ini)', npTapSource: 'Ketuk pemasok', npOther: 'Pemasok lainnya', add: 'Tambah',
-    backToWork: '‹ Kembali ke pekerjaan', timeTitle: 'Waktu mulai dan selesai', start: 'Mulai', end: 'Selesai', hoursUnit: 'jam',
-    hoursAuto: 'Total waktu kerja (dihitung otomatis)', hoursHint: 'Isi waktu mulai dan selesai untuk menghitung', next: 'Lanjut',
-    backToTime: '‹ Kembali ke waktu',
-    sumYHours: 'Total jam sampai kemarin', sumYCount: 'Total jumlah sampai kemarin', sumUph: 'UPH (jumlah / jam)',
-    boxTitle: 'Jumlah kardus yang dikirim (hanya saat muat untuk pengiriman)', boxSize: 'Ukuran kardus (kosongkan untuk bongkar)',
-    selectPlease: 'Pilih', size90: 'Ukuran 90', size115: 'Ukuran 115', boxCount: 'Jumlah kardus (wajib jika memilih ukuran)',
-    record: 'Simpan', saving: 'Menyimpan…',
-    countTitle: (memo, quota) => (memo ? 'Jumlah kerja / catatan' : 'Jumlah kerja') + (quota ? ' (wajib)' : ' (opsional)'),
-    req: 'wajib', opt: 'opsional',
-    cumLabel: r => `Total sampai sekarang (累計作業数) — semua unit yang selesai di lot ini, oleh semua orang · ${r}`,
-    dailyLabel: r => `Jumlah hari ini (本日の作業数) · ${r}`,
-    rule: 'Jika orang lain sudah mengisi angka untuk lot ini, isi 0 pada Jumlah hari ini, atau isi total yang sama. Jika dua orang mengisi Jumlah hari ini yang sama, jumlahnya terhitung dua kali.',
-    todayUnit: 'hari ini', negWarn: 'Nilai ini lebih kecil dari total sebelumnya. Mohon periksa.',
-    autoCalc: (cc, pc) => `Dihitung: total ${cc} − total sebelumnya ${pc}`, prevInfo: pc => `Total sebelumnya: ${pc} (kasus dan pekerjaan ini)`,
-    memo: 'Catatan (備考, opsional)', saved: 'Tersimpan', nextWork: 'Pekerjaan berikutnya',
-    saveFail: 'Gagal menyimpan.\nPindah ke tempat dengan sinyal dan tekan "Simpan" lagi.\n(Data yang diisi masih ada.)',
-    loadFail: 'Gagal memuat data. Periksa koneksi.',
-    npNeedDate: 'Pilih tanggal masuk barang terlebih dahulu',
-    npConfirm: (n, d, today) => `Tambahkan "${n}".\nApakah tanggal masuk barang ${d}${today ? ' (hari ini)' : ''} sudah benar?`,
-    npConfirmBtn: 'Tambah', npAddFail: 'Gagal menambah kasus. Silakan coba lagi.', npAdded: n => `"${n}" ditambahkan`,
-    checking: 'Memeriksa…', npCheckFail: 'Tidak bisa memeriksa folder 案件管理', npAddedN: k => `${k} kasus ditambahkan`,
-    npNone: 'Tidak ada file kasus baru', netFail: 'Koneksi gagal. Silakan coba lagi.', cancel: 'Batal', changeName: '(ganti)'
-  }
-};
-function t(key, ...args){
-  const dict = I18N[state.lang] || I18N.ja;
-  const v = (key in dict) ? dict[key] : I18N.ja[key];
-  return typeof v === 'function' ? v(...args) : v;
-}
-
-// 言語の記憶（この端末に、名前ごとに保存。保存できない環境では、その場だけ切り替わる）
-function loadLangFor(name){
-  try{ return localStorage.getItem('lang:' + (name || '_')) || null; }catch(e){ return null; }
-}
-function saveLangFor(name, lang){
-  try{ localStorage.setItem('lang:' + (name || '_'), lang); }catch(e){}
-}
-function langButtonHtml(){
-  return `<button class="langbtn" id="langBtn">🌐 ${LANG_LABEL[state.lang]}</button>`;
-}
-function bindLangButton(){
-  const b = document.getElementById('langBtn');
-  if(b) b.onclick = ()=>{
-    state.lang = LANGS[(LANGS.indexOf(state.lang) + 1) % LANGS.length];
-    saveLangFor(state.currentName, state.lang);
-    if(!state.currentName) saveLangFor(null, state.lang);
-    render();
-  };
-}
-
-let state = {
-  screen: 'loading',
-  lang: loadLangFor(null) || 'ja',   // 表示する言語
-  currentName: null,
-  worktype: null,
-  project: null,
-  worktypeScreen: null,   // どの作業内容画面から来たか（戻るボタン用）
-  start: '',
-  end: '',
-  count: '',
-  countMode: 'cum',       // 'cum'=累計を入力 / 'daily'=本日分を入力
-  memo: '',
-  boxSize: '',
-  countCtx: null,         // 作業数画面の前回累計など（早見表の写しから画面側で計算）
-  quick: {},              // 早見表の写し（名前選択画面を開いたときにまとめて受け取る）
-  lastEnds: {},           // 各自の今日の最後の終了時刻（開始時刻の初期値）
-  pendingEntry: null,     // 送信中の記録のid（再送時の二重登録防止）
-  projects: [],
-  benchmarks: {},
-  overview: { date: null, rows: [] },
-  adminTab: 'projects',
-  adminEntries: null,
-  adminLoading: false,
-  adminError: false,
-  lastResult: null,
-  isSubmitting: false
+// ===============================================================
+// 状態
+// ===============================================================
+const LS_DEVICE = 'symptom_device_id', LS_LANG = 'symptom_lang', LS_DRAFT = 'symptom_draft', LS_MASTER = 'symptom_master';
+const LS_OK = 'symptom_device_ok', LS_NEED = 'symptom_photo_need', LS_OUTBOX = 'symptom_outbox';
+const PHOTO_MAX = 1024;
+const PHOTO_QUALITY = 0.7;
+const state = {
+  lang: loadLang(),
+  deviceId: loadDeviceId(),
+  screen: 'loading', back: 'open',
+  owner: '', master: [], masterMap: {}, cats: [], photoNeed: 10,
+  no: '', name: '', current: [], photoCounts: {},
+  adds: new Map(), removes: new Set(),
+  cat: '', photoFor: '', lastNone: false, error: '',
+  addMeta: new Map(), photoOther: false, otherCat: '', otherDraft: '',
+  unitLoaded: true, unitFailed: false
 };
 
-// 画面に表示する文字の安全化。
-// 案件名などに < > " & が含まれていても、HTMLとして解釈されず文字のまま表示されるようにする。
-function esc(v){
-  return String(v === null || v === undefined ? '' : v)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+function loadLang() {
+  try { const v = localStorage.getItem(LS_LANG); if (LANGS.includes(v)) return v; } catch (e) {}
+  const nav = (navigator.language || 'ja').slice(0, 2);
+  return nav === 'id' || nav === 'in' ? 'id' : nav === 'en' ? 'en' : 'ja';
 }
-
-function gsRun(fnName, ...args){
-  return new Promise((resolve, reject)=>{
-    google.script.run
-      .withSuccessHandler(resolve)
-      .withFailureHandler(reject)
-      [fnName](...args);
-  });
-}
-
-// 名前選択画面へ。表示のたびにスプレッドシートから最新の案件一覧・UPHを取得する
-// ===== この端末で使う人の名前を覚える =====
-// 一度名前を選ぶと、この端末が覚え、次にアプリを開いたときは名前選択を飛ばして案件の選択から始まる。
-// 画面上部の「名前（変更）」を押すか、「‹ 名前選択に戻る」を押すと、選び直せる。
-function getRememberedName(){
-  try{ const n = localStorage.getItem('name:remembered'); return (n && NAMES.includes(n)) ? n : null; }catch(e){ return null; }
-}
-function rememberName(n){ try{ localStorage.setItem('name:remembered', n); }catch(e){} }
-function forgetName(){ try{ localStorage.removeItem('name:remembered'); }catch(e){} }
-
-// auto=true（アプリを開いたとき）は、覚えている名前があれば名前選択を飛ばす
-async function loadHome(auto){
-  state.currentName = null;
-  state.screen = 'loading';
-  render();
-  try{
-    const data = await gsRun('apiGetHome', todayStr());
-    state.projects = data.projects || [];
-    state.benchmarks = data.benchmarks || {};
-    state.overview = data.overview || { date: null, rows: [] };
-    state.quick = data.quick || {};
-    state.lastEnds = data.lastEnds || {};
-  }catch(e){
-    showToast(t('loadFail'), 'error');
+function loadDeviceId() {
+  let id = '';
+  try { id = localStorage.getItem(LS_DEVICE) || ''; } catch (e) {}
+  if (!id) {
+    id = (self.crypto && crypto.randomUUID) ? crypto.randomUUID() : 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+    try { localStorage.setItem(LS_DEVICE, id); } catch (e) {}
   }
-  const remembered = auto ? getRememberedName() : null;
-  if(remembered){
-    state.currentName = remembered;
-    state.lang = loadLangFor(remembered) || state.lang;
-    startEntryFlow();
-    return;
-  }
-  state.screen = 'name';
-  render();
+  return id;
 }
 
-// 名前を選んだとき・「次の作業へ」を押したとき
-// ★変更★ サーバーに問い合わせず、手元の情報だけですぐ次の画面へ進む（アプリを軽くするため）
-function startEntryFlow(){
-  state.worktype = null;
-  state.project = null;
-  state.worktypeScreen = null;
-  state.start = state.lastEnds[state.currentName] || '09:00';
-  state.end = '';
-  state.count = '';
-  state.countMode = 'cum';
-  state.memo = '';
-  state.boxSize = '';
-  state.countCtx = null;
-  state.pendingEntry = null;
-  state.screen = 'project';
-  render();
+// ===============================================================
+// 下書き（「写真を選ぶ」などでページが破棄されても、途中経過を復元するため）
+// ===============================================================
+function saveDraft() {
+  try {
+    localStorage.setItem(LS_DRAFT, JSON.stringify({
+      t: Date.now(), deviceId: state.deviceId, no: state.no, name: state.name,
+      photoFor: state.photoFor, adds: [...state.adds], removes: [...state.removes],
+      meta: [...state.addMeta], photoOther: state.photoOther, otherCat: state.otherCat
+    }));
+  } catch (e) {}
+}
+function clearDraft() { try { localStorage.removeItem(LS_DRAFT); } catch (e) {} }
+function loadDraft() {
+  try {
+    const d = JSON.parse(localStorage.getItem(LS_DRAFT) || 'null');
+    if (d && d.no && d.deviceId === state.deviceId && Date.now() - d.t < 30 * 60 * 1000) return d;
+  } catch (e) {}
+  return null;
 }
 
-// 早見表の写しから、作業数画面に出す数字を計算する（サーバーの quickStats と同じ計算）
-function quickStatsClient(row, today){
-  if(!row) return { prevCum: 0, yHours: 0, yCount: 0, yUph: null };
-  const totalHours = Number(row[0]) || 0;
-  const lastCum = row[1] === null || row[1] === '' ? 0 : Number(row[1]);
-  const lastDate = String(row[2] || '');
-  const prevDayCum = row[3] === null || row[3] === '' ? 0 : Number(row[3]);
-  const hoursBefore = Number(row[4]) || 0;
-  let yHours, yCount;
-  if(lastDate < today){ yHours = totalHours; yCount = lastCum; }
-  else { yHours = hoursBefore; yCount = prevDayCum; }
-  yHours = Math.round(yHours * 100) / 100;
-  return { prevCum: lastCum, yHours: yHours, yCount: yCount, yUph: yHours > 0 ? Math.round(yCount / yHours * 100) / 100 : null };
+// 画面に表示する「この台の症状」（保存済み − 取消 ＋ 今回追加）
+function effective() {
+  const list = [];
+  state.current.forEach(c => { if (!state.removes.has(c.symptom)) list.push({ symptom: c.symptom, photo: c.photo, isNew: false, cat: c.cat, other: !!c.other }); });
+  state.adds.forEach((photo, s) => { const m = state.addMeta.get(s) || {}; list.push({ symptom: s, photo: photo, isNew: true, cat: m.cat, other: !!m.other }); });
+  // その他の症状は、そのカテゴリの最後に並べる
+  const catIdx = c => { const i = state.cats.findIndex(x => x.cat === c); return i < 0 ? 99 : i; };
+  const order = e => { const m = state.masterMap[e.symptom]; return m ? catIdx(m.cat) * 1000 + m.idx % 1000 : catIdx(e.cat) * 1000 + 999; };
+  list.forEach(e => { if (!e.cat && state.masterMap[e.symptom]) e.cat = state.masterMap[e.symptom].cat; });
+  return list.sort((a, b) => order(a) - order(b));
 }
+function effectiveSet() { return new Set(effective().map(e => e.symptom)); }
 
-// 時刻画面の「次へ」。サーバーに問い合わせず、すぐ作業数画面を開く
-// （表示する前回累計は目安。保存するときにサーバー側で最新の値を使って確定する）
-function goToDetails(){
-  state.countCtx = quickStatsClient(state.quick[state.project + '|' + state.worktype], todayStr());
-  state.screen = 'details';
-  render();
-}
-
-function extractProjectNum(name){
-  const m = name.match(/【(\d+)】/);
-  return m ? parseInt(m[1], 10) : -Infinity;
-}
-
-function dateToCode(dateStr){
-  const [y,m,d] = dateStr.split('-');
-  return y.slice(2) + m + d;
-}
-
-// 手入力で案件を追加（案件ファイルがまだ「案件管理」フォルダに無いときの予備の手段）
-// ★変更★ 日付の初期値を空欄にし、選ばないと追加できないようにした。追加前に確認も出す。
-function addProjectManual(sourceCode){
-  const dateInput = document.getElementById('newProjDate');
-  const dateVal = dateInput ? dateInput.value : '';
-  if(!dateVal){
-    showToast(t('npNeedDate'), 'error');
-    if(dateInput) dateInput.focus();
-    return;
-  }
-  const name = `【${dateToCode(dateVal)}】${sourceCode}`;
-  const isToday = dateVal === todayStr();
-  showConfirmModal(
-    t('npConfirm', name, formatDateJp(dateVal), isToday),
-    t('npConfirmBtn'),
-    async ()=>{
-      try{
-        state.projects = await gsRun('apiAddProject', name);
-      }catch(e){
-        showToast(t('npAddFail'), 'error');
-        return;
-      }
-      selectProjectAfterAdd(name);
-      showToast(t('npAdded', name));
-    },
-    'ok'
-  );
-}
-
-// 「案件管理フォルダを確認する」ボタン。ドライブを今すぐ確認して、新しい案件があれば一覧に追加する
-async function refreshInbound(){
-  const btn = document.getElementById('refreshInboundBtn');
-  if(btn){ btn.disabled = true; btn.textContent = t('checking'); }
-  try{
-    const res = await gsRun('apiRefreshInbound');
-    state.projects = res.projects || state.projects;
-    if(!res.ok){
-      showToast(t('npCheckFail'), 'error');
-    } else if(res.added.length){
-      showToast(t('npAddedN', res.added.length));
-      state.screen = 'project';
-    } else {
-      showToast(t('npNone'));
-    }
-  }catch(e){
-    showToast(t('netFail'), 'error');
-  }
-  render();
-}
-
-function selectProjectAfterAdd(name){
-  state.project = name;
-  // 以前は追加後に作業内容の選択を飛ばして時刻画面へ進んでいたため、作業内容が空のまま記録できてしまっていた
-  state.worktypeScreen = worktypeScreenFor(name);
-  state.screen = state.worktypeScreen;
-  render();
-}
-
-function todayStr(){
-  const d = new Date();
-  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-}
-
-function formatDateJp(dateStr){
-  if(!dateStr) return '';
-  const [y,m,d] = dateStr.split('-');
-  return `${Number(m)}/${Number(d)}`;
-}
-
-// 休憩時間（13:00〜13:45、15:30〜15:45）を自動控除する計算処理
-function computeHours(start, end) {
-  if (!start || !end) return null;
-
-  const [sh, sm] = start.split(':').map(Number);
-  const [eh, em] = end.split(':').map(Number);
-
-  let startMin = sh * 60 + sm;
-  let endMin = eh * 60 + em;
-
-  if (endMin < startMin) {
-    endMin += 24 * 60;
-  }
-
-  let totalMinutes = endMin - startMin;
-
-  const breaks = [
-    { start: 13 * 60,      end: 13 * 60 + 45 }, // 13:00 - 13:45
-    { start: 15 * 60 + 30, end: 15 * 60 + 45 }  // 15:30 - 15:45
-  ];
-
-  breaks.forEach(b => {
-    const overlapStart = Math.max(startMin, b.start);
-    const overlapEnd = Math.min(endMin, b.end);
-
-    if (overlapStart < overlapEnd) {
-      totalMinutes -= (overlapEnd - overlapStart);
-    }
-  });
-
-  const hours = totalMinutes / 60;
-  return Math.floor(hours * 100) / 100;
-}
-
-function showToast(msg, type){
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.toggle('error', type === 'error');
-  t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), type === 'error' ? 3000 : 1600);
-}
-
-const QUOTA_WORKTYPES = [
-  "C 荷受","D エアー","E 検査","F 修理","H 外磨き","Q 内磨き","J パーツ抜き","M ダンボール作り","N メモリ増設・減設",
-  "b 荷受","q エアー","c 検査","d 外磨き","e 内磨き","f AC磨き","g OSインストール","h OS検査","j ピッキング","k 梱包"
-];
-
-// 基準UPHは「設定」シートの値（記号＝作業内容の先頭1文字で引く）
-function getBenchmarkUph(worktype){
-  const v = state.benchmarks[String(worktype).charAt(0)];
-  return (v === undefined || v === null || v === '') ? null : Number(v);
-}
-// 作業内容から先頭の記号を外した表示用の名前（例：「E 検査」→「検査」）
-// ※記号は集計の仕組みで使うため、保存するデータには残している
-function wtName(worktype){ return String(worktype || '').replace(/^\S+\s+/, ''); }
-
-function getUphColor(worktype, uph){
-  if(uph === null) return null;
-  const bench = getBenchmarkUph(worktype);
-  if(bench === null) return null;
-  if(uph === bench) return '#000000';
-  if(uph > bench) return 'var(--success)';
-  return 'var(--danger)';
-}
-function formatUphCell(worktype, uph){
-  if(uph === null) return '--';
-  const color = getUphColor(worktype, uph);
-  if(color === null) return String(uph);
-  return `<span style="font-weight:700;color:${color};">${uph}</span>`;
-}
-
-function canSubmitDetails(){
-  if(state.worktype === UNLOADING_WORKTYPE){
-    // 箱数は任意。入力する場合は、サイズと数の両方が必要
-    return (state.boxSize === '') === (state.count === '');
-  }
-  const isQuota = QUOTA_WORKTYPES.includes(state.worktype);
-  return !(isQuota && state.count === '');
-}
-
-function buildEntry(){
-  const entry = {
-    id: state.pendingEntry.id,
-    createdAt: state.pendingEntry.createdAt,
-    date: todayStr(),
-    name: state.currentName,
-    worktype: state.worktype,
-    project: state.project,
-    start: state.start,
-    end: state.end,
-    hours: computeHours(state.start, state.end),
-    count: '',
-    cumulativeCount: '',
-    boxSize: '',
-    memo: state.memo,
-    countMode: 'none'
-  };
-  if(state.worktype === UNLOADING_WORKTYPE){
-    entry.boxSize = state.boxSize;
-    entry.count = state.count === '' ? '' : Number(state.count);
-    entry.countMode = 'box';
-  } else if(state.count !== ''){
-    // ここで送る値はあくまで目安。最終的な本日分・累計はサーバー側で保存直前に計算し直される
-    const prev = state.countCtx ? state.countCtx.prevCum : 0;
-    const cum = Number(state.count);
-    entry.cumulativeCount = cum;
-    entry.count = cum - prev;
-    entry.countMode = state.countMode;
-  }
-  return entry;
-}
-
-function setSubmitBusy(busy){
-  const b = document.getElementById('submitBtn');
-  if(!b) return;
-  if(busy){
-    b.disabled = true;
-    b.textContent = t('saving');
-  } else {
-    b.textContent = t('record');
-    b.disabled = !canSubmitDetails();
-  }
-}
-
-async function submitEntry(){
-  if(state.isSubmitting) return; // 二重送信ガード
-  state.isSubmitting = true;
-  setSubmitBusy(true);
-  try{
-    // 再送しても同じidを使う → 実は1回目が保存されていた場合でも二重登録にならない
-    if(!state.pendingEntry){
-      state.pendingEntry = {
-        id: Date.now()+'-'+Math.random().toString(36).slice(2,7),
-        createdAt: new Date().toISOString()
-      };
-    }
-    const res = await gsRun('apiAddEntry', buildEntry());
-    state.pendingEntry = null;
-    // 次の作業のために手元の情報を最新にしておく（「次の作業へ」でサーバーに問い合わせなくて済む）
-    if(res.quickKey) state.quick[res.quickKey] = res.quick;
-    if(res.entry && res.entry.end) state.lastEnds[state.currentName] = res.entry.end;
-    if(res.projects) state.projects = res.projects;
-    state.lastResult = { project: res.entry.project, worktype: res.entry.worktype, uph: res.uph };
-    state.screen = 'result';
-    showToast(t('saved'));
-    render();
-  }catch(e){
-    // ★追加★ 保存に失敗したときは、入力内容をそのまま残して再送できるようにする
-    setSubmitBusy(false);
-    showAlertModal(t('saveFail'));
+// ===============================================================
+// サーバー（GAS）とのやり取り
+// ・Content-Type を text/plain にすると、ブラウザの事前確認なしで送れる
+// ===============================================================
+async function call(fn, args, busyKey) {
+  if (busyKey) showBusy(t(busyKey));
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ fn: fn, args: args || [] })
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error || 'error');
+    return j.result;
   } finally {
-    state.isSubmitting = false;
+    if (busyKey) hideBusy();
   }
 }
 
-function entriesToCSV(entries){
-  const header = ['日付','名前','作業内容','案件名','開始時刻','終了時刻','作業時間(h)','作業数','累計(参考)','箱サイズ','備考'];
-  const lines = [header.join(',')];
-  entries.forEach(en=>{
-    lines.push([en.date,en.name,wtName(en.worktype),en.project,en.start,en.end,en.hours,en.count,en.cumulativeCount,en.boxSize,en.memo].map(fmtCSVCell).join(','));
+// 起動：前回の症状マスタと許可の状態が残っていれば、通信を待たずにすぐ画面を出す
+function start() {
+  let cachedOk = false;
+  try {
+    const m = JSON.parse(localStorage.getItem(LS_MASTER) || 'null');
+    if (m) setMaster(m);
+    cachedOk = !!m && localStorage.getItem(LS_OK) === '1';
+    state.photoNeed = Number(localStorage.getItem(LS_NEED)) || 10;
+  } catch (e) {}
+  const quick = cachedOk && !loadDraft();
+  if (quick && INIT.no) { setUnit({ no: normalizeNo(INIT.no), name: INIT.name }, INIT.name, false); state.screen = 'cat'; }
+  else if (quick) state.screen = 'open';
+  else state.screen = 'loading';
+  render();
+  flushOutbox();
+
+  const token = ++loadToken;
+  call('apiInit', [state.deviceId, INIT.no]).then(r => {
+    if (r.status === 'new' || r.status === 'pending') {
+      try { localStorage.removeItem(LS_OK); } catch (e) {}
+      state.screen = r.status === 'new' ? 'request' : 'pending';
+      return render();
+    }
+    setMaster(r.master);
+    state.owner = r.owner; state.photoNeed = r.photoNeed;
+    try {
+      localStorage.setItem(LS_MASTER, JSON.stringify(r.master));
+      localStorage.setItem(LS_OK, '1');
+      localStorage.setItem(LS_NEED, String(r.photoNeed));
+    } catch (e) {}
+
+    // 「写真を選ぶ」の途中でページが作り直された場合は、途中経過を復元する
+    // （別の台のQRで開いたときは、下書きを捨てる）
+    const d = loadDraft();
+    const sameUnit = d && (!INIT.no || normalizeNo(INIT.no) === d.no);
+    if (d && !sameUnit) clearDraft();
+    if (sameUnit) {
+      clearDraft();
+      return call('apiLoadUnit', [state.deviceId, d.no]).then(info => {
+        setUnit(info, d.name, false);
+        applyUnitInfo(info);
+        d.adds.forEach(([s, p]) => state.adds.set(s, p));
+        d.removes.forEach(s => state.removes.add(s));
+        (d.meta || []).forEach(([s, m]) => state.addMeta.set(s, m));
+        state.photoOther = !!d.photoOther; state.otherCat = d.otherCat || '';
+        state.photoFor = d.photoFor; state.screen = 'photo';
+        render(); toast(t('retake'));
+      });
+    }
+
+    if (INIT.no) {
+      if (!quick) { setUnit(r, INIT.name, false); state.screen = 'cat'; }
+      if (token === loadToken) applyUnitInfo(r);
+    } else if (!quick) state.screen = 'open';
+    refresh();
+  }).catch(e => {
+    // すぐ出した画面はそのまま使える。登録済みの症状だけ読み直せるようにする
+    if (quick) { if (INIT.no && token === loadToken) state.unitFailed = true; refresh(); return; }
+    state.error = String(e.message || e); state.screen = 'error'; render();
   });
-  return lines.join('\n');
-}
-function fmtCSVCell(v){
-  v = (v===null||v===undefined) ? '' : String(v);
-  if(v.includes(',')||v.includes('"')||v.includes('\n')){
-    v = '"'+v.replace(/"/g,'""')+'"';
-  }
-  return v;
 }
 
-function headerHtml(){
-  return `
-    <header class="top">
-      ${renderWhoHeader()}
-      <div style="display:flex;align-items:center;gap:4px;">${langButtonHtml()}<button class="gear" id="openAdmin">⚙</button></div>
-    </header>
-  `;
+// カメラ表示中でなければ、今の画面を描き直す
+function refresh() { if (state.screen !== 'camera' && state.screen !== 'scan') render(); }
+
+function setMaster(master) {
+  state.master = master; state.masterMap = {}; state.cats = [];
+  master.forEach((m, i) => {
+    m.idx = i; state.masterMap[m.h] = m;
+    if (!state.cats.find(c => c.cat === m.cat)) state.cats.push({ cat: m.cat, en: m.catEn, id: m.catId });
+  });
 }
-function bindHeader(){
-  bindLangButton();
-  const nb = document.getElementById('changeNameBtn');
-  if(nb) nb.onclick = ()=>{ forgetName(); loadHome(); };   // 名前を選び直す
-  const btn = document.getElementById('openAdmin');
-  if(btn) btn.onclick = ()=>{
-    state.adminEntries = null;
-    state.adminError = false;
-    state.screen = 'admin';
-    render();
+
+function setUnit(info, nameFromQr, loaded) {
+  state.no = info.no; state.name = nameFromQr || info.name || '';
+  state.current = info.current || []; state.photoCounts = info.photoCounts || {};
+  state.adds = new Map(); state.removes = new Set(); state.cat = ''; state.lastNone = false;
+  state.addMeta = new Map(); state.photoOther = false; state.otherCat = '';
+  state.unitLoaded = loaded !== false; state.unitFailed = false;
+  // アドレスにも台の番号を残しておく（再読み込みしても同じ台が開く）
+  try {
+    const q = new URLSearchParams({ no: state.no });
+    if (state.name) q.set('name', state.name);
+    history.replaceState(null, '', location.pathname + '?' + q.toString());
+  } catch (e) {}
+}
+
+// サーバーから届いた「登録済みの症状」を画面に反映する
+// ・まだ送信待ちの保存があれば、その内容も重ねる（送信前でも正しい状態を見せる）
+function applyUnitInfo(info) {
+  if (!info || (info.no && normalizeNo(info.no) !== normalizeNo(state.no))) return;
+  if (info.no) state.no = info.no;
+  let cur = (info.current || []).slice();
+  getOutbox().filter(j => normalizeNo(j.no) === normalizeNo(state.no)).forEach(j => {
+    const rm = new Set(j.removes);
+    cur = cur.filter(c => !rm.has(c.symptom));
+    j.adds.forEach(a => { if (!cur.find(c => c.symptom === a.symptom)) cur.push({ symptom: a.symptom, photo: a.photo, cat: a.cat, other: !!a.other }); });
+  });
+  state.current = cur;
+  state.photoCounts = info.photoCounts || {};
+  if (!state.name && info.name) state.name = info.name;
+  cur.forEach(c => state.adds.delete(c.symptom));   // 読み込み前に選んだものが登録済みなら、二重にしない
+  state.unitLoaded = true; state.unitFailed = false;
+}
+function normalizeNo(no) {
+  return String(no || '').trim().replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/[－ー―‐]/g, '-');
+}
+
+// 台を開く：画面はすぐに切り替え、登録済みの症状は裏で読み込む
+let loadToken = 0;
+function openUnit(no, name) {
+  clearDraft();
+  setUnit({ no: normalizeNo(no), name: name }, name, false);
+  state.screen = 'cat'; render(); window.scrollTo(0, 0);
+  loadUnit();
+}
+function loadUnit() {
+  const token = ++loadToken, no = state.no;
+  state.unitLoaded = false; state.unitFailed = false;
+  call('apiLoadUnit', [state.deviceId, no]).then(info => {
+    if (token !== loadToken || state.no !== no) return;
+    applyUnitInfo(info); refresh();
+  }).catch(() => {
+    if (token !== loadToken || state.no !== no) return;
+    state.unitFailed = true; refresh();
+  });
+}
+
+// ---------------------------------------------------------------
+// 保存：「完了」を押したらすぐ結果の画面を出し、送信は裏で行う
+// ・送信待ちの記録はスマホに保存しておき、失敗しても自動で送り直す
+// ---------------------------------------------------------------
+function getOutbox() { try { return JSON.parse(localStorage.getItem(LS_OUTBOX) || '[]'); } catch (e) { return []; } }
+function setOutbox(a) { try { localStorage.setItem(LS_OUTBOX, JSON.stringify(a)); } catch (e) {} }
+
+async function save(none) {
+  clearDraft();
+  // 写真の送信は待たない（送信中の写真は、届きしだい記録の中身を差し替えてから送る）
+  const job = {
+    id: Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+    no: state.no, name: state.name,
+    adds: [...state.adds].map(([symptom, photo]) => { const m = state.addMeta.get(symptom); return m && m.other ? { symptom, photo, other: true, cat: m.cat } : { symptom, photo }; }),
+    removes: [...state.removes], none: !!none
   };
+  const box = getOutbox(); box.push(job); setOutbox(box);
+
+  state.current = effective().map(e => ({ symptom: e.symptom, photo: e.photo, cat: e.cat, other: e.other }));
+  state.adds = new Map(); state.removes = new Set(); state.addMeta = new Map();
+  state.lastNone = !!none; state.screen = 'result';
+  render(); window.scrollTo(0, 0);
+  flushOutbox();
 }
 
-function render(){
-  const app = document.getElementById('app');
-  if(state.screen === 'loading'){
-    app.innerHTML = `<div style="padding:40px;text-align:center;color:var(--muted);">${t('loading')}</div>`;
-    return;
-  }
-  if(state.screen === 'name'){
-    const lastDate = state.overview.date;
-    const uphRows = state.overview.rows.slice()
-      .sort((a,b)=> compareProjects(a.project, b.project) || a.worktype.localeCompare(b.worktype));
-    app.innerHTML = `
-      <header class="top">
-        <div class="who"><b>${t('appTitle')}</b></div>
-        <div style="display:flex;align-items:center;gap:4px;">${langButtonHtml()}<button class="gear" id="openAdmin">⚙</button></div>
-      </header>
-      <div class="steptitle">${t('selectName')}</div>
-      <div class="name-grid">
-        ${NAMES.map(n=>`<div class="name-btn" data-name="${esc(n)}">${esc(n)}</div>`).join('')}
-      </div>
-      <main style="padding-top:24px;">
-        <div class="wt-ungrouped-label">${t('uphTitle', lastDate ? formatDateJp(lastDate) : '')}</div>
-        <div class="card tablewrap">
-          <table class="data uph-table">
-            <thead><tr><th>${t('thProject')}</th><th>${t('thWork')}</th><th>UPH</th></tr></thead>
-            <tbody>
-              ${uphRows.length ? uphRows.map(r=>`
-                <tr>
-                  <td>${esc(r.project)}</td><td>${workLabelHtml(r.worktype)}</td><td>${formatUphCell(r.worktype, r.uph)}</td>
-                </tr>
-              `).join('') : `<tr><td colspan="3" style="text-align:center;color:var(--muted);">${t('noRecords')}</td></tr>`}
-            </tbody>
-          </table>
-        </div>
-      </main>
-    `;
-    bindHeader();
-    app.querySelectorAll('.name-btn').forEach(el=>{
-      el.onclick = ()=>{
-        state.currentName = el.dataset.name;
-        state.lang = loadLangFor(state.currentName) || state.lang;   // その人が前に選んだ言語で表示する
-        rememberName(state.currentName);                             // この端末で使う人として覚える
-        startEntryFlow();
-      };
-    });
-    return;
-  }
-  if(state.screen === 'project'){
-    const sortedProjects = state.projects.filter(p=>p.active).map(p=>p.name)
-      .sort((a,b)=> compareProjects(a,b));
-    app.innerHTML = `
-      ${headerHtml()}
-      ${renderStepBar(1)}
-      <div class="backlink"><button id="backBtn">${t('backToName')}</button></div>
-      <div class="steptitle">${t('selectProject')}</div>
-      <main>
-        <div class="plist">
-          ${sortedProjects.map(it=>{
-            const label = getSpecialLabel(it);
-            const special = label !== null;
-            return `<div class="prow ${special?'prow-special':''}" data-val="${esc(it)}">
-              <span>${esc(it)}</span>${special?`<span class="special-tag">${esc(label === 'その他' ? t('tagCommon') : label)}</span>`:''}
-            </div>`;
-          }).join('')}
-        </div>
-        <div class="paddnew" id="goNewProject">${t('addProject')}</div>
-      </main>
-    `;
-    bindHeader();
-    document.getElementById('backBtn').onclick = ()=>{ forgetName(); loadHome(); };
-    document.getElementById('goNewProject').onclick = ()=>{ state.screen='newproject'; render(); };
-    app.querySelectorAll('.prow').forEach(r=>{
-      r.onclick = ()=>{
-        state.project = r.dataset.val;
-        state.worktypeScreen = worktypeScreenFor(state.project);
-        state.screen = state.worktypeScreen;
-        render();
-      };
-    });
-    return;
-  }
-  if(WORKTYPE_SCREENS[state.screen]){
-    const conf = WORKTYPE_SCREENS[state.screen];
-    app.innerHTML = `
-      ${headerHtml()}
-      ${renderStepBar(2)}
-      <div class="backlink"><button id="backBtn">${t('backToProject')}</button></div>
-      <div class="steptitle">${t('wtTitle')}${t('wtSuffix')[state.screen] || ''}</div>
-      <main>
-        ${conf.blocks.map(block=>`
-          <div class="wt-block">
-            <div class="worktype-grid">
-              ${block.map(w=>`<div class="worktype-btn" data-val="${esc(w)}">${workLabelHtml(w)}</div>`).join('')}
-            </div>
-          </div>
-        `).join('')}
-      </main>
-    `;
-    bindHeader();
-    document.getElementById('backBtn').onclick = ()=>{ state.screen='project'; render(); };
-    app.querySelectorAll('.worktype-btn').forEach(btn=>{
-      btn.onclick = ()=>{
-        state.worktype = btn.dataset.val;
-        // ECの梱包は、どのロットの商品か分からないため、必ず【260101】ECとして記録する
-        if(state.worktype === EC_PACKING_WORKTYPE && getSpecialLabel(state.project) === 'EC' && state.project !== EC_FIXED_PROJECT){
-          state.project = EC_FIXED_PROJECT;
-          showToast(t('ecPackToast', EC_FIXED_PROJECT));
-        }
-        state.screen = 'time';
-        render();
-      };
-    });
-    return;
-  }
-  if(state.screen === 'newproject'){
-    app.innerHTML = `
-      ${headerHtml()}
-      ${renderStepBar(1)}
-      <div class="backlink"><button id="backBtn">${t('backToList')}</button></div>
-      <div class="steptitle">${t('npTitle')}</div>
-      <main>
-        <div class="card">
-          <div style="font-size:14px;line-height:1.6;margin-bottom:12px;">
-            ${t('npIntro')}
-          </div>
-          <button class="primary" id="refreshInboundBtn">${t('npRefresh')}</button>
-        </div>
-        <details class="more">
-          <summary>${t('npManual')}</summary>
-          <div class="card" style="margin-top:8px;">
-            <div class="field" style="margin-top:0;">
-              <label>${t('npDate')}</label>
-              <input type="date" id="newProjDate" value="">
-            </div>
-          </div>
-          <div class="wt-ungrouped-label">${t('npTapSource')}</div>
-          <div class="worktype-grid" id="sourceGrid" style="grid-template-columns:repeat(2,1fr);margin-bottom:12px;">
-            ${["DR","SS","KC","SBF","EC","EO"].map(code=>`<div class="worktype-btn" data-code="${code}" style="min-height:72px;font-size:20px;">${code}</div>`).join('')}
-          </div>
-          <div class="field">
-            <label>${t('npOther')}</label>
-            <div style="display:flex;gap:8px;">
-              <input type="text" id="customSourceInput" style="flex:1;">
-              <button class="primary" style="width:auto;padding:10px 16px;" id="customSourceBtn">${t('add')}</button>
-            </div>
-          </div>
-        </details>
-      </main>
-    `;
-    bindHeader();
-    document.getElementById('backBtn').onclick = ()=>{ state.screen='project'; render(); };
-    document.getElementById('refreshInboundBtn').onclick = ()=>{ refreshInbound(); };
-    document.querySelectorAll('#sourceGrid .worktype-btn').forEach(btn=>{
-      btn.onclick = ()=> addProjectManual(btn.dataset.code);
-    });
-    document.getElementById('customSourceBtn').onclick = ()=>{
-      const v = document.getElementById('customSourceInput').value.trim();
-      if(!v) return;
-      addProjectManual(v);
-    };
-    return;
-  }
-  if(state.screen === 'time'){
-    const hours = computeHours(state.start, state.end);
-    app.innerHTML = `
-      ${headerHtml()}
-      ${renderStepBar(3)}
-      <div class="backlink"><button id="backBtn">${t('backToWork')}</button></div>
-      <div class="steptitle">${t('timeTitle')}</div>
-      <main>
-        <div class="card">
-          <div class="time-row">
-            <div class="time-box">
-              <label>${t('start')}</label>
-              <input type="time" id="startTime" value="${esc(state.start)}">
-            </div>
-            <div class="arrow">→</div>
-            <div class="time-box">
-              <label>${t('end')}</label>
-              <input type="time" id="endTime" value="${esc(state.end)}">
-            </div>
-          </div>
-          <div class="hours-display">
-            <div class="num">${hours!==null ? hours : '--'}<span>${t('hoursUnit')}</span></div>
-            <div class="hint">${hours!==null ? t('hoursAuto') : t('hoursHint')}</div>
-          </div>
-        </div>
-      </main>
-      <footer class="bar">
-        <button class="primary" id="nextBtn" ${(!state.start||!state.end)?'disabled':''}>${t('next')}</button>
-      </footer>
-    `;
-    bindHeader();
-    // ★修正★ 選んだ案件の区分（業務委託／EC／EO／共通業務）の作業内容画面に戻る
-    document.getElementById('backBtn').onclick = ()=>{
-      state.screen = state.worktypeScreen || worktypeScreenFor(state.project);
-      render();
-    };
-    document.getElementById('startTime').onchange = (e)=>{ state.start = e.target.value; render(); };
-    document.getElementById('endTime').onchange = (e)=>{ state.end = e.target.value; render(); };
-    const nextBtn = document.getElementById('nextBtn');
-    if(nextBtn) nextBtn.onclick = ()=>{ goToDetails(); };
-    return;
-  }
-  if(state.screen === 'details'){
-    const ctx = state.countCtx || { prevCum: 0, yHours: 0, yCount: 0, yUph: null };
-    const summaryCard = `
-      <div class="card summary-card">
-        <div class="row"><span class="k">${t('sumYHours')}</span><span>${ctx.yHours} ${t('hoursUnit')}</span></div>
-        <div class="row"><span class="k">${t('sumYCount')}</span><span>${ctx.yCount}</span></div>
-        <div class="row"><span class="k">${t('sumUph')}</span><span>${ctx.yUph!==null ? ctx.yUph : '--'}</span></div>
-      </div>
-    `;
-
-    if(state.worktype === UNLOADING_WORKTYPE){
-      app.innerHTML = `
-        ${headerHtml()}
-        ${renderStepBar(4)}
-        <div class="backlink"><button id="backBtn">${t('backToTime')}</button></div>
-        <div class="steptitle">${t('boxTitle')}</div>
-        <main>
-          ${summaryCard}
-          <div class="card">
-            <div class="field">
-              <label>${t('boxSize')}</label>
-              <select id="boxSizeSelect" style="width:100%;font-size:16px;padding:10px;border-radius:10px;border:1px solid var(--border);background:#fafafa;">
-                <option value="" ${state.boxSize===''?'selected':''}>${t('selectPlease')}</option>
-                <option value="90サイズ" ${state.boxSize==='90サイズ'?'selected':''}>${t('size90')}</option>
-                <option value="115サイズ" ${state.boxSize==='115サイズ'?'selected':''}>${t('size115')}</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>${t('boxCount')}</label>
-              <input type="number" inputmode="numeric" id="boxCountInput" value="${esc(state.count)}">
-            </div>
-          </div>
-        </main>
-        <footer class="bar">
-          <button class="primary" id="submitBtn" ${canSubmitDetails() ? '' : 'disabled'}>${t('record')}</button>
-        </footer>
-      `;
-      bindHeader();
-      document.getElementById('backBtn').onclick = ()=>{ state.screen='time'; render(); };
-      const updateBtn = ()=>{
-        const submitBtn = document.getElementById('submitBtn');
-        if(submitBtn && !state.isSubmitting) submitBtn.disabled = !canSubmitDetails();
-      };
-      document.getElementById('boxSizeSelect').onchange = (e)=>{ state.boxSize = e.target.value; updateBtn(); };
-      document.getElementById('boxCountInput').oninput = (e)=>{ state.count = e.target.value; updateBtn(); };
-      document.getElementById('submitBtn').onclick = ()=>{ submitEntry(); };
-      return;
+let flushing = false, flushTimer = null;
+async function flushOutbox() {
+  if (flushing) return;
+  flushing = true; clearTimeout(flushTimer);
+  let sent = 0, failed = false;
+  try {
+    for (;;) {
+      let job = getOutbox()[0];
+      if (!job) break;
+      // この記録に送信中の写真があれば、届くのを待つ（ページを開き直して行方が分からないものは、写真なしにする）
+      const marks = job.adds.map(a => a.photo).filter(isPending);
+      if (marks.length) {
+        await Promise.all(marks.map(m => uploadJobs.get(m) || Promise.resolve()));
+        marks.forEach(m => { if (!uploadJobs.has(m)) replacePhoto(m, ''); });
+        job = getOutbox().find(j => j.id === job.id);
+        if (!job) continue;
+        job.adds.forEach(a => { if (isPending(a.photo)) a.photo = ''; });
+      }
+      try {
+        var saved = await call('apiSave', [state.deviceId, job.no, job.name, job.adds, job.removes, job.none]);
+      } catch (e) { failed = true; break; }
+      setOutbox(getOutbox().filter(j => j.id !== job.id));
+      // 開いている台なら、サーバーに記録された内容（翻訳後の症状名など）に合わせる
+      if (saved && normalizeNo(saved.no) === normalizeNo(state.no)) { applyUnitInfo(saved); refresh(); }
+      sent++;
+      renderHeader();
     }
-
-    const prevCum = ctx.prevCum;
-    const curCum = state.count === '' ? null : Number(state.count);
-    const dailyCount = curCum !== null ? (curCum - prevCum) : null;
-    const isQuota = QUOTA_WORKTYPES.includes(state.worktype);
-    const showMemo = getSpecialLabel(state.project) === 'その他';
-    app.innerHTML = `
-      ${headerHtml()}
-      ${renderStepBar(4)}
-      <div class="backlink"><button id="backBtn">${t('backToTime')}</button></div>
-      <div class="steptitle">${t('countTitle', showMemo, isQuota)}</div>
-      <main>
-        ${summaryCard}
-        <div class="card">
-          <div class="field">
-            <label>${t('cumLabel', isQuota ? t('req') : t('opt'))}</label>
-            <input type="number" inputmode="numeric" id="countInput" value="${esc(state.count)}">
-          </div>
-          <div class="field">
-            <label>${t('dailyLabel', isQuota ? t('req') : t('opt'))}</label>
-            <input type="number" inputmode="numeric" id="dailyInput" value="${dailyCount!==null ? dailyCount : ''}">
-          </div>
-          <div class="hours-display" style="margin-top:10px;padding:14px 0;">
-            <div class="num" id="dailyCountNum" style="font-size:28px;"></div>
-            <div class="hint" id="dailyCountHint"></div>
-          </div>
-          <div class="rulebox">${esc(t('rule'))}</div>
-          ${showMemo ? `
-          <div class="field">
-            <label>${t('memo')}</label>
-            <textarea id="memoInput" rows="2">${esc(state.memo)}</textarea>
-          </div>
-          ` : ''}
-        </div>
-      </main>
-      <footer class="bar">
-        <button class="primary" id="submitBtn" ${canSubmitDetails() ? '' : 'disabled'}>${t('record')}</button>
-      </footer>
-    `;
-    bindHeader();
-    document.getElementById('backBtn').onclick = ()=>{ state.screen='time'; render(); };
-
-    function updateCountDisplays(){
-      const cc = state.count === '' ? null : Number(state.count);
-      const dc = cc !== null ? (cc - prevCum) : null;
-      const numEl = document.getElementById('dailyCountNum');
-      const hintEl = document.getElementById('dailyCountHint');
-      numEl.innerHTML = `${dc!==null ? dc : '--'}<span>${t('todayUnit')}</span>`;
-      numEl.style.color = (dc!==null && dc<0) ? 'var(--danger)' : '';
-      hintEl.textContent = dc!==null
-        ? (dc<0 ? t('negWarn') : t('autoCalc', cc, prevCum))
-        : t('prevInfo', prevCum);
-      const submitBtn = document.getElementById('submitBtn');
-      if(submitBtn && !state.isSubmitting) submitBtn.disabled = !canSubmitDetails();
-      return dc;
-    }
-    updateCountDisplays();
-
-    document.getElementById('countInput').oninput = (e)=>{
-      state.count = e.target.value;
-      state.countMode = 'cum';
-      const dc = updateCountDisplays();
-      const dailyEl = document.getElementById('dailyInput');
-      const dailyVal = dc !== null ? String(dc) : '';
-      if(dailyEl.value !== dailyVal) dailyEl.value = dailyVal;
-    };
-    document.getElementById('dailyInput').oninput = (e)=>{
-      const typed = e.target.value;
-      const newCum = typed === '' ? '' : String(prevCum + Number(typed));
-      state.count = newCum;
-      state.countMode = 'daily';
-      const countEl = document.getElementById('countInput');
-      if(countEl.value !== newCum) countEl.value = newCum;
-      updateCountDisplays();
-    };
-    const memoInputEl = document.getElementById('memoInput');
-    if(memoInputEl) memoInputEl.oninput = (e)=>{ state.memo = e.target.value; };
-    document.getElementById('submitBtn').onclick = ()=>{ submitEntry(); };
-    return;
-  }
-  if(state.screen === 'result'){
-    const r = state.lastResult;
-    app.innerHTML = `
-      ${headerHtml()}
-      <div class="steptitle">${t('saved')}</div>
-      <main>
-        <div class="card" style="text-align:center;padding:32px 16px;">
-          <div style="font-size:24px;font-weight:800;margin-bottom:8px;">${esc(r.project)}</div>
-          <div style="font-size:24px;font-weight:800;margin-bottom:22px;">${workLabelHtml(r.worktype)}</div>
-          <div style="font-size:14px;color:var(--muted);margin-bottom:6px;">UPH</div>
-          ${renderUphComparison(r.worktype, r.uph)}
-        </div>
-      </main>
-      <footer class="bar">
-        <button class="primary" id="nextBtn">${t('nextWork')}</button>
-      </footer>
-    `;
-    bindHeader();
-    document.getElementById('nextBtn').onclick = ()=>{ startEntryFlow(); };
-    return;
-  }
-  if(state.screen === 'admin'){
-    renderAdmin(app);
-    return;
+  } finally {
+    flushing = false;
+    renderHeader();
+    if (failed) { flushTimer = setTimeout(flushOutbox, 15000); toast(t('sendFail')); }
+    else if (sent) toast(t('saved'));
   }
 }
+window.addEventListener('online', flushOutbox);
 
-function renderWhoHeader(){
-  const chips = [];
-  if(state.project) chips.push(state.project);
-  if(state.worktype) chips.push(wtName(state.worktype));
-  if(state.start && state.end){
-    const h = computeHours(state.start, state.end);
-    chips.push(`${h!==null ? h : '--'}h（${state.start}〜${state.end}）`);
-  }
-  return `
-    <div class="who">
-      <button class="whobtn" id="changeNameBtn"><b>${esc(state.currentName)}</b><span>${t('changeName')}</span></button>
-      ${chips.length ? `<div class="chip-row">${chips.map(c=>`<span class="chip">${esc(c)}</span>`).join('')}</div>` : ''}
-    </div>
-  `;
+// ===============================================================
+// 操作
+// ===============================================================
+function pickSymptom(h) {
+  const m = state.masterMap[h];
+  if (!m || effectiveSet().has(h)) return;
+  state.photoOther = false;
+  if (m.photo) { state.photoFor = h; state.screen = 'photo'; render(); window.scrollTo(0, 0); return; }
+  addSymptom(h, '');
 }
-
-function renderUphComparison(worktype, uph){
-  if(uph === null) return `<div style="font-size:56px;font-weight:800;color:var(--ink);">--</div>`;
-  const bench = getBenchmarkUph(worktype);
-  if(bench === null){
-    return `<div style="font-size:56px;font-weight:800;color:var(--ink);">${uph}</div>`;
-  }
-  const uphSpan = (c)=>`<span style="font-size:56px;font-weight:800;color:${c};">${uph}</span>`;
-  const benchSpan = `<span style="font-size:20px;font-weight:700;color:var(--muted);">${bench}</span>`;
-  const sign = (s)=>`<span style="font-size:26px;font-weight:700;color:var(--muted);margin:0 8px;">${s}</span>`;
-  if(uph < bench){
-    return `<div>${benchSpan}${sign('&gt;')}${uphSpan('var(--danger)')}</div>`;
-  } else if(uph > bench){
-    return `<div>${uphSpan('var(--success)')}${sign('&gt;')}${benchSpan}</div>`;
-  } else {
-    return `<div>${uphSpan('#000000')}${sign('=')}${benchSpan}</div>`;
-  }
+function addSymptom(h, photo) {
+  clearDraft();
+  if (state.photoOther && h === state.photoFor) state.addMeta.set(h, { cat: state.otherCat, other: true });
+  state.photoOther = false; state.otherDraft = '';
+  if (state.removes.has(h)) state.removes.delete(h); else state.adds.set(h, photo || '');
+  state.screen = 'cat'; state.cat = ''; render(); window.scrollTo(0, 0);
 }
-
-function renderStepBar(step){
-  let dots = '';
-  for(let i=1;i<=4;i++){
-    let cls = 'dot';
-    if(i < step) cls += ' done';
-    if(i === step) cls += ' active';
-    dots += `<div class="${cls}"></div>`;
-  }
-  return `<div class="stepbar">${dots}</div>`;
-}
-
-// 管理画面「入力データ」タブ用。開いたときだけスプレッドシートから全件を読み込む
-async function loadAdminEntries(){
-  if(state.adminLoading) return;
-  state.adminLoading = true;
-  state.adminError = false;
-  try{
-    state.adminEntries = await gsRun('apiGetAllEntries');
-  }catch(e){
-    state.adminError = true;
-  }
-  state.adminLoading = false;
-  if(state.screen === 'admin' && state.adminTab === 'data') render();
-}
-
-// 案件マスタの操作（1件ずつスプレッドシートに反映し、最新の一覧を受け取る）
-async function runProjectOp(fnName, args, successMsg){
-  try{
-    state.projects = await gsRun(fnName, ...args);
-    if(successMsg) showToast(successMsg);
-  }catch(e){
-    showToast('保存に失敗しました。もう一度お試しください', 'error');
-  }
+function removeSymptom(h) {
+  if (state.adds.has(h)) { state.adds.delete(h); state.addMeta.delete(h); } else state.removes.add(h);
   render();
 }
 
-function renderAdmin(app){
-  app.innerHTML = `
-    <header class="top">
-      <div class="who"><b>管理画面</b></div>
-      <button class="gear" id="closeAdmin">✕</button>
-    </header>
-    <div class="admin-tabs">
-      <button id="tabProjects" class="${state.adminTab==='projects'?'active':''}">案件マスタ</button>
-      <button id="tabData" class="${state.adminTab==='data'?'active':''}">入力データ</button>
-    </div>
-    <main id="adminBody"></main>
-  `;
-  document.getElementById('closeAdmin').onclick = ()=>{
-    if(state.currentName){ state.screen = 'project'; render(); }
-    else { loadHome(); }
+// 写真を裏で送る。画面はすぐ次に進める
+// ・送信中の写真は「pending:番号」という目印にしておき、届いたら本当のURLに差し替える
+// ・「完了」を押したあとに届いた場合も、送信待ちの記録の中身を差し替える
+const pendingUploads = new Set();
+const uploadJobs = new Map();   // 目印 → 送信中の処理
+let uploadSeq = 0;
+function replacePhoto(mark, url) {
+  state.adds.forEach((p, s) => { if (p === mark) state.adds.set(s, url); });
+  state.current.forEach(c => { if (c.photo === mark) c.photo = url; });
+  const box = getOutbox();
+  let changed = false;
+  box.forEach(j => j.adds.forEach(a => { if (a.photo === mark) { a.photo = url; changed = true; } }));
+  if (changed) setOutbox(box);
+}
+function uploadPhoto(dataUrl) {
+  const h = state.photoFor, no = state.no;
+  const mark = 'pending:' + Date.now() + '_' + (++uploadSeq);
+  hideBusy();
+  addSymptom(h, mark);   // 先に症状を追加して、カテゴリ画面に戻る
+  toast(t('uploading'));
+  const p = call('apiUploadPhoto', [state.deviceId, no, h, dataUrl])
+    .then(r => {
+      replacePhoto(mark, r.url);
+      state.photoCounts[h] = (state.photoCounts[h] || 0) + 1;
+    })
+    .catch(e => {
+      // 「完了」の前なら、症状を外して撮り直せるようにする
+      if (state.no === no && state.adds.get(h) === mark) {
+        state.adds.delete(h);
+        alert(t('errSave') + '\n' + (e.message || e));
+      }
+      replacePhoto(mark, '');   // 「完了」のあとなら、写真なしで症状だけ記録する
+    })
+    .then(() => { pendingUploads.delete(p); uploadJobs.delete(mark); refresh(); });
+  pendingUploads.add(p);
+  uploadJobs.set(mark, p);
+  return p;
+}
+const isPending = v => typeof v === 'string' && v.indexOf('pending:') === 0;
+
+// 「写真を選ぶ」、またはページ内カメラが使えない端末の撮影
+async function onPhotoPicked(ev) {
+  const file = ev.target.files && ev.target.files[0];
+  ev.target.value = '';
+  if (!file) return;
+  try {
+    showBusy(t('uploading'));
+    const dataUrl = await resizeImage(file, PHOTO_MAX, PHOTO_QUALITY);
+    await uploadPhoto(dataUrl);
+  } catch (e) { hideBusy(); alert(t('errSave') + '\n' + (e.message || e)); }
+}
+['camPhoto', 'galPhoto'].forEach(id => document.getElementById(id).addEventListener('change', onPhotoPicked));
+
+// ---------------------------------------------------------------
+// ページ内カメラ（別アプリに切り替わらないので、ページが破棄されない）
+// ---------------------------------------------------------------
+let camStream = null, scanTimer = null;
+function stopCamera() {
+  clearTimeout(scanTimer); scanTimer = null;
+  if (camStream) { camStream.getTracks().forEach(tr => tr.stop()); camStream = null; }
+}
+async function startCamera(w, h) {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('no camera');
+  camStream = await navigator.mediaDevices.getUserMedia({
+    video: { facingMode: { ideal: 'environment' }, width: { ideal: w }, height: { ideal: h } }, audio: false });
+  return camStream;
+}
+function cameraHtml(withFrame) {
+  return `<div class="cam"><video id="vid" autoplay playsinline muted></video>${withFrame ? '<div class="frame"></div>' : ''}</div>`;
+}
+
+// 瑕疵の撮影
+async function openCamera() {
+  try { await startCamera(1280, 960); }
+  catch (e) {
+    // ページ内カメラが使えない場合は、カメラアプリで撮影する
+    saveDraft();
+    document.getElementById('camPhoto').click();
+    return;
+  }
+  state.screen = 'camera'; renderHeader();
+  $app.innerHTML = `${cameraHtml(false)}
+    <div class="actions"><button class="primary" id="snap" type="button" aria-label="${esc(t('shoot'))}">📷</button></div>
+    <button class="link" id="camCancel" type="button">${esc(t('cancel'))}</button>`;
+  const v = document.getElementById('vid');
+  v.srcObject = camStream;
+  document.getElementById('camCancel').onclick = () => { stopCamera(); state.screen = 'photo'; render(); };
+  document.getElementById('snap').onclick = async () => {
+    if (!v.videoWidth) return;
+    const r = Math.min(1, PHOTO_MAX / Math.max(v.videoWidth, v.videoHeight));
+    const c = document.createElement('canvas');
+    c.width = Math.round(v.videoWidth * r); c.height = Math.round(v.videoHeight * r);
+    c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+    const dataUrl = c.toDataURL('image/jpeg', PHOTO_QUALITY);
+    c.width = c.height = 0;
+    stopCamera();
+    await uploadPhoto(dataUrl);
   };
-  document.getElementById('tabProjects').onclick = ()=>{ state.adminTab='projects'; render(); };
-  document.getElementById('tabData').onclick = ()=>{
-    state.adminTab = 'data';
-    state.adminEntries = null;
-    state.adminError = false;
+}
+
+// QRの読み取り（カメラを向けるだけで読み取る）
+async function openScanner() {
+  const back = state.screen === 'result' || state.screen === 'cat' ? state.screen : 'open';
+  try { await loadJsQR(); } catch (e) { return alert(t('errLoad')); }
+  try { await startCamera(640, 480); }
+  catch (e) {
+    // ページ内カメラが使えない場合は、QRを写真に撮って読み取る
+    document.getElementById('camQr').click();
+    return;
+  }
+  state.screen = 'scan'; state.back = back; renderHeader();
+  $app.innerHTML = `<p class="note">${esc(t('scanDesc'))}</p>${cameraHtml(true)}
+    <div class="actions"><button class="secondary" id="scanCancel" type="button">${esc(t('cancel'))}</button></div>
+    <button class="link" id="scanNum" type="button">${esc(t('byNumber'))}</button>`;
+  const v = document.getElementById('vid');
+  v.srcObject = camStream;
+  document.getElementById('scanCancel').onclick = () => { stopCamera(); state.screen = state.back; render(); };
+  document.getElementById('scanNum').onclick = () => { stopCamera(); state.no = ''; state.name = ''; state.screen = 'open'; render(); };
+  const c = document.createElement('canvas');
+  const ctx = c.getContext('2d', { willReadFrequently: true });
+  const tick = () => {
+    if (state.screen !== 'scan' || !camStream) return;
+    if (v.videoWidth) {
+      const r = Math.min(1, 480 / Math.max(v.videoWidth, v.videoHeight));
+      c.width = Math.round(v.videoWidth * r); c.height = Math.round(v.videoHeight * r);
+      ctx.drawImage(v, 0, 0, c.width, c.height);
+      const d = ctx.getImageData(0, 0, c.width, c.height);
+      const code = jsQR(d.data, c.width, c.height, { inversionAttempts: 'dontInvert' });
+      const unit = code && parseQr(code.data);
+      if (unit) { stopCamera(); if (navigator.vibrate) navigator.vibrate(80); openUnit(unit.no, unit.name); return; }
+    }
+    scanTimer = setTimeout(tick, 250);   // 古い端末でも重くならないよう、1秒に4回だけ調べる
+  };
+  tick();
+}
+
+// アプリを裏に回したらカメラを止める（電池とメモリの節約）
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && camStream) {
+    const s = state.screen;
+    stopCamera();
+    state.screen = s === 'scan' ? state.back : 'photo';
+    render();
+  }
+});
+
+// QR読み取りの部品は、必要になったときに読み込む
+let jsqrPromise = null;
+function loadJsQR() {
+  if (window.jsQR) return Promise.resolve();
+  if (!jsqrPromise) jsqrPromise = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+    s.onload = resolve;
+    s.onerror = () => { jsqrPromise = null; reject(new Error('jsQR')); };
+    document.head.appendChild(s);
+  });
+  return jsqrPromise;
+}
+
+// ページ内カメラが使えない端末：QRを写真に撮って読み取る
+document.getElementById('camQr').addEventListener('change', async ev => {
+  const file = ev.target.files && ev.target.files[0];
+  ev.target.value = '';
+  if (!file) return;
+  showBusy(t('loading'));
+  let text = null;
+  try {
+    await loadJsQR();
+    const img = await loadImage(file);
+    for (const size of [1280, 800, 1800]) {
+      const c = drawScaled(img, size);
+      const d = c.getContext('2d').getImageData(0, 0, c.width, c.height);
+      const code = jsQR(d.data, c.width, c.height);
+      c.width = c.height = 0;
+      if (code && code.data) { text = code.data; break; }
+    }
+  } catch (e) {}
+  hideBusy();
+  const unit = parseQr(text);
+  if (!unit) return alert(t('qrFail'));
+  openUnit(unit.no, unit.name);
+});
+
+function parseQr(text) {
+  if (!text) return null;
+  text = String(text).trim();
+  try {
+    const u = new URL(text);
+    const no = u.searchParams.get('no');
+    if (no) return { no: no.trim(), name: (u.searchParams.get('name') || '').trim() };
+  } catch (e) {}
+  const m = text.match(/^(\d+-\d+)(?:\|(.*))?$/);
+  return m ? { no: m[1], name: m[2] || '' } : null;
+}
+
+function loadImage(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+function drawScaled(img, max) {
+  const r = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+  const c = document.createElement('canvas');
+  c.width = Math.round(img.naturalWidth * r); c.height = Math.round(img.naturalHeight * r);
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  return c;
+}
+// 最初から縮小して読み込むので、元画像を丸ごとメモリに載せない
+async function resizeImage(file, max, quality) {
+  try {
+    const bmp = await createImageBitmap(file, { resizeWidth: max, resizeQuality: 'low' });
+    const r = Math.min(1, max / Math.max(bmp.width, bmp.height));   // 縦長の写真も長い辺を max にそろえる
+    const c = document.createElement('canvas');
+    c.width = Math.round(bmp.width * r); c.height = Math.round(bmp.height * r);
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    bmp.close();
+    const url = c.toDataURL('image/jpeg', quality);
+    c.width = c.height = 0;   // 作業用のメモリをすぐ手放す
+    return url;
+  } catch (e) {
+    const img = await loadImage(file);
+    return drawScaled(img, max).toDataURL('image/jpeg', quality);
+  }
+}
+
+// ===============================================================
+// 画面の描画
+// ===============================================================
+const $app = document.getElementById('app');
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function trSym(h) { const m = state.masterMap[h]; return !m || state.lang === 'ja' ? '' : (state.lang === 'en' ? m.en : m.id); }
+function trCat(c) { return state.lang === 'ja' ? '' : (state.lang === 'en' ? c.en : c.id); }
+function sub(s) { return s ? `<small>${esc(s)}</small>` : ''; }
+
+function renderHeader() {
+  const hd = document.getElementById('hd');
+  const left = state.no
+    ? `<span class="pill no">${esc(state.no)}</span>${state.name ? `<span class="pill name">${esc(state.name)}</span>` : ''}`
+    : `<span class="title">${esc(t('title'))}</span>`;
+  const n = getOutbox().length;
+  const pend = n ? `<span class="pill sync">${esc(t('pendingN', n))}</span>` : '';
+  hd.innerHTML = `${left}<button class="lang" id="langBtn" type="button">🌐 ${LANG_LABEL[state.lang]}</button>${pend}`;
+  document.getElementById('langBtn').onclick = () => {
+    state.lang = LANGS[(LANGS.indexOf(state.lang) + 1) % LANGS.length];
+    try { localStorage.setItem(LS_LANG, state.lang); } catch (e) {}
     render();
   };
+}
 
-  const body = document.getElementById('adminBody');
-  if(state.adminTab === 'projects'){
-    body.innerHTML = `
-      <div class="card">
-        <div class="field">
-          <label>新しい案件名を追加</label>
-          <div style="display:flex;gap:8px;">
-            <input type="text" id="newProjInput" style="flex:1;">
-            <button class="primary" style="width:auto;padding:10px 16px;" id="addProjBtn">追加</button>
-          </div>
-        </div>
-      </div>
-      <div class="card">
-        ${state.projects.slice().sort((a,b)=> compareProjects(a.name,b.name)).map(p=>`
-          <div class="proj-row">
-            <span class="name ${p.active?'':'inactive'}">${esc(p.name)}${(p.hasFile===false && getSpecialLabel(p.name)===null) ? '<span class="nofile-tag">案件ファイルなし</span>' : ''}</span>
-            <div style="display:flex;align-items:center;gap:10px;">
-              <div class="switch ${p.active?'on':''}" data-name="${esc(p.name)}"><div class="knob"></div></div>
-              <button class="del-proj" data-name="${esc(p.name)}" title="削除">✕</button>
-            </div>
-          </div>
-        `).join('')}
-      </div>
-    `;
-    body.querySelectorAll('.switch').forEach(sw=>{
-      sw.onclick = ()=>{
-        const name = sw.dataset.name;
-        const proj = state.projects.find(p=>p.name===name);
-        if(!proj) return;
-        runProjectOp('apiSetProjectActive', [name, !proj.active]);
-      };
-    });
-    body.querySelectorAll('.del-proj').forEach(btn=>{
-      btn.onclick = ()=>{
-        const name = btn.dataset.name;
-        runProjectOp('apiDeleteProject', [name], `「${name}」を削除しました`);
-      };
-    });
-    document.getElementById('addProjBtn').onclick = ()=>{
-      const name = document.getElementById('newProjInput').value.trim();
-      if(!name) return;
-      runProjectOp('apiAddProject', [name], '案件名を追加しました');
-    };
-    return;
-  }
+function render() {
+  renderHeader();
+  document.documentElement.lang = state.lang;
+  const S = state.screen;
+  if (S === 'camera' || S === 'scan') return;   // カメラの表示中は、画面を作り直さない
+  if (S === 'loading') $app.innerHTML = `<p class="note">${esc(t('loading'))}</p>`;
+  else if (S === 'error') renderError();
+  else if (S === 'request') renderRequest();
+  else if (S === 'pending') renderPending();
+  else if (S === 'open') renderOpen();
+  else if (S === 'cat') renderCat();
+  else if (S === 'sym') renderSym();
+  else if (S === 'photo') renderPhoto();
+  else if (S === 'other') renderOther();
+  else if (S === 'result') renderResult();
+}
 
-  // ===== 入力データタブ =====
-  if(state.adminError){
-    body.innerHTML = `
-      <div class="card" style="text-align:center;">
-        <div style="color:var(--danger);margin-bottom:12px;">データを読み込めませんでした。通信状況を確認してください。</div>
-        <button class="primary" id="retryAdmin">もう一度読み込む</button>
-      </div>
-    `;
-    document.getElementById('retryAdmin').onclick = ()=>{ state.adminError = false; render(); };
-    return;
-  }
-  if(state.adminEntries === null){
-    body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);">読み込み中…</div>';
-    loadAdminEntries();
-    return;
-  }
+function renderError() {
+  $app.innerHTML = `<div class="card"><p class="big">${esc(t('errLoad'))}</p><p class="note">${esc(state.error)}</p>
+    <div class="actions"><button class="primary" id="retry" type="button">${esc(t('retry'))}</button></div></div>`;
+  document.getElementById('retry').onclick = start;
+}
 
-  const entries = state.adminEntries;
-  const csv = entriesToCSV(entries);
-  const box90 = entries
-    .filter(en=> BOX_WORKTYPES.includes(en.worktype) && en.boxSize==='90サイズ')
-    .reduce((sum,en)=> sum + (Number(en.count)||0), 0);
-  const box115 = entries
-    .filter(en=> BOX_WORKTYPES.includes(en.worktype) && en.boxSize==='115サイズ')
-    .reduce((sum,en)=> sum + (Number(en.count)||0), 0);
-  const blankIfEmpty = v => (v===''||v===undefined||v===null) ? '' : v;
-  body.innerHTML = `
-    <div class="card">
-      <button class="primary" id="copyCsvBtn">CSVをコピー（${entries.length}件）</button>
-      <div style="margin-top:10px;">
-        <button class="primary" id="deleteAllBtn" style="background:#E7E4DC;color:var(--muted);">全データを削除</button>
-      </div>
-    </div>
-    <div class="card summary-card">
-      <div class="row"><span class="k">90サイズ 小計（箱）</span><span>${box90}</span></div>
-      <div class="row"><span class="k">115サイズ 小計（箱）</span><span>${box115}</span></div>
-    </div>
-    <div class="card tablewrap">
-      <table class="data">
-        <thead><tr><th>日付</th><th>名前</th><th>作業内容</th><th>案件名</th><th>開始</th><th>終了</th><th>時間</th><th>数</th><th>累計</th><th>箱サイズ</th><th>備考</th></tr></thead>
-        <tbody>
-          ${entries.slice().reverse().map(en=>`
-            <tr>
-              <td>${esc(en.date)}</td><td>${esc(en.name)}</td><td>${esc(wtName(en.worktype))}</td><td>${esc(en.project)}</td>
-              <td>${esc(en.start)}</td><td>${esc(en.end)}</td><td>${esc(en.hours)}</td><td>${esc(blankIfEmpty(en.count))}</td><td>${esc(blankIfEmpty(en.cumulativeCount))}</td><td>${esc(en.boxSize)}</td><td>${esc(en.memo)}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    </div>
-  `;
-  document.getElementById('copyCsvBtn').onclick = async ()=>{
-    try{
-      await navigator.clipboard.writeText(csv);
-      showToast('CSVをコピーしました');
-    }catch(e){
-      const ta = document.createElement('textarea');
-      ta.value = csv;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-      showToast('CSVをコピーしました');
-    }
-  };
-  document.getElementById('deleteAllBtn').onclick = ()=>{
-    showConfirmModal(`全${entries.length}件のデータを削除しますか？\nこの操作は元に戻せません。`, '削除する', async ()=>{
-      const count = entries.length;
-      try{
-        await gsRun('apiDeleteAllEntries');
-        state.adminEntries = [];
-        state.quick = {};
-        state.lastEnds = {};
-        showToast(`${count}件を削除しました`);
-      }catch(e){
-        showToast('削除に失敗しました。もう一度お試しください', 'error');
-      }
-      render();
-    });
+function renderRequest() {
+  $app.innerHTML = `<div class="card"><p class="big">${esc(t('reqTitle'))}</p><p class="note">${esc(t('reqDesc'))}</p>
+    <label class="field" for="devName">${esc(t('reqLabel'))}</label>
+    <input type="text" id="devName" maxlength="40" autocomplete="off">
+    <div class="err" id="devErr"></div>
+    <div class="actions"><button class="primary" id="reqBtn" type="button">${esc(t('reqBtn'))}</button></div></div>`;
+  const input = document.getElementById('devName');
+  input.oninput = () => { document.getElementById('devErr').textContent = ''; };
+  document.getElementById('reqBtn').onclick = () => {
+    const label = input.value.trim();
+    if (!label) { document.getElementById('devErr').textContent = t('reqEmpty'); input.focus(); return; }
+    call('apiRequestDevice', [state.deviceId, label], 'saving').then(() => { state.screen = 'pending'; render(); })
+      .catch(e => alert(t('errSave') + '\n' + (e.message || e)));
   };
 }
 
-function showConfirmModal(message, confirmLabel, onConfirm, style){
-  const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay';
-  overlay.innerHTML = `
-    <div class="modal-box">
-      <div class="modal-msg">${esc(message).replace(/\n/g,'<br>')}</div>
-      <div class="modal-actions">
-        <button class="modal-btn cancel" id="modalCancel">${t('cancel')}</button>
-        <button class="modal-btn ${style==='ok' ? 'ok' : 'danger'}" id="modalConfirm">${esc(confirmLabel)}</button>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(overlay);
-  overlay.querySelector('#modalCancel').onclick = ()=> document.body.removeChild(overlay);
-  overlay.querySelector('#modalConfirm').onclick = ()=>{
-    document.body.removeChild(overlay);
-    onConfirm();
+function renderPending() {
+  $app.innerHTML = `<div class="card"><p class="big">${esc(t('pendTitle'))}</p><p class="note">${esc(t('pendDesc'))}</p>
+    <div class="actions"><button class="primary" id="chk" type="button">${esc(t('check'))}</button></div></div>`;
+  document.getElementById('chk').onclick = start;
+}
+
+function renderOpen() {
+  $app.innerHTML = `<div class="card"><p class="big">${esc(t('openTitle'))}</p><p class="note">${esc(t('openDesc'))}</p>
+    <div class="actions"><button class="primary" id="scanBtn" type="button">${esc(t('scan'))}</button></div>
+    <label class="field" for="noInput">${esc(t('noLabel'))}</label>
+    <input type="text" id="noInput" inputmode="tel" autocomplete="off" placeholder="564-03">
+    <div class="err" id="noErr"></div>
+    <div class="actions"><button class="secondary" id="openBtn" type="button">${esc(t('open'))}</button></div></div>`;
+  const input = document.getElementById('noInput');
+  input.oninput = () => {
+    document.getElementById('noErr').textContent = '';
+    // 全角数字を半角にして、数字と「-」以外を消す
+    let v = input.value.replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
+                       .replace(/[－ー―‐]/g, '-')
+                       .replace(/[ 　.,*#]/g, '-')
+                       .replace(/[^0-9-]/g, '');
+    input.value = v;
+  };
+  document.getElementById('scanBtn').onclick = openScanner;
+  document.getElementById('openBtn').onclick = () => {
+    const v = input.value.trim();
+    if (!/^\d+-\d+$/.test(v)) { document.getElementById('noErr').textContent = t('noInvalid'); input.focus(); return; }
+    openUnit(v, '');
   };
 }
 
-// 保存失敗などを確実に伝えるための、OKボタンだけのお知らせ
-function showAlertModal(message){
-  const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay';
-  overlay.innerHTML = `
-    <div class="modal-box">
-      <div class="modal-msg">${esc(message).replace(/\n/g,'<br>')}</div>
-      <div class="modal-actions">
-        <button class="modal-btn ok" id="modalOk">OK</button>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(overlay);
-  overlay.querySelector('#modalOk').onclick = ()=> document.body.removeChild(overlay);
+function selectedListHtml(withRemove) {
+  const list = effective();
+  if (!list.length) return state.unitLoaded ? `<div class="empty">${esc(t('selEmpty'))}</div>` : '';
+  return `<ul class="sel">${list.map(e => `<li><span>${esc(e.symptom)}${sub(trSym(e.symptom))}</span>
+      ${e.other ? `<span class="tag">${esc(t('otherTag'))}</span>` : ''}${e.photo ? `<span class="tag">${esc(t('hasPhoto'))}</span>` : ''}${e.isNew && withRemove ? `<span class="tag new">${esc(t('isNew'))}</span>` : ''}
+      ${withRemove ? `<button class="x" type="button" data-rm="${esc(e.symptom)}" aria-label="×">×</button>` : ''}</li>`).join('')}</ul>`;
 }
 
-loadHome(true);
+function renderCat() {
+  const effList = effective();
+  const counts = {};
+  effList.forEach(e => { if (e.cat) counts[e.cat] = (counts[e.cat] || 0) + 1; });
+  const empty = effList.length === 0;
+  $app.innerHTML = `<h2>${esc(t('catTitle'))}</h2>
+    <div class="group">${state.cats.map((c, i) => `<button class="btn" type="button" data-cat="${i}">${esc(c.cat)}${sub(trCat(c))}${counts[c.cat] ? `<span class="badge">${counts[c.cat]}</span>` : ''}</button>`).join('')}</div>
+    <h2>${esc(t('selTitle'))}</h2>${selectedListHtml(true)}
+    ${state.unitFailed ? `<p class="note">${esc(t('unitFail'))} <button class="link" id="reload" type="button">${esc(t('retry'))}</button></p>`
+      : !state.unitLoaded ? `<p class="note">${esc(t('unitLoading'))}</p>` : ''}
+    <div class="actions">${!state.unitLoaded
+      ? `<button class="primary" type="button" disabled style="opacity:.5">${esc(t('waitLoad'))}</button>`
+      : empty
+      ? `<button class="primary" id="noneBtn" type="button">${esc(t('none'))}</button>`
+      : `<button class="primary" id="doneBtn" type="button">${esc(t('done'))}</button>`}</div>`;
+  $app.querySelectorAll('[data-cat]').forEach(b => b.onclick = () => { state.cat = state.cats[Number(b.dataset.cat)].cat; state.screen = 'sym'; render(); window.scrollTo(0, 0); });
+  $app.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => removeSymptom(b.dataset.rm));
+  const done = document.getElementById('doneBtn'); if (done) done.onclick = () => save(false);
+  const rl = document.getElementById('reload'); if (rl) rl.onclick = () => { loadUnit(); render(); };
+  const none = document.getElementById('noneBtn'); if (none) none.onclick = () => save(true);
+}
+
+function renderSym() {
+  const eff = effectiveSet();
+  const c = state.cats.find(x => x.cat === state.cat) || {};
+  const items = state.master.filter(m => m.cat === state.cat);
+  $app.innerHTML = `<button class="back" id="backBtn" type="button">${esc(t('backCat'))}</button>
+    <h2>${esc(state.cat)}${trCat(c) ? ` <span class="note">${esc(trCat(c))}</span>` : ''}</h2>
+    <div class="group">${items.map(m => `<button class="btn${eff.has(m.h) ? ' on' : ''}" type="button" data-h="${esc(m.h)}">${esc(m.h)}${sub(trSym(m.h))}</button>`).join('')}
+      <button class="btn other" type="button" id="otherBtn">${esc(t('other'))}</button></div>`;
+  document.getElementById('backBtn').onclick = () => { state.screen = 'cat'; render(); window.scrollTo(0, 0); };
+  document.getElementById('otherBtn').onclick = () => { state.otherCat = state.cat; state.screen = 'other'; render(); window.scrollTo(0, 0); };
+  $app.querySelectorAll('[data-h]').forEach(b => b.onclick = () => pickSymptom(b.dataset.h));
+}
+
+function renderPhoto() {
+  const h = state.photoFor;
+  const have = state.photoCounts[h] || 0;
+  const optional = !state.photoOther && have >= state.photoNeed;
+  $app.innerHTML = `<div class="card"><p class="big">${esc(h)}</p>${trSym(h) ? `<p class="note">${esc(trSym(h))}</p>` : ''}
+    <p class="note">${esc(state.photoOther ? t('otherReq') : optional ? t('photoOpt', have) : t('photoReq'))}</p>
+    <div class="actions"><button class="primary" id="shootBtn" type="button">${esc(t('shoot'))}</button></div>
+    <div class="actions"><button class="secondary" id="pickBtn" type="button">${esc(t('pick'))}</button></div>
+    ${optional ? `<div class="actions"><button class="secondary" id="skipBtn" type="button">${esc(t('skip'))}</button></div>` : ''}
+    <button class="link" id="cancelBtn" type="button">${esc(t('cancel'))}</button></div>`;
+  document.getElementById('shootBtn').onclick = openCamera;
+  document.getElementById('pickBtn').onclick = () => { saveDraft(); document.getElementById('galPhoto').click(); };
+  const skip = document.getElementById('skipBtn'); if (skip) skip.onclick = () => addSymptom(h, '');
+  document.getElementById('cancelBtn').onclick = () => { clearDraft(); state.screen = state.photoOther ? 'other' : 'sym'; render(); };
+}
+
+// その他（リストにない症状）の入力
+function renderOther() {
+  const c = state.cats.find(x => x.cat === state.otherCat) || {};
+  $app.innerHTML = `<button class="back" id="backBtn" type="button">${esc(t('backCat'))}</button>
+    <div class="card"><p class="big">${esc(t('otherTitle'))}</p>
+    <p class="note">${esc(state.otherCat)}${trCat(c) ? ' / ' + esc(trCat(c)) : ''}</p>
+    <p class="note">${esc(t('otherDesc'))}</p>
+    <label class="field" for="otherInput">${esc(t('otherLabel'))}</label>
+    <input type="text" id="otherInput" maxlength="60" autocomplete="off">
+    <div class="err" id="otherErr"></div>
+    <div class="actions"><button class="primary" id="otherNext" type="button">${esc(t('otherNext'))}</button></div></div>`;
+  const input = document.getElementById('otherInput');
+  input.value = state.otherDraft || '';
+  input.oninput = () => { state.otherDraft = input.value; document.getElementById('otherErr').textContent = ''; };
+  document.getElementById('backBtn').onclick = () => { state.otherDraft = ''; state.screen = 'cat'; render(); window.scrollTo(0, 0); };
+  document.getElementById('otherNext').onclick = () => {
+    const v = input.value.replace(/\s+/g, ' ').trim();
+    if (!v) { document.getElementById('otherErr').textContent = t('otherEmpty'); input.focus(); return; }
+    if (effectiveSet().has(v)) { document.getElementById('otherErr').textContent = t('otherDup'); input.focus(); return; }
+    state.photoFor = v; state.photoOther = true; state.screen = 'photo'; render(); window.scrollTo(0, 0);
+  };
+}
+
+function renderResult() {
+  const n = effective().length;
+  $app.innerHTML = `<h2>${esc(t('selTitle'))}${n ? ` <span class="note">${esc(t('count', n))}</span>` : ''}</h2>
+    ${state.lastNone ? `<div class="empty">${esc(t('resNone'))}</div>` : selectedListHtml(false)}
+    <div class="actions"><button class="primary" id="nextBtn" type="button">${esc(t('next'))}</button></div>
+    <div class="actions"><button class="secondary" id="fixBtn" type="button">${esc(t('fix'))}</button></div>
+    <button class="link" id="numBtn" type="button">${esc(t('byNumber'))}</button>`;
+  document.getElementById('nextBtn').onclick = openScanner;
+  document.getElementById('fixBtn').onclick = () => { state.screen = 'cat'; render(); window.scrollTo(0, 0); };
+  document.getElementById('numBtn').onclick = () => { state.no = ''; state.name = ''; state.screen = 'open'; render(); };
+}
+
+function showBusy(msg) { const b = document.getElementById('busy'); b.textContent = msg; b.hidden = false; }
+function hideBusy() { document.getElementById('busy').hidden = true; }
+let toastTimer = null;
+function toast(msg) { const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 1800); }
+
+start();
+setTimeout(() => loadJsQR().catch(() => {}), 3000);   // 画面が出たあとで、QR読み取りの部品を先読みする
 </script>
 </body>
 </html>
