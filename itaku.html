@@ -88,6 +88,9 @@ input[type=text]{width:100%;font:inherit;font-size:18px;padding:12px;border:1px 
 .grade.A{background:var(--ok-soft);color:var(--ok)}
 .grade.NG{background:var(--ng-soft);color:var(--danger)}
 .grades{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.dests{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}   /* ピッキングの出荷先：3列で、文字を横書き1行に */
+.dests button{min-height:64px;font-size:19px;white-space:nowrap;padding:0 6px;overflow:hidden;text-overflow:ellipsis}
+.dests button.cur{border:3px solid var(--amber);background:var(--amber-soft)}
 .grades button{min-height:76px;font-size:26px}
 .grades button.cur{border:3px solid var(--amber);background:var(--amber-soft)}
 .stick{border:3px solid var(--amber);background:var(--amber-soft);text-align:center}
@@ -103,7 +106,10 @@ details.note summary{cursor:pointer;padding:8px 0}
 .spec .sv.need{background:var(--amber-soft);border:2px solid var(--amber);border-radius:8px;padding:2px 8px;font-weight:700}
 .spec .sv.new{background:#e6f4ea;border:2px solid #1d6b2e;border-radius:8px;padding:2px 8px;font-weight:700}
 .spec .sb{display:flex;flex-wrap:wrap;gap:8px;padding:0 14px 14px}
-.spec .sb button{min-height:48px;min-width:64px;padding:0 12px;font-size:16px}
+.spec .sb button{flex:0 0 auto;white-space:nowrap;min-height:48px;min-width:64px;padding:0 14px;font-size:16px}   /* 文字の長さに合わせた幅にして、はみ出さないように */
+.spec .sb .res{display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%}
+.spec .sb .res input{width:110px;font-size:22px;text-align:center}
+.spec .sb .res b{font-size:26px}
 .spec .sb button.cur{background:var(--amber-soft);border:3px solid var(--amber)}
 .spec .sb input{font:inherit;font-size:18px;padding:10px;border:1px solid var(--ink);border-radius:10px;width:160px}
 .spec .by{font-size:12px;color:var(--ink2);padding:0 14px 8px}
@@ -384,7 +390,8 @@ const T = {
   specNeed:  { ja: '要確認の項目', en: 'Items to check', id: 'Item yang perlu dicek' },
   specNoNeed:{ ja: '要確認の項目はありません', en: 'No items to check', id: 'Tidak ada item yang perlu dicek' },
   specOther: { ja: 'ほかの項目も直す', en: 'Edit other items', id: 'Ubah item lain' },
-  specType:  { ja: 'その他（打つ）', en: 'Other (type)', id: 'Lainnya (ketik)' },
+  specType:  { ja: '手動で入力', en: 'Enter manually', id: 'Isi manual' },
+  specResNeed:{ ja: '「*」の前と後ろに、数字を入れてください（例：1920 * 1080）', en: 'Enter numbers before and after “*” (e.g. 1920 * 1080)', id: 'Isi angka sebelum dan sesudah “*” (contoh 1920 * 1080)' },
   specNone:  { ja: '-（この商品には無い）', en: '- (not on this item)', id: '- (tidak ada)' },
   specOk:    { ja: '決める', en: 'Set', id: 'Pakai' },
   specUndo:  { ja: '元に戻す', en: 'Undo', id: 'Batal' },
@@ -1285,7 +1292,7 @@ function renderPickLists() {
   const p = state.pick;
   $app.innerHTML = `<div class="card"><p class="big">${esc(t('pickNew'))}</p>
       <p class="note">${esc(t('pickDest'))}</p>
-      <div class="grades">${p.dests.map(d => `<button class="secondary${p.newDest === d ? ' cur' : ''}" type="button" data-pd="${esc(d)}">${esc(d)}</button>`).join('')}</div>
+      <div class="dests">${p.dests.map(d => `<button class="secondary${p.newDest === d ? ' cur' : ''}" type="button" data-pd="${esc(d)}">${esc(d)}</button>`).join('')}</div>
       <label class="field" for="pickDate">${esc(t('pickDate'))}</label>
       <input type="date" id="pickDate" value="${esc(p.newDate.replace(/\//g, '-'))}" style="width:100%;font:inherit;font-size:20px;padding:10px;border:1px solid var(--ink);border-radius:10px">
       <div class="actions"><button class="primary" id="pickStart" type="button" ${p.newDest ? '' : 'disabled'}>${esc(t('pickStart'))}</button></div></div>
@@ -1779,6 +1786,7 @@ function specRowHtml(item) {
     body = `<div class="sb">${d.opts.map(btn).join('')}
       ${d.text ? `<input type="${d.text === 'clock' ? 'number' : 'text'}" ${d.text === 'clock' ? 'step="0.01" inputmode="decimal"' : 'autocapitalize="characters"'} id="specIn" placeholder="${d.text === 'clock' ? esc(t('specClockPh')) : ''}"><button class="secondary" type="button" id="specInOk">${esc(t('specOk'))}</button>` : ''}
       ${d.other ? `<button class="secondary" type="button" id="specOtherBtn">${esc(t('specType'))}</button>` : ''}
+      ${item === '解像度' && sp.typing === '解像度' ? `<div class="res"><input type="number" inputmode="numeric" id="resW" placeholder="1920"><b>*</b><input type="number" inputmode="numeric" id="resH" placeholder="1080"><button class="secondary" type="button" id="resOk">${esc(t('specOk'))}</button></div>` : ''}
       <button class="secondary${cur === '-' ? ' cur' : ''}" type="button" data-sv="-">${esc(t('specNone'))}</button>
       ${edited ? `<button class="link" type="button" id="specUndo">${esc(t('specUndo'))}</button>` : ''}</div>`;
   }
@@ -1801,7 +1809,7 @@ function renderSpec() {
     <p class="note">${esc(t('specAfter'))}</p>
     <div class="actions"><button class="primary" id="specSave" type="button" ${nEdit ? '' : 'disabled'}>${esc(t('specSave'))}${nEdit ? '（' + nEdit + '）' : ''}</button></div>
     <button class="link" id="specHome" type="button">${esc(t('stockBack'))}</button>`;
-  $app.querySelectorAll('[data-si]').forEach(el => el.onclick = () => { sp.open = sp.open === el.dataset.si ? null : el.dataset.si; render(); });
+  $app.querySelectorAll('[data-si]').forEach(el => el.onclick = () => { sp.open = sp.open === el.dataset.si ? null : el.dataset.si; sp.typing = null; render(); });
   const setVal = v => {
     const item = sp.open; v = specNorm(item, v);
     if (v === '') return;
@@ -1813,7 +1821,17 @@ function renderSpec() {
   const ok = document.getElementById('specInOk');
   if (ok) ok.onclick = () => setVal(document.getElementById('specIn').value);
   const ob = document.getElementById('specOtherBtn');
-  if (ob) ob.onclick = () => { const v = prompt(specLabel(sp.open)); if (v != null) setVal(v); };
+  if (ob) ob.onclick = () => {
+    // 解像度は「*」を出しておき、前と後ろの数字だけを入れる
+    if (sp.open === '解像度') { sp.typing = '解像度'; render(); const w = document.getElementById('resW'); if (w) w.focus(); return; }
+    const v = prompt(specLabel(sp.open)); if (v != null) setVal(v);
+  };
+  const ro = document.getElementById('resOk');
+  if (ro) ro.onclick = () => {
+    const w = String(document.getElementById('resW').value || '').replace(/\D/g, ''), h = String(document.getElementById('resH').value || '').replace(/\D/g, '');
+    if (!w || !h) return alert(t('specResNeed'));
+    sp.typing = null; setVal(w + '*' + h);
+  };
   const ub = document.getElementById('specUndo');
   if (ub) ub.onclick = () => { delete sp.edits[sp.open]; sp.open = null; render(); };
   document.getElementById('specSave').onclick = saveSpec;
