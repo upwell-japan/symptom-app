@@ -105,9 +105,13 @@ details.note summary{cursor:pointer;padding:8px 0}
 .spec .sv{font-size:17px}
 .spec .sv.need{background:var(--amber-soft);border:2px solid var(--amber);border-radius:8px;padding:2px 8px;font-weight:700}
 .spec .sv.new{background:#e6f4ea;border:2px solid #1d6b2e;border-radius:8px;padding:2px 8px;font-weight:700}
-.spec .sb{display:flex;flex-wrap:wrap;gap:8px;padding:0 14px 14px}
-.spec .sb button{flex:0 0 auto;white-space:nowrap;min-height:48px;min-width:64px;padding:0 14px;font-size:16px}   /* 文字の長さに合わせた幅にして、はみ出さないように */
-.spec .sb .res{display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%}
+.spec .sb{padding:0 14px 14px}
+.spec .sb{display:grid;gap:8px}
+.spec .sb.c3{grid-template-columns:repeat(3,1fr)}   /* 短い選択肢は3列、長い選択肢は2列。どのボタンも同じ大きさ */
+.spec .sb.c2{grid-template-columns:repeat(2,1fr)}
+.spec .sb button{width:100%;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:52px;padding:0 6px;font-size:16px}
+.spec .sb .wide,.spec .sb .res,.spec .sb .link{grid-column:1/-1}
+.spec .sb .res{display:flex;align-items:center;gap:8px;width:100%}
 .spec .sb .res input{width:110px;font-size:22px;text-align:center}
 .spec .sb .res b{font-size:26px}
 .spec .sb button.cur{background:var(--amber-soft);border:3px solid var(--amber)}
@@ -1783,11 +1787,14 @@ function specRowHtml(item) {
   let body = '';
   if (open) {
     const btn = v => `<button class="secondary${cur === v ? ' cur' : ''}" type="button" data-sv="${esc(v)}">${esc(specShow(item, v))}</button>`;
-    body = `<div class="sb">${d.opts.map(btn).join('')}
-      ${d.text ? `<input type="${d.text === 'clock' ? 'number' : 'text'}" ${d.text === 'clock' ? 'step="0.01" inputmode="decimal"' : 'autocapitalize="characters"'} id="specIn" placeholder="${d.text === 'clock' ? esc(t('specClockPh')) : ''}"><button class="secondary" type="button" id="specInOk">${esc(t('specOk'))}</button>` : ''}
-      ${d.other ? `<button class="secondary" type="button" id="specOtherBtn">${esc(t('specType'))}</button>` : ''}
-      ${item === '解像度' && sp.typing === '解像度' ? `<div class="res"><input type="number" inputmode="numeric" id="resW" placeholder="1920"><b>*</b><input type="number" inputmode="numeric" id="resH" placeholder="1080"><button class="secondary" type="button" id="resOk">${esc(t('specOk'))}</button></div>` : ''}
-      <button class="secondary${cur === '-' ? ' cur' : ''}" type="button" data-sv="-">${esc(t('specNone'))}</button>
+    // 選択肢の文字の長さ（全角は2）で、3列か2列かを決める
+    const units = v => [...String(specShow(item, v))].reduce((n, ch) => n + (ch.charCodeAt(0) > 0xff ? 2 : 1), 0);
+    const cols = Math.max(0, ...d.opts.map(units)) <= 10 ? 'c3' : 'c2';
+    body = `<div class="sb ${cols}">${d.opts.map(btn).join('')}
+      ${d.text ? `<div class="res"><input style="flex:1;width:auto;text-align:left" type="${d.text === 'clock' ? 'number' : 'text'}" ${d.text === 'clock' ? 'step="0.01" inputmode="decimal"' : 'autocapitalize="characters"'} id="specIn" placeholder="${d.text === 'clock' ? esc(t('specClockPh')) : ''}"><button class="secondary" style="width:auto;padding:0 18px" type="button" id="specInOk">${esc(t('specOk'))}</button></div>` : ''}
+      ${d.other ? `<button class="secondary wide" type="button" id="specOtherBtn">${esc(t('specType'))}</button>` : ''}
+      ${item === '解像度' && sp.typing === '解像度' ? `<div class="res"><input type="number" inputmode="numeric" id="resW" placeholder="1920"><b>*</b><input type="number" inputmode="numeric" id="resH" placeholder="1080"><button class="secondary" style="width:auto;padding:0 18px" type="button" id="resOk">${esc(t('specOk'))}</button></div>` : ''}
+      <button class="secondary wide${cur === '-' ? ' cur' : ''}" type="button" data-sv="-">${esc(t('specNone'))}</button>
       ${edited ? `<button class="link" type="button" id="specUndo">${esc(t('specUndo'))}</button>` : ''}</div>`;
   }
   const inp = sp.inputs[item];
