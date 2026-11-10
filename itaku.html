@@ -449,6 +449,10 @@ const T = {
   acbNoneSame:{ ja: 'どれとも違う（新しい種類として写真を撮る）', en: 'None of these (take a photo as a new type)', id: 'Tidak ada yang sama (foto sebagai jenis baru)' },
   acbNoneAsk:{ ja: '上のどのACとも違う、新しい種類（{t}）として登録します。よろしいですか？', en: 'Register as a new type ({t}), different from all above?', id: 'Daftarkan sebagai jenis baru ({t}), berbeda dari semua di atas?' },
   acbSwitched:{ ja: '{t} に切り替えました', en: 'Switched to {t}', id: 'Beralih ke {t}' },
+  acPickPh:  { ja: '選んでください', en: 'Choose', id: 'Pilih' },
+  acPickAddMk:{ ja: '＋ ほかのメーカーを足す', en: '+ Add another maker', id: '+ Tambah merek lain' },
+  acPickAddConn:{ ja: '＋ ほかの口型を足す', en: '+ Add another connector', id: '+ Tambah konektor lain' },
+  acPickAddW:{ ja: '＋ ほかのWを足す', en: '+ Add another W', id: '+ Tambah W lain' },
   acCtTitle: { ja: '棚卸し（ACの種類ごと）', en: 'Count (by AC type)', id: 'Stok opname (per jenis AC)' },
   acCtNote:  { ja: 'ACはすべてパレットに移してから数えます。「数えたACを足す」で種類を選び、数えた数を入れてください。数えた数がそのメーカーのパレットの数になり、ほかの場所（ロットなど）の記録は0になります。', en: 'Count after moving all ACs to pallets. Add each type and enter the count. It becomes the maker pallet\'s stock; other places are set to 0.', id: 'Hitung setelah semua AC dipindah ke palet. Tambah tiap jenis dan isi jumlahnya. Menjadi stok palet merek; tempat lain jadi 0.' },
   acCtAdd:   { ja: '＋ 数えたACを足す', en: '+ Add a counted AC', id: '+ Tambah AC yang dihitung' },
@@ -1916,6 +1920,12 @@ async function saveShipItem() {
 // スペックの入力：看板のQR → 要確認の項目をボタンで選ぶ → 保存 → 次の看板
 //   保存した値は、ロットファイルの Ctrl+Shift+N で作業結果に書き込まれる
 // ===============================================================
+// ACの選択肢（今まで使っていたACアダプター管理表の「設定」シートから。「丸」は、型番マスターの書き方に合わせて「丸口」）
+const AC_MAKERS = ['DELL', 'FUJITSU', 'HP', 'LENOVO', 'MICROSOFT', 'NEC', 'PANASONIC', 'TOSHIBA', 'VAIO', 'SONY', 'EPSON'];
+const AC_CONNS = ['丸口', '細丸', '太丸', '四角口', '四角口(小)', 'タイプC', '専用接続'];
+const AC_WS = ['24', '36', '40', '44', '45', '60', '65', '75', '80', '85', '90', '113', '120', '135', '150', '170', '180', '200'];
+// メーカーごとの口型とW（ACアダプター管理表の記録から。プルダウンには、このほかに今までの記録にある種類も出る）
+const AC_COMBOS = {"DELL": {"細丸": ["45", "65", "90"], "太丸": ["65", "90"], "タイプC": ["45"]}, "EPSON": {"細丸": ["40", "65"]}, "FUJITSU": {"丸口": ["36", "40", "60", "65", "80", "90"], "細丸": ["36", "65"], "タイプC": ["45", "65"]}, "HP": {"細丸": ["45", "65", "90", "120", "150", "200"], "太丸": ["45", "65", "90", "150", "200"], "タイプC": ["45", "65", "90"]}, "LENOVO": {"四角口": ["45", "65", "135", "170", "180"], "細丸": ["45"], "タイプC": ["45", "65"], "丸口": ["65"]}, "MICROSOFT": {"専用接続": ["24", "44", "60", "65"]}, "NEC": {"四角口": ["45", "65"], "四角口(小)": ["36"], "細丸": ["45"], "タイプC": ["45"], "丸口": ["40"]}, "PANASONIC": {"丸口": ["45", "60", "65", "85", "113"]}, "SONY": {"丸口": ["40", "45"], "タイプC": ["65"]}, "TOSHIBA": {"タイプC": ["45", "65"], "太丸": ["65", "75"], "丸口": ["45", "65", "75"]}, "VAIO": {"丸口": ["40", "45"], "タイプC": ["65"]}};
 const SPEC_DEF = {
   'CPU':          { opts: ['Ci3', 'Ci5', 'Ci7', 'Ci9', 'Cm3', 'Celeron', 'Pentium', 'Atom', 'Core Ultra 5', 'Core Ultra 7', 'Ryzen 3', 'Ryzen 5', 'Ryzen 7', 'Xeon'], other: true, en: 'CPU', id: 'CPU' },
   'プロセッサーナンバー': { opts: [], text: 'text', en: 'Processor number', id: 'Nomor prosesor' },
@@ -1929,8 +1939,8 @@ const SPEC_DEF = {
   'WIFI':         { opts: ['無線LAN', '無線LANなし'], en: 'Wi-Fi', id: 'Wi-Fi' },
   '10key':        { opts: ['10key', '10keyなし'], en: '10-key', id: '10-key' },
   'Webｶﾒﾗ':       { opts: ['Webカメラ', 'Webカメラなし'], en: 'Webcam', id: 'Webcam' },
-  'AC口型':       { opts: ['丸口', '細丸', '四角口', 'タイプC'], other: true, en: 'AC connector', id: 'Konektor AC' },
-  'W':            { opts: ['45', '65', '90', '120', '135', '170'], unit: 'W', other: true, en: 'Watt', id: 'Watt' }
+  'AC口型':       { opts: AC_CONNS, other: true, en: 'AC connector', id: 'Konektor AC' },
+  'W':            { opts: AC_WS, unit: 'W', other: true, en: 'Watt', id: 'Watt' }
 };
 function specLabel(item) {
   const d = SPEC_DEF[item] || {};
@@ -2100,27 +2110,23 @@ function renderAc() {
     ${a.types.map(rowHtml).join('')}
     ${r.unknown && r.unknown.length ? `<div class="card"><p class="warn">${esc(t('acUnknown'))}</p>
       <p class="note">${r.unknown.map(u => esc(u.name + '（' + (u.conn || '空欄') + '・' + (u.w || '空欄') + '）')).join('<br>')}</p></div>` : ''}
-    ${a.adding ? `<div class="card"><p class="big">${esc(t('acAdd'))}</p>
-        <label class="field">${esc(t('acMaker'))}</label><input type="text" id="acAddMk" autocapitalize="characters">
-        <label class="field">${esc(t('acConnL'))}</label><select id="acAddConn">${connOpts.map(o => `<option>${esc(o)}</option>`).join('')}</select>
-        <label class="field">${esc(t('acW'))}</label><select id="acAddW">${wOpts.map(o => `<option>${esc(o)}</option>`).join('')}</select>
-        <div class="actions"><button class="secondary" id="acAddOk" type="button">${esc(t('acAddOk'))}</button></div></div>`
-      : `<button class="link" id="acAddBtn" type="button">${esc(t('acAdd'))}</button>`}
+    ${a.adding ? acAddFormHtml(a) : `<button class="link" id="acAddBtn" type="button">${esc(t('acAdd'))}</button>`}
     <p class="note">${esc(t('acAfter'))}</p>
     <div class="actions"><button class="primary" id="acSave" type="button">${esc(t('acSave'))}</button></div>
     <button class="link" id="acBack" type="button">${esc(t('back') || '‹')}</button>`;
   $app.querySelectorAll('[data-ac]').forEach(inp => inp.oninput = () => { a.types[+inp.dataset.ac].v = inp.value; a.dirty = true; });
   const ab = document.getElementById('acAddBtn');
   if (ab) ab.onclick = () => { a.adding = true; render(); };
+  if (a.adding) bindAcPick(a.pick);
   const ok = document.getElementById('acAddOk');
   if (ok) ok.onclick = () => {
-    const m = document.getElementById('acAddMk').value.trim(), c = document.getElementById('acAddConn').value, w = document.getElementById('acAddW').value;
+    const pk = a.pick || {}, m = pk.maker || '', c = pk.conn || '', w = pk.w || '';
     if (!c || !w) return alert(t('acAddNeed'));
     if (a.types.some(x => acKey(x.maker, x.conn, x.w) === acKey(m, c, w))) return alert(t('acAddDup'));
     acCheckType({ maker: m, conn: c, w: w }, ty => {   // 写真と見比べてから足す
       if (a.types.some(x => acKey(x.maker, x.conn, x.w) === acKey(ty.maker, ty.conn, ty.w))) return alert(t('acAddDup'));
       a.types.push({ maker: ty.maker, conn: ty.conn, w: ty.w, units: 0, names: [], extra: true, v: '' });
-      a.adding = false; a.dirty = true;
+      a.adding = false; a.dirty = true; a.pick = null;
     });
   };
   document.getElementById('acSave').onclick = saveAc;
@@ -2180,7 +2186,9 @@ function renderAcMenu() {
   document.getElementById('acmBox').onclick = openAcBox;
   document.getElementById('acmHome').onclick = goHome;
 }
-function acMenu() { state.screen = 'acMenu'; render(); window.scrollTo(0, 0); }
+function acMenu() { state.screen = 'acMenu'; render(); window.scrollTo(0, 0); acLoadKnown(); }
+// 今までに記録のあるACの種類を読む（プルダウンの選択肢に足す。裏で読むので、待たなくてよい）
+function acLoadKnown() { call('kAcKnownTypes', [state.deviceId]).then(r => { state.acKnown = r.types || []; }).catch(() => {}); }
 function acTypeText(x) { return [x.maker || '-', x.conn, x.w + 'W'].join('　'); }
 function isPalletId(id) { return /^PL\d+$/i.test(String(id || '')); }
 // ACの看板・パレットの看板を読んだとき（目的ごとに分ける）
@@ -2260,26 +2268,89 @@ async function openAcCount(id) {
     state.screen = 'acCount'; render(); window.scrollTo(0, 0);
   } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); acMenu(); }
 }
-function acAddFormHtml() {
-  const connOpts = (SPEC_DEF['AC口型'] || {}).opts || [], wOpts = (SPEC_DEF['W'] || {}).opts || [];
-  return `<div class="card"><p class="big">${esc(t('acAdd'))}</p>
-    <label class="field">${esc(t('acMaker'))}</label><input type="text" id="acAddMk" autocapitalize="characters">
-    <label class="field">${esc(t('acConnL'))}</label><select id="acAddConn">${connOpts.map(o => `<option>${esc(o)}</option>`).join('')}</select>
-    <label class="field">${esc(t('acW'))}</label><select id="acAddW">${wOpts.map(o => `<option>${esc(o)}</option>`).join('')}</select>
-    <div class="actions"><button class="secondary" id="acAddOk" type="button">${esc(t('acAddOk'))}</button></div></div>`;
+// ACの種類をプルダウンで選ぶ（メーカー名・AC口型・W）。sel: { maker, conn, w } に選んだ値が入る
+//   口型・Wは、選んだメーカー（と口型）にあるものだけを出す（ACアダプター管理表の記録＋今までのアプリの記録＋この画面で足したもの）
+//   一覧に無いものは、いちばん下の「＋ ほかの…を足す」で入力する
+const AC_ADD = '__add__';
+function acKnown() { return (state.acKnown || []).concat(state.acAdded || []); }
+function acMakerList(sel) {
+  const l = AC_MAKERS.slice();
+  Object.keys(AC_COMBOS).concat(acKnown().map(x => x.maker)).forEach(m => { m = String(m || '').toUpperCase(); if (m && !l.includes(m)) l.push(m); });
+  if (sel.maker && !l.includes(sel.maker)) l.push(sel.maker);
+  return l;
+}
+function acConnList(sel) {
+  if (!sel.maker) return [];
+  const base = AC_COMBOS[sel.maker] ? Object.keys(AC_COMBOS[sel.maker]) : AC_CONNS.slice();
+  acKnown().filter(x => String(x.maker).toUpperCase() === sel.maker).forEach(x => { if (!base.includes(x.conn)) base.push(x.conn); });
+  if (sel.conn && !base.includes(sel.conn)) base.push(sel.conn);
+  return base.sort((a, b) => (AC_CONNS.indexOf(a) < 0 ? 99 : AC_CONNS.indexOf(a)) - (AC_CONNS.indexOf(b) < 0 ? 99 : AC_CONNS.indexOf(b)));
+}
+function acWList(sel) {
+  if (!sel.maker || !sel.conn) return [];
+  const mc = AC_COMBOS[sel.maker] && AC_COMBOS[sel.maker][sel.conn];
+  const base = mc ? mc.slice() : (AC_COMBOS[sel.maker] ? [] : AC_WS.slice());
+  acKnown().filter(x => String(x.maker).toUpperCase() === sel.maker && x.conn === sel.conn).forEach(x => { if (!base.includes(String(x.w))) base.push(String(x.w)); });
+  if (sel.w && !base.includes(String(sel.w))) base.push(String(sel.w));
+  return base.sort((a, b) => Number(a) - Number(b));
+}
+function acPickHtml(sel) {
+  const st = 'width:100%;font:inherit;font-size:20px;padding:12px;border:1px solid var(--ink);border-radius:10px;background:#fff;color:var(--ink)';
+  const opts = (list, cur, addLabel, unit) => `<option value="" ${cur ? '' : 'selected'}>${esc(t('acPickPh'))}</option>` +
+    list.map(v => `<option value="${esc(v)}" ${String(cur) === String(v) ? 'selected' : ''}>${esc(v)}${unit || ''}</option>`).join('') +
+    `<option value="${AC_ADD}">${esc(addLabel)}</option>`;
+  return `<label class="field" for="pkMk">${esc(t('acMaker'))}</label><select id="pkMk" style="${st}">${opts(acMakerList(sel), sel.maker, t('acPickAddMk'))}</select>
+    <label class="field" for="pkConn">${esc(t('acConnL'))}</label><select id="pkConn" style="${st}" ${sel.maker ? '' : 'disabled'}>${opts(acConnList(sel), sel.conn, t('acPickAddConn'))}</select>
+    <label class="field" for="pkW">${esc(t('acW'))}</label><select id="pkW" style="${st}" ${sel.maker && sel.conn ? '' : 'disabled'}>${opts(acWList(sel), sel.w, t('acPickAddW'), 'W')}</select>`;
+}
+function bindAcPick(sel, after) {
+  const done = () => (after || render)();
+  const ask = (label, norm) => { const v = prompt(label); if (v == null) return ''; return norm(String(v)); };
+  const remember = () => { if (sel.maker && sel.conn && sel.w) (state.acAdded = state.acAdded || []).push({ maker: sel.maker, conn: sel.conn, w: sel.w }); };
+  const mk = document.getElementById('pkMk'), cn = document.getElementById('pkConn'), wt = document.getElementById('pkW');
+  if (mk) mk.onchange = () => {
+    let v = mk.value;
+    if (v === AC_ADD) v = ask(t('acPickAddMk'), x => x.trim().toUpperCase());
+    sel.maker = v;
+    if (!acConnList(sel).includes(sel.conn)) { sel.conn = ''; sel.w = ''; }
+    else if (!acWList(sel).includes(String(sel.w))) sel.w = '';
+    done();
+  };
+  if (cn) cn.onchange = () => {
+    let v = cn.value;
+    if (v === AC_ADD) v = ask(t('acPickAddConn'), x => x.trim());
+    sel.conn = v;
+    if (!acWList(sel).includes(String(sel.w))) sel.w = '';
+    done();
+  };
+  if (wt) wt.onchange = () => {
+    let v = wt.value;
+    if (v === AC_ADD) { v = ask(t('acPickAddW'), x => x.replace(/[^0-9.]/g, '')); if (v) { sel.w = v; remember(); return done(); } }
+    sel.w = v;
+    done();
+  };
+}
+// 「ACの種類を足す」の欄（ボタンで選ぶ）
+function acAddFormHtml(obj) {
+  obj.pick = obj.pick || { maker: '', conn: '', w: '' };
+  const p = obj.pick, ready = p.maker && p.conn && p.w;
+  return `<div class="card"><p class="big">${esc(t('acAdd'))}</p>${acPickHtml(p)}
+    ${ready ? `<p class="big">${esc([p.maker, p.conn, p.w + 'W'].join('　'))}</p>` : `<p class="note">${esc(t('acbChoose'))}</p>`}
+    <div class="actions"><button class="primary" id="acAddOk" type="button" ${ready ? '' : 'disabled'}>${esc(t('acAddOk'))}</button></div></div>`;
 }
 function bindAcAdd(obj) {
   const ab = document.getElementById('acAddBtn');
   if (ab) ab.onclick = () => { obj.adding = true; render(); };
+  if (obj.adding && obj.pick) bindAcPick(obj.pick);
   const ok = document.getElementById('acAddOk');
   if (ok) ok.onclick = () => {
-    const m = document.getElementById('acAddMk').value.trim(), c = document.getElementById('acAddConn').value, w = document.getElementById('acAddW').value;
+    const pk = obj.pick || {}, m = pk.maker || '', c = pk.conn || '', w = pk.w || '';
     if (!c || !w) return alert(t('acAddNeed'));
     if (obj.types.some(x => acKey(x.maker, x.conn, x.w) === acKey(m, c, w))) return alert(t('acAddDup'));
     acCheckType({ maker: m, conn: c, w: w }, ty => {   // 写真と見比べてから足す
       if (obj.types.some(x => acKey(x.maker, x.conn, x.w) === acKey(ty.maker, ty.conn, ty.w))) return alert(t('acAddDup'));
       obj.types.push({ maker: ty.maker, conn: ty.conn, w: ty.w, n: 0, v: '' });
-      obj.adding = false; obj.dirty = true;
+      obj.adding = false; obj.dirty = true; obj.pick = null;
     });
   };
 }
@@ -2289,7 +2360,7 @@ function renderAcCount() {
     ${a.types.map((x, i) => `<div class="card" style="margin-bottom:8px"><p class="big" style="margin:0">${esc(acTypeText(x))}</p>
       <p class="note">${esc(t('acCountNow', { n: x.n || 0 }))}</p>
       <div class="boxrow"><input type="number" inputmode="numeric" min="0" data-acc="${i}" value="${esc(x.v)}" placeholder="0"><span>${esc(t('acUnit'))}</span></div></div>`).join('')}
-    ${a.adding ? acAddFormHtml() : `<button class="link" id="acAddBtn" type="button">${esc(t('acAdd'))}</button>`}
+    ${a.adding ? acAddFormHtml(a) : `<button class="link" id="acAddBtn" type="button">${esc(t('acAdd'))}</button>`}
     <div class="actions"><button class="primary" id="accSave" type="button" ${a.types.length ? '' : 'disabled'}>${esc(t('acSave'))}</button></div>
     <button class="link" id="accBack" type="button">${esc(t('back'))}</button>`;
   $app.querySelectorAll('[data-acc]').forEach(inp => inp.oninput = () => { a.types[+inp.dataset.acc].v = inp.value; a.dirty = true; });
@@ -2518,7 +2589,7 @@ async function openAcBox() {
   try {
     const r = await call('kAcBoxLoad', [state.deviceId], 'loading');
     const prev = state.acBox || {};
-    state.acBox = { makers: r.makers || [], boxes: r.boxes || [], photos: r.photos || [], maker: prev.maker || '', conn: prev.conn || '', w: prev.w || '', n: '', copies: prev.copies || '1', start: '1', typing: false, photo: undefined, ok: false };
+    state.acBox = { makers: AC_MAKERS.concat((r.makers || []).map(x => String(x).toUpperCase()).filter(x => !AC_MAKERS.includes(x))), boxes: r.boxes || [], photos: r.photos || [], maker: prev.maker || '', conn: prev.conn || '', w: prev.w || '', n: '', copies: prev.copies || '1', start: '1', typing: false, photo: undefined, ok: false };
     acbFill();
     if (state.acBox.maker && state.acBox.conn && state.acBox.w) acbLoadPhoto();
     state.screen = 'acBox'; render(); window.scrollTo(0, 0);
@@ -2547,7 +2618,7 @@ async function acbLoadPhoto() {
 }
 function renderAcBox() {
   const b = state.acBox, saved = acbSaved();
-  const connOpts = (SPEC_DEF['AC口型'] || {}).opts || [], wOpts = (SPEC_DEF['W'] || {}).opts || [];
+  const connOpts = AC_CONNS, wOpts = AC_WS.concat(b.w && !AC_WS.includes(String(b.w)) ? [String(b.w)] : []);
   const btns = (list, cur, attr) => list.map(v => `<button class="secondary${String(cur) === String(v) ? ' cur' : ''}" type="button" ${attr}="${esc(v)}">${esc(v)}</button>`).join('');
   const ready = b.maker && b.conn && b.w;
   const hasPh = (m, c, w) => (b.photos || []).includes(acKey(m, c, w));
@@ -2571,11 +2642,7 @@ function renderAcBox() {
         <button class="link" id="acbRetake" type="button">${esc(t('acbRetake'))}</button></div>`;
   }
   $app.innerHTML = `<div class="card"><p class="big">${esc(t('acbTitle'))}</p><p class="note">${esc(t('acbNote'))}</p></div>
-    <div class="card"><p class="big">${esc(t('acMaker'))}</p><div class="sb c3">${btns(b.makers, b.maker, 'data-bm')}</div>
-      <div class="res"><input type="text" id="acbMk" autocapitalize="characters" placeholder="${esc(t('acbOther'))}" style="flex:1;width:auto"><button class="secondary" style="width:auto;padding:0 18px" type="button" id="acbMkOk">${esc(t('specOk'))}</button></div></div>
-    <div class="card"><p class="big">${esc(t('acConnL'))}</p><div class="sb c2">${btns(connOpts, b.conn, 'data-bc')}</div></div>
-    <div class="card"><p class="big">${esc(t('acW'))}</p><div class="sb c3">${wOpts.map(v => `<button class="secondary${String(b.w) === String(v) ? ' cur' : ''}" type="button" data-bw="${esc(v)}">${esc(v)}${b.maker && b.conn && hasPh(b.maker, b.conn, v) ? ' 📷' : ''}</button>`).join('')}</div>
-      <div class="res"><input type="number" inputmode="numeric" id="acbWIn" placeholder="W" style="flex:1;width:auto"><button class="secondary" style="width:auto;padding:0 18px" type="button" id="acbWOk">${esc(t('specOk'))}</button></div></div>
+    <div class="card">${acPickHtml(b)}</div>
     ${photoHtml}
     ${ready && b.ok ? `<div class="card"><p class="big">${esc([b.maker, b.conn, b.w + 'W'].join('　'))}</p>
       <label class="field" for="acbN">${esc(t('acbPerBox'))}</label>
@@ -2603,11 +2670,7 @@ function renderAcBox() {
     b.newOk = true; render();
   };
   const df = document.getElementById('acbDiff'); if (df) df.onclick = () => { b.conn = ''; b.w = ''; b.photo = undefined; b.ok = false; render(); window.scrollTo(0, 0); };
-  $app.querySelectorAll('[data-bm]').forEach(x => x.onclick = () => pick('maker', x.dataset.bm));
-  $app.querySelectorAll('[data-bc]').forEach(x => x.onclick = () => pick('conn', x.dataset.bc));
-  $app.querySelectorAll('[data-bw]').forEach(x => x.onclick = () => pick('w', x.dataset.bw));
-  document.getElementById('acbMkOk').onclick = () => { const v = document.getElementById('acbMk').value.trim().toUpperCase(); if (v) { if (!b.makers.includes(v)) b.makers.push(v); pick('maker', v); } };
-  document.getElementById('acbWOk').onclick = () => { const v = String(document.getElementById('acbWIn').value || '').replace(/[^0-9.]/g, ''); if (v) pick('w', v); };
+  bindAcPick(b, () => { acbFill(); b.photo = undefined; b.ok = false; render(); if (b.maker && b.conn && b.w) acbLoadPhoto(); });
   const nIn = document.getElementById('acbN'); if (nIn) nIn.oninput = e => { b.n = e.target.value; };
   const cIn = document.getElementById('acbCopies'); if (cIn) cIn.oninput = e => { b.copies = e.target.value; };
   const sIn = document.getElementById('acbStart'); if (sIn) sIn.oninput = e => { b.start = e.target.value; };
@@ -2870,21 +2933,22 @@ function renderAcCountType() {
       <p class="note">${esc(x.info ? t('acCtNow', { p: x.info.pallet || '-', n: x.info.total, w: x.info.where.map(y => y.label + ' ' + y.n).join('、') || '-' }) : t('loading'))}</p>
       <div class="boxrow"><input type="number" inputmode="numeric" min="0" data-ct="${i}" value="${esc(x.v)}" placeholder="0"><span>${esc(t('acUnit'))}</span>
       <button class="secondary" type="button" data-ctdel="${i}">×</button></div></div>`).join('')}
-    ${a.adding ? acAddFormHtml() : `<div class="actions"><button class="primary" id="acAddBtn" type="button">${esc(t('acCtAdd'))}</button></div>`}
+    ${a.adding ? acAddFormHtml(a) : `<div class="actions"><button class="primary" id="acAddBtn" type="button">${esc(t('acCtAdd'))}</button></div>`}
     ${a.items.length ? `<div class="actions"><button class="primary" id="actSave" type="button">${esc(t('acSave'))}（${a.items.length}）</button></div>` : ''}
     <button class="link" id="actBack" type="button">${esc(t('back'))}</button>`;
   $app.querySelectorAll('[data-ct]').forEach(inp => inp.oninput = () => { a.items[+inp.dataset.ct].v = inp.value; a.dirty = true; });
   $app.querySelectorAll('[data-ctdel]').forEach(b => b.onclick = () => { a.items.splice(+b.dataset.ctdel, 1); render(); });
   const ab = document.getElementById('acAddBtn'); if (ab) ab.onclick = () => { a.adding = true; render(); };
+  if (a.adding && a.pick) bindAcPick(a.pick);
   const ok = document.getElementById('acAddOk');
   if (ok) ok.onclick = () => {
-    const m = document.getElementById('acAddMk').value.trim(), c = document.getElementById('acAddConn').value, w = document.getElementById('acAddW').value;
+    const pk = a.pick || {}, m = pk.maker || '', c = pk.conn || '', w = pk.w || '';
     if (!m) return alert(t('acCtNeedMaker'));
     if (!c || !w) return alert(t('acAddNeed'));
     acCheckType({ maker: m, conn: c, w: w }, async ty => {   // 写真と見比べてから足す
       if (a.items.some(x => acKey(x.maker, x.conn, x.w) === acKey(ty.maker, ty.conn, ty.w))) return alert(t('acAddDup'));
       const x = { maker: ty.maker, conn: ty.conn, w: ty.w, v: '', info: null };
-      a.items.push(x); a.adding = false; a.dirty = true;
+      a.items.push(x); a.adding = false; a.dirty = true; a.pick = null;
       try { x.info = await call('kAcTypeInfo', [state.deviceId, x.maker, x.conn, x.w], 'loading'); } catch (e) { x.info = { pallet: '', where: [], total: 0 }; }
       if (state.screen === 'acCountType') render();
     });
