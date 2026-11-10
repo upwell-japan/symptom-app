@@ -453,8 +453,14 @@ const T = {
   acPickAddMk:{ ja: '＋ ほかのメーカーを足す', en: '+ Add another maker', id: '+ Tambah merek lain' },
   acPickAddConn:{ ja: '＋ ほかの口型を足す', en: '+ Add another connector', id: '+ Tambah konektor lain' },
   acPickAddW:{ ja: '＋ ほかのWを足す', en: '+ Add another W', id: '+ Tambah W lain' },
+  acCtPer:   { ja: '個入り ×', en: 'per box ×', id: 'per kotak ×' },
+  acCtBoxes: { ja: '箱', en: 'boxes', id: 'kotak' },
+  acCtRest:  { ja: '＋ 端数の箱', en: '+ partial box', id: '+ kotak sisa' },
+  acCtTotal: { ja: '合計：', en: 'Total: ', id: 'Total: ' },
+  acCtDel:   { ja: 'この種類を消す', en: 'Remove this type', id: 'Hapus jenis ini' },
+  acCtBad:   { ja: '{t}：1箱の個数・箱の数・端数を、正しく入れてください（箱があるときは、1箱の個数が必要です）', en: '{t}: enter the number per box, boxes and the partial box correctly', id: '{t}: isi jumlah per kotak, jumlah kotak, dan sisa dengan benar' },
   acCtTitle: { ja: '棚卸し（ACの種類ごと）', en: 'Count (by AC type)', id: 'Stok opname (per jenis AC)' },
-  acCtNote:  { ja: 'ACはすべてパレットに移してから数えます。「数えたACを足す」で種類を選び、数えた数を入れてください。数えた数がそのメーカーのパレットの数になり、ほかの場所（ロットなど）の記録は0になります。', en: 'Count after moving all ACs to pallets. Add each type and enter the count. It becomes the maker pallet\'s stock; other places are set to 0.', id: 'Hitung setelah semua AC dipindah ke palet. Tambah tiap jenis dan isi jumlahnya. Menjadi stok palet merek; tempat lain jadi 0.' },
+  acCtNote:  { ja: 'ACはすべてパレットに移してから数えます。「数えたACを足す」で種類を選び、「1箱の個数 × 箱の数 ＋ 端数の箱」で入れてください。数えた数がそのメーカーのパレットの数になり、ほかの場所（ロットなど）の記録は0になります。', en: 'Count after moving all ACs to pallets. Add each type and enter the count. It becomes the maker pallet\'s stock; other places are set to 0.', id: 'Hitung setelah semua AC dipindah ke palet. Tambah tiap jenis dan isi jumlahnya. Menjadi stok palet merek; tempat lain jadi 0.' },
   acCtAdd:   { ja: '＋ 数えたACを足す', en: '+ Add a counted AC', id: '+ Tambah AC yang dihitung' },
   acCtNow:   { ja: 'パレット {p}　今の記録：合計 {n}個（{w}）', en: 'Pallet {p}  Current record: {n} ({w})', id: 'Palet {p}  Catatan sekarang: {n} ({w})' },
   acCtNeedMaker:{ ja: 'メーカー名を入れてください', en: 'Enter the maker', id: 'Masukkan merek' },
@@ -2922,6 +2928,11 @@ function acPrintLabels(labels, start) {
 //   「数えたACを足す」でメーカー・AC口型・Wを選ぶ（写真と見比べる）→ 数を入れる → 保存
 //   数えた数がそのメーカーのパレットの数になり、ほかの場所の記録は 0 になる
 // ===============================================================
+// 棚卸しの合計（1箱の個数 × 箱の数 ＋ 端数）
+function acCtTotal(x) {
+  const n = v => { const s2 = String(v == null ? '' : v).trim(); return /^\d+$/.test(s2) ? Number(s2) : 0; };
+  return n(x.per) * n(x.boxes) + n(x.rest);
+}
 function openAcCountType() {
   state.acCt = state.acCt || { items: [], adding: false, maker: '', dirty: false };
   state.screen = 'acCountType'; render(); window.scrollTo(0, 0);
@@ -2931,12 +2942,19 @@ function renderAcCountType() {
   $app.innerHTML = `<div class="card"><p class="big">${esc(t('acCtTitle'))}</p><p class="note">${esc(t('acCtNote'))}</p></div>
     ${a.items.map((x, i) => `<div class="card" style="margin-bottom:8px"><p class="big" style="margin:0">${esc(acTypeText(x))}</p>
       <p class="note">${esc(x.info ? t('acCtNow', { p: x.info.pallet || '-', n: x.info.total, w: x.info.where.map(y => y.label + ' ' + y.n).join('、') || '-' }) : t('loading'))}</p>
-      <div class="boxrow"><input type="number" inputmode="numeric" min="0" data-ct="${i}" value="${esc(x.v)}" placeholder="0"><span>${esc(t('acUnit'))}</span>
-      <button class="secondary" type="button" data-ctdel="${i}">×</button></div></div>`).join('')}
+      <div class="boxrow"><input type="number" inputmode="numeric" min="1" data-ctf="per" data-ci="${i}" value="${esc(x.per)}" placeholder="40"><span>${esc(t('acCtPer'))}</span>
+        <input type="number" inputmode="numeric" min="0" data-ctf="boxes" data-ci="${i}" value="${esc(x.boxes)}" placeholder="0"><span>${esc(t('acCtBoxes'))}</span></div>
+      <div class="boxrow"><span>${esc(t('acCtRest'))}</span><input type="number" inputmode="numeric" min="0" data-ctf="rest" data-ci="${i}" value="${esc(x.rest)}" placeholder="0"><span>${esc(t('acUnit'))}</span></div>
+      <p class="note">${esc(x.info && x.info.perBox ? t('acbSavedN', { n: x.info.perBox }) : t('acbNewN'))}</p>
+      <p class="note">${esc(t('acCtTotal'))}<b style="font-size:24px" id="ctTot${i}">${esc(acCtTotal(x))}</b>${esc(t('acUnit'))}</p>
+      <div class="actions"><button class="secondary" type="button" data-ctdel="${i}">${esc(t('acCtDel'))}</button></div></div>`).join('')}
     ${a.adding ? acAddFormHtml(a) : `<div class="actions"><button class="primary" id="acAddBtn" type="button">${esc(t('acCtAdd'))}</button></div>`}
     ${a.items.length ? `<div class="actions"><button class="primary" id="actSave" type="button">${esc(t('acSave'))}（${a.items.length}）</button></div>` : ''}
     <button class="link" id="actBack" type="button">${esc(t('back'))}</button>`;
-  $app.querySelectorAll('[data-ct]').forEach(inp => inp.oninput = () => { a.items[+inp.dataset.ct].v = inp.value; a.dirty = true; });
+  $app.querySelectorAll('[data-ctf]').forEach(inp => inp.oninput = () => {
+    const i = +inp.dataset.ci; a.items[i][inp.dataset.ctf] = inp.value; a.dirty = true;
+    const el = document.getElementById('ctTot' + i); if (el) el.textContent = acCtTotal(a.items[i]);
+  });
   $app.querySelectorAll('[data-ctdel]').forEach(b => b.onclick = () => { a.items.splice(+b.dataset.ctdel, 1); render(); });
   const ab = document.getElementById('acAddBtn'); if (ab) ab.onclick = () => { a.adding = true; render(); };
   if (a.adding && a.pick) bindAcPick(a.pick);
@@ -2947,20 +2965,28 @@ function renderAcCountType() {
     if (!c || !w) return alert(t('acAddNeed'));
     acCheckType({ maker: m, conn: c, w: w }, async ty => {   // 写真と見比べてから足す
       if (a.items.some(x => acKey(x.maker, x.conn, x.w) === acKey(ty.maker, ty.conn, ty.w))) return alert(t('acAddDup'));
-      const x = { maker: ty.maker, conn: ty.conn, w: ty.w, v: '', info: null };
+      const x = { maker: ty.maker, conn: ty.conn, w: ty.w, per: '', boxes: '', rest: '', info: null };
       a.items.push(x); a.adding = false; a.dirty = true; a.pick = null;
-      try { x.info = await call('kAcTypeInfo', [state.deviceId, x.maker, x.conn, x.w], 'loading'); } catch (e) { x.info = { pallet: '', where: [], total: 0 }; }
+      try { x.info = await call('kAcTypeInfo', [state.deviceId, x.maker, x.conn, x.w], 'loading'); } catch (e) { x.info = { pallet: '', where: [], total: 0, perBox: 0 }; }
+      if (x.info.perBox && !x.per) x.per = String(x.info.perBox);   // 1箱の個数は、決めてある数を最初から入れる
       if (state.screen === 'acCountType') render();
     });
   };
   const sv = document.getElementById('actSave');
   if (sv) sv.onclick = async () => {
-    if (a.items.some(x => !/^\d+$/.test(String(x.v).trim()))) return alert(t('acNeedNum'));
+    const num = v => String(v == null ? '' : v).trim() === '' ? 0 : Number(v);
+    const bad = a.items.find(x => [x.per, x.boxes, x.rest].some(v => String(v).trim() !== '' && !/^\d+$/.test(String(v).trim())) || (num(x.boxes) > 0 && !(num(x.per) > 0)));
+    if (bad) return alert(t('acCtBad', { t: acTypeText(bad) }));
     const noPl = a.items.filter(x => x.info && !x.info.pallet);
     if (noPl.length) return alert(t('acCtNoPallet', { m: noPl.map(x => x.maker).join('、') }));
-    const items = a.items.map(x => ({ maker: x.maker, conn: x.conn, w: x.w, n: Number(String(x.v).trim()) }));
-    if (!confirm(t('acCtAsk', { n: items.length }))) return;
+    const items = a.items.map(x => ({ maker: x.maker, conn: x.conn, w: x.w, n: acCtTotal(x) }));
+    const chg = a.items.filter(x => num(x.per) > 0 && x.info && x.info.perBox && num(x.per) !== x.info.perBox);
+    if (!confirm(t('acCtAsk', { n: items.length }) + (chg.length ? '\n' + t('acBulkChangeAsk', { l: chg.map(x => acTypeText(x) + '：' + x.info.perBox + '→' + x.per).join('、') }) : ''))) return;
     try {
+      // 1箱の個数を記録する（新しい種類・変えた種類）。箱のシールも、この数で分ける
+      for (const x of a.items) {
+        if (num(x.per) > 0 && (!x.info || num(x.per) !== x.info.perBox)) await call('kAcBoxSave', [state.deviceId, x.maker, x.conn, x.w, num(x.per)], 'saving');
+      }
       await call('kAcCountType', [state.deviceId, items], 'saving');
       toast(t('acCtSaved', { n: items.length }));
       state.acCt = null;
