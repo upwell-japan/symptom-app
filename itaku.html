@@ -2670,12 +2670,11 @@ function renderAcBox() {
     const y = b.similar[+x.dataset.same];
     b.conn = y.conn; acbFill();
     toast(t('acbShapeSet', { c: y.conn, w: b.w }));
-    b.photo = undefined; b.ok = false; render();
-    try {
-      const r = await call('kAcPhotoGet', [state.deviceId, b.maker, b.conn, b.w], 'loading');
-      b.photo = r.photo || null;
-    } catch (e) { b.photo = null; }
-    b.similar = []; b.newOk = true;   // 口の形は見比べ済み。写真が無ければ、このWの写真を撮る
+    // 口の形は見比べ済みなので、写真は撮り直さない（この種類に写真が無ければ、見比べた写真を見本として使う）
+    let ph = { thumb: y.thumb, by: y.by, at: y.at };
+    try { const r = await call('kAcPhotoLink', [state.deviceId, b.maker, b.conn, b.w, y.w], 'saving'); if (r.photo) ph = r.photo; } catch (e) {}
+    const k = acKey(b.maker, b.conn, b.w); if (!(b.photos || []).includes(k)) (b.photos = b.photos || []).push(k);
+    b.photo = ph; b.ok = true; b.similar = null; b.newOk = false;
     render(); window.scrollTo(0, 0);
   });
   const nn = document.getElementById('acbNone'); if (nn) nn.onclick = () => {
@@ -2809,13 +2808,9 @@ function renderAcTc() {
     const y = tc.similar[+b.dataset.tcs];
     tc.type = { maker: tc.type.maker, conn: y.conn, w: tc.type.w };
     toast(t('acbShapeSet', { c: y.conn, w: tc.type.w }));
-    tc.photo = undefined; render();
-    try {
-      const r = await call('kAcPhotoGet', [state.deviceId, tc.type.maker, tc.type.conn, tc.type.w], 'loading');
-      tc.photo = r.photo || null;
-    } catch (e) { tc.photo = null; }
-    tc.similar = []; tc.newOk = true;   // 口の形は見比べ済み。写真が無ければ、このWの写真を撮る
-    if (state.acTc === tc) render();
+    // 口の形は見比べ済みなので、写真は撮り直さずに進む（この種類に写真が無ければ、見比べた写真を見本として使う）
+    try { await call('kAcPhotoLink', [state.deviceId, tc.type.maker, tc.type.conn, tc.type.w, y.w], 'saving'); } catch (e) {}
+    if (state.acTc === tc) acTcDone(tc.type);
   });
 }
 
