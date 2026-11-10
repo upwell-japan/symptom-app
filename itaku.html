@@ -449,6 +449,16 @@ const T = {
   acbNoneSame:{ ja: 'どれとも違う（新しい種類として写真を撮る）', en: 'None of these (take a photo as a new type)', id: 'Tidak ada yang sama (foto sebagai jenis baru)' },
   acbNoneAsk:{ ja: '上のどのACとも違う、新しい種類（{t}）として登録します。よろしいですか？', en: 'Register as a new type ({t}), different from all above?', id: 'Daftarkan sebagai jenis baru ({t}), berbeda dari semua di atas?' },
   acbSwitched:{ ja: '{t} に切り替えました', en: 'Switched to {t}', id: 'Beralih ke {t}' },
+  acCtTitle: { ja: '棚卸し（ACの種類ごと）', en: 'Count (by AC type)', id: 'Stok opname (per jenis AC)' },
+  acCtNote:  { ja: 'ACはすべてパレットに移してから数えます。「数えたACを足す」で種類を選び、数えた数を入れてください。数えた数がそのメーカーのパレットの数になり、ほかの場所（ロットなど）の記録は0になります。', en: 'Count after moving all ACs to pallets. Add each type and enter the count. It becomes the maker pallet\'s stock; other places are set to 0.', id: 'Hitung setelah semua AC dipindah ke palet. Tambah tiap jenis dan isi jumlahnya. Menjadi stok palet merek; tempat lain jadi 0.' },
+  acCtAdd:   { ja: '＋ 数えたACを足す', en: '+ Add a counted AC', id: '+ Tambah AC yang dihitung' },
+  acCtNow:   { ja: 'パレット {p}　今の記録：合計 {n}個（{w}）', en: 'Pallet {p}  Current record: {n} ({w})', id: 'Palet {p}  Catatan sekarang: {n} ({w})' },
+  acCtNeedMaker:{ ja: 'メーカー名を入れてください', en: 'Enter the maker', id: 'Masukkan merek' },
+  acCtNoPallet:{ ja: 'パレットが決まっていないメーカーがあります（{m}）。「ACのパレット」シートにメーカーとパレットを入れてください', en: 'No pallet for: {m}. Add it on the “ACのパレット” sheet', id: 'Belum ada palet untuk: {m}. Tambahkan di sheet “ACのパレット”' },
+  acCtAsk:   { ja: '{n}種類の数を保存します。数えた数が、パレットの数になります。よろしいですか？', en: 'Save {n} types? The counts become the pallet stock.', id: 'Simpan {n} jenis? Jumlah menjadi stok palet.' },
+  acCtSaved: { ja: '{n}種類の棚卸しを保存しました', en: 'Saved the count for {n} types', id: 'Stok opname {n} jenis tersimpan' },
+  acCtLabelAsk:{ ja: '続けて、数えたACの箱のシールをまとめて発行しますか？', en: 'Print box labels for the counted ACs now?', id: 'Cetak label kotak untuk AC yang dihitung sekarang?' },
+  acCtLabelT:{ ja: '棚卸しで数えたAC', en: 'Counted ACs', id: 'AC yang dihitung' },
   acTcTitle: { ja: '足すACの確認', en: 'Check the AC to add', id: 'Periksa AC yang ditambah' },
   acTcSame:  { ja: '✅ 写真と同じAC（足す）', en: '✅ Same as the photo (add)', id: '✅ Sama dengan foto (tambah)' },
   acTcNoSwitch:{ ja: '同じメーカーで、写真のあるACです。この中に同じACがあれば、在庫の種類の書き方が違っています（棚卸しで正しい種類に直してください）。どれとも違うときだけ、写真を撮ってください', en: 'These have photos. If one is the same, the stock type name is wrong (fix it in a count). Take a photo only if none is the same', id: 'Ini sudah punya foto. Jika ada yang sama, nama jenis stok salah (perbaiki saat opname). Foto hanya jika tidak ada yang sama' },
@@ -474,6 +484,7 @@ const T = {
   acbPhotoSaved:{ ja: '写真を保存しました', en: 'Photo saved', id: 'Foto tersimpan' },
   acbOk:     { ja: '写真と同じACであることを確かめました', en: 'Checked against the photo', id: 'Sudah dicocokkan dengan foto' },
   acbHasPhoto:{ ja: '📷', en: '📷', id: '📷' },
+  acLotCount:{ ja: '🔢 このロットの数を直す', en: '🔢 Correct this lot\'s count', id: '🔢 Koreksi jumlah lot ini' },
   acViewShort:{ ja: '見る', en: 'View', id: 'Lihat' },
   acCountShort:{ ja: '棚卸し', en: 'Count', id: 'Opname' },
   acTakeHere:{ ja: '{p} から出す', en: 'Take from {p}', id: 'Ambil dari {p}' },
@@ -1260,7 +1271,7 @@ function render() {
               board: renderBoard, unit: renderUnit, cat: renderCat, sym: renderSym, mark: renderMark,
               grade: renderGrade, repair: renderRepair, photo: renderSym, stock: renderStock, gradeMany: renderGradeMany, spec: renderSpec, acLots: renderAcLots, ac: renderAc, acPrint: renderAcPrint,
               acMenu: renderAcMenu, acPlace: renderAcPlace, acMove: renderAcMove, acCount: renderAcCount, acPallets: renderAcPallets,
-              acBox: renderAcBox, acTc: renderAcTc, acBulk: renderAcBulk, pickAc: renderPickAc, pickAcQty: renderPickAcQty, pickAcAll: renderPickAcAll, pickAcTake: renderPickAcTake,
+              acBox: renderAcBox, acCountType: renderAcCountType, acTc: renderAcTc, acBulk: renderAcBulk, pickAc: renderPickAc, pickAcQty: renderPickAcQty, pickAcAll: renderPickAcAll, pickAcTake: renderPickAcTake,
               shipList: renderShipList, ship: renderShip, shipItem: renderShipItem,
               batchCount: renderBatchCount, batch: renderBatch,
               gradeBoard: renderGradeBoard, slipList: renderSlipList, slipPrint: renderSlipPrint,
@@ -1274,12 +1285,13 @@ function render() {
 // どの画面でも「‹ 戻る」と「⌂ ホーム」を押せるようにする（誤操作したときに戻れるように）
 // ===============================================================
 // 入力の途中の画面（戻ると、保存していない入力が消える画面）
-const NAV_EDITING = ['cat', 'sym', 'photo', 'mark', 'grade', 'repair', 'spec', 'ac', 'acCount', 'stock', 'gradeMany', 'shipItem', 'batch'];
+const NAV_EDITING = ['cat', 'sym', 'photo', 'mark', 'grade', 'repair', 'spec', 'ac', 'acCount', 'acCountType', 'stock', 'gradeMany', 'shipItem', 'batch'];
 function hasUnsaved() {
   const S = state.screen;
   if (S === 'spec') return !!(state.spec && Object.keys(state.spec.edits).length);
   if (S === 'ac') return !!(state.ac && state.ac.dirty);
   if (S === 'acCount') return !!(state.acCount && state.acCount.dirty);
+  if (S === 'acCountType') return !!(state.acCt && state.acCt.dirty && state.acCt.items.length);
   if (S === 'stock') return !!(state.stock && (state.stock.photo || state.stock.boxes.some(x => x.per || x.n)));
   if (['cat', 'sym', 'photo', 'mark'].includes(S)) return state.adds.size > 0 || state.removes.size > 0;
   if (S === 'repair') return state.repairSel.size > 0;
@@ -1312,6 +1324,7 @@ function goBack() {
   else if (S === 'acLots') { state.acLots = null; state.screen = 'acMenu'; }
   else if (S === 'acMenu') { state.screen = 'home'; }
   else if (S === 'acBox') { state.screen = 'acMenu'; }
+  else if (S === 'acCountType') { state.acCt = null; state.screen = 'acMenu'; }
   else if (S === 'acTc') { const tc = state.acTc; state.acTc = null; state.screen = tc ? tc.back : 'acMenu'; }
   else if (S === 'acBulk') { state.acBulk = null; state.screen = 'acMenu'; }
   else if (S === 'acPlace' || S === 'acMove' || S === 'acCount' || S === 'acPallets') { state.acPlace = null; state.acMove = null; state.acCount = null; state.screen = 'acMenu'; }
@@ -1334,7 +1347,7 @@ function goHome() {
   if (NAV_EDITING.includes(S) && hasUnsaved() && !confirm(t('leaveAsk'))) return;
   stopCamera();
   resetEdit();
-  state.spec = null; state.ac = null; state.acLots = null; state.acPlace = null; state.acMove = null; state.acCount = null; state.acPallets = null; state.acPrint = null; state.acTc = null; state.acBulk = null; state.acBox = null; state.stock = null; state.grpEdit = null; state.ship = null; state.batch = null; state.slip = null; state.pick = null; state.sd = null;
+  state.spec = null; state.ac = null; state.acLots = null; state.acPlace = null; state.acMove = null; state.acCount = null; state.acPallets = null; state.acPrint = null; state.acTc = null; state.acBulk = null; state.acBox = null; state.acCt = null; state.stock = null; state.grpEdit = null; state.ship = null; state.batch = null; state.slip = null; state.pick = null; state.sd = null;
   scanPurpose = 'any'; scanBack = 'home';
   state.screen = 'home';
   render(); window.scrollTo(0, 0);
@@ -2161,7 +2174,7 @@ function renderAcMenu() {
     <button class="link" id="acmHome" type="button">${esc(t('stockBack'))}</button>`;
   document.getElementById('acmIn').onclick = () => openAcLots(false);
   document.getElementById('acmMove').onclick = () => { scanPurpose = 'acMove'; scanBack = 'acMenu'; openScanner(t('acMoveScan')); };
-  document.getElementById('acmCount').onclick = () => { scanPurpose = 'acCount'; scanBack = 'acMenu'; openScanner(t('acCountScan')); };
+  document.getElementById('acmCount').onclick = openAcCountType;   // 看板は読まずに、ACの種類を選んで数を入れる
   document.getElementById('acmView').onclick = () => { scanPurpose = 'acView'; scanBack = 'acMenu'; openScanner(t('acViewScan')); };
   document.getElementById('acmPallet').onclick = openAcPallets;
   document.getElementById('acmBox').onclick = openAcBox;
@@ -2201,13 +2214,13 @@ function renderAcPlace() {
     ${acStockListHtml(r.stock)}
     <div class="actions">
       ${r.pallet ? '' : `<button class="secondary" id="apIn" type="button">${esc(t('acmIn'))}</button><button class="secondary" id="apMove" type="button">${esc(t('acmMove'))}</button>`}
-      <button class="secondary" id="apCount" type="button">${esc(t('acmCount'))}</button>
+      ${r.pallet ? '' : `<button class="secondary" id="apCount" type="button">${esc(t('acLotCount'))}</button>`}
       <button class="secondary" id="apPrint" type="button">${esc(t('acPrintThis'))}</button>
       <button class="secondary" id="apBulk" type="button">${esc(t('acBulkBtn'))}</button></div>
     <button class="link" id="apBack" type="button">${esc(t('back'))}</button>`;
   const inB = document.getElementById('apIn'); if (inB) inB.onclick = () => openAcLot(r.place);
   const mvB = document.getElementById('apMove'); if (mvB) mvB.onclick = () => openAcMove(r.place);
-  document.getElementById('apCount').onclick = () => openAcCount(r.place);
+  const cB = document.getElementById('apCount'); if (cB) cB.onclick = () => openAcCount(r.place);
   document.getElementById('apPrint').onclick = () => openAcPrint(r.pallet ? { kind: 'pallet', place: r.place, makers: r.makers || [] } : { kind: 'lot', lot: r.place, date: r.date, supplier: r.supplier }, 'acPlace');
   document.getElementById('apBulk').onclick = () => openAcBulk(r.place);
   document.getElementById('apBack').onclick = goBack;
@@ -2306,13 +2319,12 @@ function renderAcPallets() {
   const L = state.acPallets;
   $app.innerHTML = `<h2>${esc(t('acmPallet'))}</h2>
     ${L.length ? `<ul class="grp">${L.map((x, i) => `<li><span class="gs"><b>${esc(x.place)}</b><br><span class="note">${esc(x.makers.join('、') || '-')}</span></span>
-      <span class="gn">${esc(x.total)}${esc(t('acUnit'))}</span><button class="secondary" type="button" data-pv="${i}">${esc(t('acViewShort'))}</button><button class="secondary" type="button" data-pc="${i}">${esc(t('acCountShort'))}</button><button class="secondary" type="button" data-pp="${i}">${esc(t('acPrintShort'))}</button></li>`).join('')}</ul>`
+      <span class="gn">${esc(x.total)}${esc(t('acUnit'))}</span><button class="secondary" type="button" data-pv="${i}">${esc(t('acViewShort'))}</button><button class="secondary" type="button" data-pp="${i}">${esc(t('acPrintShort'))}</button></li>`).join('')}</ul>`
       : `<p class="note">${esc(t('acPalletNone'))}</p>`}
     <p class="note">${esc(t('acPalletSet'))}</p>
     <button class="link" id="appBack" type="button">${esc(t('back'))}</button>`;
   $app.querySelectorAll('[data-pp]').forEach(b => b.onclick = () => { const x = L[+b.dataset.pp]; openAcPrint({ kind: 'pallet', place: x.place, makers: x.makers }, 'acPallets'); });
   $app.querySelectorAll('[data-pv]').forEach(b => b.onclick = () => openAcPlace(L[+b.dataset.pv].place));
-  $app.querySelectorAll('[data-pc]').forEach(b => b.onclick = () => openAcCount(L[+b.dataset.pc].place));
   document.getElementById('appBack').onclick = goBack;
 }
 
@@ -2790,7 +2802,8 @@ async function openAcBulkRefresh() {
   const a = state.acBulk;
   if (!a) return;
   try {
-    const r = await call('kAcBoxBulkLoad', [state.deviceId, a.info.place], 'loading');
+    const r = a.info.preset ? await call('kAcBoxItemsLoad', [state.deviceId, a.info.preset], 'loading')
+                            : await call('kAcBoxBulkLoad', [state.deviceId, a.info.place], 'loading');
     const old = {};
     a.items.forEach(x => { old[acKey(x.maker, x.conn, x.w)] = x; });
     a.items = r.items.map(x => { const o = old[acKey(x.maker, x.conn, x.w)] || {}; return Object.assign({}, x, { per: o.per != null ? o.per : (x.perBox ? String(x.perBox) : ''), use: o.use !== false, ok: !!o.ok }); });
@@ -2839,6 +2852,67 @@ function acPrintLabels(labels, start) {
     window.print();
     setTimeout(() => { document.body.classList.remove('printing'); css.remove(); pa.innerHTML = ''; }, 500);
   }, 50);
+}
+
+// ===============================================================
+// 🔢 棚卸し（ACの種類ごと）：ACはすべてパレットに移してから数える前提なので、看板は読まない
+//   「数えたACを足す」でメーカー・AC口型・Wを選ぶ（写真と見比べる）→ 数を入れる → 保存
+//   数えた数がそのメーカーのパレットの数になり、ほかの場所の記録は 0 になる
+// ===============================================================
+function openAcCountType() {
+  state.acCt = state.acCt || { items: [], adding: false, maker: '', dirty: false };
+  state.screen = 'acCountType'; render(); window.scrollTo(0, 0);
+}
+function renderAcCountType() {
+  const a = state.acCt;
+  $app.innerHTML = `<div class="card"><p class="big">${esc(t('acCtTitle'))}</p><p class="note">${esc(t('acCtNote'))}</p></div>
+    ${a.items.map((x, i) => `<div class="card" style="margin-bottom:8px"><p class="big" style="margin:0">${esc(acTypeText(x))}</p>
+      <p class="note">${esc(x.info ? t('acCtNow', { p: x.info.pallet || '-', n: x.info.total, w: x.info.where.map(y => y.label + ' ' + y.n).join('、') || '-' }) : t('loading'))}</p>
+      <div class="boxrow"><input type="number" inputmode="numeric" min="0" data-ct="${i}" value="${esc(x.v)}" placeholder="0"><span>${esc(t('acUnit'))}</span>
+      <button class="secondary" type="button" data-ctdel="${i}">×</button></div></div>`).join('')}
+    ${a.adding ? acAddFormHtml() : `<div class="actions"><button class="primary" id="acAddBtn" type="button">${esc(t('acCtAdd'))}</button></div>`}
+    ${a.items.length ? `<div class="actions"><button class="primary" id="actSave" type="button">${esc(t('acSave'))}（${a.items.length}）</button></div>` : ''}
+    <button class="link" id="actBack" type="button">${esc(t('back'))}</button>`;
+  $app.querySelectorAll('[data-ct]').forEach(inp => inp.oninput = () => { a.items[+inp.dataset.ct].v = inp.value; a.dirty = true; });
+  $app.querySelectorAll('[data-ctdel]').forEach(b => b.onclick = () => { a.items.splice(+b.dataset.ctdel, 1); render(); });
+  const ab = document.getElementById('acAddBtn'); if (ab) ab.onclick = () => { a.adding = true; render(); };
+  const ok = document.getElementById('acAddOk');
+  if (ok) ok.onclick = () => {
+    const m = document.getElementById('acAddMk').value.trim(), c = document.getElementById('acAddConn').value, w = document.getElementById('acAddW').value;
+    if (!m) return alert(t('acCtNeedMaker'));
+    if (!c || !w) return alert(t('acAddNeed'));
+    acCheckType({ maker: m, conn: c, w: w }, async ty => {   // 写真と見比べてから足す
+      if (a.items.some(x => acKey(x.maker, x.conn, x.w) === acKey(ty.maker, ty.conn, ty.w))) return alert(t('acAddDup'));
+      const x = { maker: ty.maker, conn: ty.conn, w: ty.w, v: '', info: null };
+      a.items.push(x); a.adding = false; a.dirty = true;
+      try { x.info = await call('kAcTypeInfo', [state.deviceId, x.maker, x.conn, x.w], 'loading'); } catch (e) { x.info = { pallet: '', where: [], total: 0 }; }
+      if (state.screen === 'acCountType') render();
+    });
+  };
+  const sv = document.getElementById('actSave');
+  if (sv) sv.onclick = async () => {
+    if (a.items.some(x => !/^\d+$/.test(String(x.v).trim()))) return alert(t('acNeedNum'));
+    const noPl = a.items.filter(x => x.info && !x.info.pallet);
+    if (noPl.length) return alert(t('acCtNoPallet', { m: noPl.map(x => x.maker).join('、') }));
+    const items = a.items.map(x => ({ maker: x.maker, conn: x.conn, w: x.w, n: Number(String(x.v).trim()) }));
+    if (!confirm(t('acCtAsk', { n: items.length }))) return;
+    try {
+      await call('kAcCountType', [state.deviceId, items], 'saving');
+      toast(t('acCtSaved', { n: items.length }));
+      state.acCt = null;
+      if (confirm(t('acCtLabelAsk'))) return openAcBulkItems(t('acCtLabelT'), items);   // 数えたACの箱のシールを、まとめて発行する
+      acMenu();
+    } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
+  };
+  document.getElementById('actBack').onclick = goBack;
+}
+// 指定したACの種類・数で、箱のシールをまとめて発行する（棚卸しで数えたACなど）
+async function openAcBulkItems(label, items) {
+  try {
+    const r = await call('kAcBoxItemsLoad', [state.deviceId, items], 'loading');
+    state.acBulk = { info: { place: '', label: label, preset: items }, items: r.items.map(x => Object.assign({}, x, { per: x.perBox ? String(x.perBox) : '', use: true, ok: false })), start: '1' };
+    state.screen = 'acBulk'; render(); window.scrollTo(0, 0);
+  } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); acMenu(); }
 }
 
 // ===============================================================
