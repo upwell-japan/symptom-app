@@ -160,7 +160,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbxQNpelUbbsIixIPD0ftLah
 // QRのURLの「?k=看板ID」「?s=シール番号」を受け取る
 const INIT = (() => {
   const q = new URLSearchParams(location.search);
-  return { k: (q.get('k') || '').trim(), s: (q.get('s') || '').trim() };
+  return { k: (q.get('k') || '').trim(), s: (q.get('s') || '').trim(), ac: (q.get('ac') || '').trim() };
 })();
 
 // ===============================================================
@@ -291,6 +291,7 @@ const T = {
   toBoard:   { ja: 'この台の看板を開く', en: 'Open this board', id: 'Buka papan ini' },
   modeSym:   { ja: '🔍 症状を入力する', en: '🔍 Enter defects', id: '🔍 Input cacat' },
   modeSpec:  { ja: '📝 スペックを入力する', en: '📝 Enter specs', id: '📝 Input spesifikasi' },
+  modeAc:    { ja: '🔌 ACの数を入力する', en: '🔌 Enter AC count', id: '🔌 Input jumlah AC' },
   boardRetired:{ ja: '看板 {id} は使われていない看板です（案件管理で消されました）。正しい看板のQRを読み取ってください。', en: 'Board {id} is no longer used (removed in the case file). Scan the correct board.', id: 'Papan {id} tidak dipakai lagi (dihapus). Pindai papan yang benar.' },
   retiredNote:{ ja: 'この看板は使われていません（案件管理で消されました）。登録されている台は、下の「台を別の看板へ移す」で、正しい看板へ移してください。', en: 'This board is no longer used. Move its units to the correct board below.', id: 'Papan ini tidak dipakai lagi. Pindahkan unitnya ke papan yang benar di bawah.' },
   moveTitle: { ja: '台を別の看板へ移す', en: 'Move units to another board', id: 'Pindahkan unit ke papan lain' },
@@ -391,6 +392,35 @@ const T = {
   modeTitle: { ja: '何をしますか？', en: 'What will you do?', id: 'Apa yang akan dilakukan?' },
   typeOpen:  { ja: '看板ID・シール番号を打って開く（症状の入力）', en: 'Type a board ID or sticker number (defects)', id: 'Ketik ID papan atau nomor stiker (cacat)' },
   specScan:  { ja: 'スペックを入力する看板のQRを読み取ってください', en: 'Scan the QR on the board to enter specs', id: 'Pindai QR papan untuk input spesifikasi' },
+  acLotsT:   { ja: 'ACの数を入力するロットを選んでください', en: 'Choose the lot to enter the AC count', id: 'Pilih lot untuk input jumlah AC' },
+  acLotsNone:{ ja: 'ロットがありません（看板を作成すると出ます）', en: 'No lots yet (they appear after boards are created)', id: 'Belum ada lot (muncul setelah papan dibuat)' },
+  acBoards:  { ja: '看板 {n}件', en: '{n} boards', id: '{n} papan' },
+  acNotYet:  { ja: '未入力', en: 'Not entered', id: 'Belum diinput' },
+  acDoneBy:  { ja: '入力済み {n}個（{w}　{t}）', en: 'Entered {n} ({w} {t})', id: 'Sudah diinput {n} ({w} {t})' },
+  acOlder:   { ja: '古いロットも見る（{n}件）', en: 'Show older lots ({n})', id: 'Tampilkan lot lama ({n})' },
+  acTitle:   { ja: 'このロットに届いたACの数', en: 'Number of ACs that arrived in this lot', id: 'Jumlah AC yang datang di lot ini' },
+  acLotInfo: { ja: '入荷日 {d}　仕入先 {s}　看板 {n}件', en: 'Arrival {d}  Supplier {s}  {n} boards', id: 'Tiba {d}  Pemasok {s}  {n} papan' },
+  acUnitsOf: { ja: '本体 {n}台：{m}', en: '{n} units: {m}', id: '{n} unit: {m}' },
+  acExtra:   { ja: '一覧に無かったAC', en: 'AC not in the list', id: 'AC di luar daftar' },
+  acUnknown: { ja: 'AC口型・Wが決まっていない機種（届いたACは「ACの種類を足す」で入力してください）', en: 'Models without AC connector/W (enter their ACs with "Add AC type")', id: 'Model tanpa konektor/W AC (input AC-nya dengan "Tambah jenis AC")' },
+  acAdd:     { ja: '＋ ACの種類を足す', en: '+ Add AC type', id: '+ Tambah jenis AC' },
+  acMaker:   { ja: 'メーカー名', en: 'Maker', id: 'Merek' },
+  acConnL:   { ja: 'AC口型', en: 'AC connector', id: 'Konektor AC' },
+  acW:       { ja: 'W', en: 'W', id: 'W' },
+  acAddOk:   { ja: '足す', en: 'Add', id: 'Tambah' },
+  acAddNeed: { ja: 'AC口型とWを入れてください', en: 'Enter the AC connector and W', id: 'Masukkan konektor AC dan W' },
+  acAddDup:  { ja: 'このACの種類は、すでに一覧にあります', en: 'This AC type is already in the list', id: 'Jenis AC ini sudah ada di daftar' },
+  acUnit:    { ja: '個', en: 'pcs', id: 'buah' },
+  acSave:    { ja: '保存する', en: 'Save', id: 'Simpan' },
+  acSaved:   { ja: 'ロット {l} のACの数を保存しました', en: 'Saved the AC count for lot {l}', id: 'Jumlah AC lot {l} tersimpan' },
+  acNeedNum: { ja: 'すべてのACの数を入力してください（無ければ 0）', en: 'Enter every AC count (0 if none)', id: 'Masukkan semua jumlah AC (0 jika tidak ada)' },
+  acAfter:   { ja: '保存した数は、案件管理のロットファイルで Ctrl+Shift+N か Ctrl+Shift+A を実行すると、「AC」シートに出ます。', en: 'Saved counts appear on the AC sheet when Ctrl+Shift+N or Ctrl+Shift+A is run in the lot file.', id: 'Jumlah tersimpan muncul di sheet AC saat Ctrl+Shift+N atau Ctrl+Shift+A dijalankan di file lot.' },
+  acTotal:   { ja: '入力済み：合計 {n}個（{w}　{t}）', en: 'Entered: {n} in total ({w} {t})', id: 'Sudah diinput: total {n} ({w} {t})' },
+  acNone:    { ja: 'このロットのACの数は、まだ入力されていません', en: 'The AC count for this lot has not been entered yet', id: 'Jumlah AC lot ini belum diinput' },
+  acPrintBtn:{ ja: '🖨 このロットのACの看板を印刷する', en: '🖨 Print the AC board for this lot', id: '🖨 Cetak papan AC untuk lot ini' },
+  acPrintT:  { ja: 'ACの看板（ロット {l}）', en: 'AC board (lot {l})', id: 'Papan AC (lot {l})' },
+  acPrintNote:{ ja: '印刷の画面で、用紙は「A5」・向きは「横」・倍率は「100%」にしてください。QRを読み取ると、このロットのACの数の画面が開きます。', en: 'Use A5 landscape at 100%. Scanning the QR opens the AC count for this lot.', id: 'Pakai A5 lanskap 100%. Memindai QR membuka jumlah AC lot ini.' },
+  acLeave:   { ja: '保存していない入力があります。戻りますか？', en: 'You have unsaved input. Go back?', id: 'Ada input yang belum disimpan. Kembali?' },
   specNeed:  { ja: '要確認の項目', en: 'Items to check', id: 'Item yang perlu dicek' },
   specNoNeed:{ ja: '要確認の項目はありません', en: 'No items to check', id: 'Tidak ada item yang perlu dicek' },
   specOther: { ja: 'ほかの項目も直す', en: 'Edit other items', id: 'Ubah item lain' },
@@ -634,6 +664,7 @@ function start() {
     try { localStorage.setItem(LS_KMASTER, JSON.stringify(r.master)); } catch (e) {}
     if (INIT.s) return openSeal(INIT.s);
     if (INIT.k) return openBoard(INIT.k);
+    if (INIT.ac) { state.screen = 'home'; render(); return openAcLot(normId(INIT.ac)); }
     state.screen = 'home'; render();
   }).catch(e => { state.error = String(e.message || e); state.screen = 'error'; render(); });
 }
@@ -653,7 +684,8 @@ function parseCode(text) {
   text = String(text).trim();
   try {
     const u = new URL(text);
-    const k = u.searchParams.get('k'), s = u.searchParams.get('s'), no = u.searchParams.get('no');
+    const k = u.searchParams.get('k'), s = u.searchParams.get('s'), no = u.searchParams.get('no'), ac = u.searchParams.get('ac');
+    if (ac) return { type: 'acLot', id: normId(ac) };   // ACの看板（ロットごと）
     if (k) { const g = String(u.searchParams.get('g') || '').toUpperCase(); return { type: 'board', id: normId(k), g: ['B', 'C', 'NG'].includes(g) ? g : 'A' }; }
     if (s) return { type: 'seal', id: normSeal(s) };
     if (no) return { type: 'ec', no: no, raw: text };
@@ -670,6 +702,7 @@ let scanPurpose = 'any';
 function handleCode(code) {
   if (!code) return alert(t('qrFail'));
   if (code.type === 'ec') { toast(t('ecMove')); location.href = 'index.html?no=' + encodeURIComponent(code.no); return; }
+  if (code.type === 'acLot') { scanPurpose = 'any'; return openAcLot(code.id); }   // ACの看板は、どの画面で読んでも、そのロットのACの数を開く
   if (scanPurpose === 'pick') {
     if (code.type !== 'board') { alert(t('qrWrong')); return pickScan(); }
     return openPickItem(code.id, code.g || 'A');
@@ -1107,7 +1140,7 @@ function render() {
   if (S === 'camera' || S === 'scan') return;
   const R = { loading: renderLoading, error: renderError, request: renderRequest, pending: renderPending, home: renderHome,
               board: renderBoard, unit: renderUnit, cat: renderCat, sym: renderSym, mark: renderMark,
-              grade: renderGrade, repair: renderRepair, photo: renderSym, stock: renderStock, gradeMany: renderGradeMany, spec: renderSpec,
+              grade: renderGrade, repair: renderRepair, photo: renderSym, stock: renderStock, gradeMany: renderGradeMany, spec: renderSpec, acLots: renderAcLots, ac: renderAc, acPrint: renderAcPrint,
               shipList: renderShipList, ship: renderShip, shipItem: renderShipItem,
               batchCount: renderBatchCount, batch: renderBatch,
               gradeBoard: renderGradeBoard, slipList: renderSlipList, slipPrint: renderSlipPrint,
@@ -1121,10 +1154,11 @@ function render() {
 // どの画面でも「‹ 戻る」と「⌂ ホーム」を押せるようにする（誤操作したときに戻れるように）
 // ===============================================================
 // 入力の途中の画面（戻ると、保存していない入力が消える画面）
-const NAV_EDITING = ['cat', 'sym', 'photo', 'mark', 'grade', 'repair', 'spec', 'stock', 'gradeMany', 'shipItem', 'batch'];
+const NAV_EDITING = ['cat', 'sym', 'photo', 'mark', 'grade', 'repair', 'spec', 'ac', 'stock', 'gradeMany', 'shipItem', 'batch'];
 function hasUnsaved() {
   const S = state.screen;
   if (S === 'spec') return !!(state.spec && Object.keys(state.spec.edits).length);
+  if (S === 'ac') return !!(state.ac && state.ac.dirty);
   if (S === 'stock') return !!(state.stock && (state.stock.photo || state.stock.boxes.some(x => x.per || x.n)));
   if (['cat', 'sym', 'photo', 'mark'].includes(S)) return state.adds.size > 0 || state.removes.size > 0;
   if (S === 'repair') return state.repairSel.size > 0;
@@ -1154,6 +1188,9 @@ function goBack() {
   else if (S === 'slipList') { state.slip = null; state.screen = 'home'; }
   else if (S === 'slipPrint') { state.screen = 'slipList'; }
   else if (S === 'spec') { state.spec = null; state.screen = 'home'; }
+  else if (S === 'acLots') { state.acLots = null; state.screen = 'home'; }
+  else if (S === 'ac') { state.ac = null; openAcLots(false); return; }
+  else if (S === 'acPrint') { state.screen = 'ac'; }
   else if (S === 'stock') { state.stock = null; state.screen = 'home'; }
   else if (S === 'batchCount' || S === 'batch') { state.batch = null; state.screen = 'board'; }
   else if (S === 'shipList') { state.ship = null; state.screen = 'home'; }
@@ -1167,7 +1204,7 @@ function goHome() {
   if (NAV_EDITING.includes(S) && hasUnsaved() && !confirm(t('leaveAsk'))) return;
   stopCamera();
   resetEdit();
-  state.spec = null; state.stock = null; state.grpEdit = null; state.ship = null; state.batch = null; state.slip = null; state.pick = null; state.sd = null;
+  state.spec = null; state.ac = null; state.acLots = null; state.stock = null; state.grpEdit = null; state.ship = null; state.batch = null; state.slip = null; state.pick = null; state.sd = null;
   scanPurpose = 'any'; scanBack = 'home';
   state.screen = 'home';
   render(); window.scrollTo(0, 0);
@@ -1220,6 +1257,7 @@ function renderHome() {
     <div class="modes">
       <button class="primary" id="scanBtn" type="button">${esc(t('modeSym'))}</button>
       <button class="primary" id="specBtn" type="button">${esc(t('modeSpec'))}</button>
+      <button class="primary" id="acBtn" type="button">${esc(t('modeAc'))}</button>
       <button class="primary" id="gradeBtn" type="button">${esc(t('modeGrade'))}</button>
       <button class="primary" id="slipListBtn" type="button">${esc(t('modeSlip'))}</button>
       <button class="primary" id="stockBtn" type="button">${esc(t('modeStock'))}</button>
@@ -1232,6 +1270,7 @@ function renderHome() {
     <div class="actions"><button class="secondary" id="openBtn" type="button">${esc(t('open'))}</button></div></div>`;
   document.getElementById('scanBtn').onclick = () => { scanPurpose = 'any'; scanBack = 'home'; openScanner(); };
   document.getElementById('specBtn').onclick = () => { scanPurpose = 'spec'; scanBack = 'home'; openScanner(t('specScan')); };
+  document.getElementById('acBtn').onclick = () => openAcLots(false);
   document.getElementById('shipBtn').onclick = openShipFiles;
   document.getElementById('pickBtn').onclick = openPickLists;
   document.getElementById('gradeBtn').onclick = gradeScan;
@@ -1856,6 +1895,126 @@ async function saveSpec() {
     state.spec = null;
     scanPurpose = 'spec'; scanBack = 'home';
     openScanner(t('specScan'));   // そのまま次の看板を読む
+  } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
+}
+
+// ===============================================================
+// ACの数：ロットの一覧 → ロットを選ぶ → ACの種類（メーカー名・AC口型・W）ごとに数を入力 → 保存
+// ===============================================================
+async function openAcLots(all) {
+  try {
+    const r = await call('kAcLots', [state.deviceId, !!all], 'loading');
+    state.acLots = { list: r.lots || [], older: r.older || 0, all: !!all };
+    state.screen = 'acLots'; render(); window.scrollTo(0, 0);
+  } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); state.screen = 'home'; render(); }
+}
+function renderAcLots() {
+  const L = state.acLots;
+  $app.innerHTML = `<h2>${esc(t('acLotsT'))}</h2>
+    ${L.list.length ? `<div class="units">${L.list.map((x, i) => `<button class="secondary wide" type="button" data-lot="${i}" style="text-align:left;height:auto;padding:10px 14px;margin-bottom:8px">
+        <b style="font-size:18px">${esc(x.lot)}</b>　${esc(x.date)}　${esc(x.supplier)}<br>
+        <small>${esc(t('acBoards', { n: x.boards }))}：${esc(x.names.join('、'))}</small><br>
+        <small class="${x.entered ? '' : 'warn'}">${esc(x.entered ? t('acDoneBy', { n: x.entered.total, w: x.entered.by, t: x.entered.at }) : t('acNotYet'))}</small></button>`).join('')}</div>`
+      : `<p class="note">${esc(t('acLotsNone'))}</p>`}
+    ${L.older ? `<button class="link" id="acOlder" type="button">${esc(t('acOlder', { n: L.older }))}</button>` : ''}
+    <button class="link" id="acLotsHome" type="button">${esc(t('stockBack'))}</button>`;
+  $app.querySelectorAll('[data-lot]').forEach(b => b.onclick = () => openAcLot(L.list[+b.dataset.lot].lot));
+  const ob = document.getElementById('acOlder');
+  if (ob) ob.onclick = () => openAcLots(true);
+  document.getElementById('acLotsHome').onclick = () => { state.acLots = null; state.screen = 'home'; render(); };
+}
+function acKey(m, c, w) { return [String(m || '').trim().toUpperCase(), String(c || '').trim(), String(w || '').replace(/[WＷ]/g, '').trim()].join('\t'); }
+async function openAcLot(lot) {
+  try {
+    const r = await call('kAcLoad', [state.deviceId, lot], 'loading');
+    state.ac = { info: r, types: (r.types || []).map(x => Object.assign({}, x, { v: x.n == null ? '' : String(x.n) })), dirty: false, adding: false };
+    state.screen = 'ac'; render(); window.scrollTo(0, 0);
+  } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); }
+}
+function renderAc() {
+  const a = state.ac, r = a.info;
+  const connOpts = (SPEC_DEF['AC口型'] || {}).opts || [], wOpts = (SPEC_DEF['W'] || {}).opts || [];
+  const rowHtml = (x, i) => `<div class="card" style="margin-bottom:8px">
+      <p class="big" style="margin:0">${esc(x.maker || '-')}　${esc(x.conn)}　${esc(x.w)}W</p>
+      <p class="note">${x.extra || !x.units ? esc(t('acExtra')) : esc(t('acUnitsOf', { n: x.units, m: x.names.join('、') }))}</p>
+      <div class="boxrow"><input type="number" inputmode="numeric" min="0" data-ac="${i}" value="${esc(x.v)}" placeholder="0"><span>${esc(t('acUnit'))}</span></div></div>`;
+  const done = a.types.filter(x => x.n != null);
+  const last = done.slice().sort((p, q) => String(q.at).localeCompare(String(p.at)))[0];
+  $app.innerHTML = `<div class="card"><p class="big">${esc(acLotName(r.lot))}　<small>${esc(r.lot)}</small></p>
+      <p class="note">${esc(t('acLotInfo', { d: r.date, s: r.supplier, n: r.boards }))}</p>
+      ${done.length ? `<p class="note"><b style="font-size:20px">${esc(t('acTotal', { n: done.reduce((s2, x) => s2 + (Number(x.n) || 0), 0), w: last.by || '', t: last.at || '' }))}</b></p>`
+                    : `<p class="warn">${esc(t('acNone'))}</p>`}
+      <div class="actions"><button class="secondary" id="acPrint" type="button">${esc(t('acPrintBtn'))}</button></div></div>
+    <h2>${esc(t('acTitle'))}</h2>
+    ${a.types.map(rowHtml).join('')}
+    ${r.unknown && r.unknown.length ? `<div class="card"><p class="warn">${esc(t('acUnknown'))}</p>
+      <p class="note">${r.unknown.map(u => esc(u.name + '（' + (u.conn || '空欄') + '・' + (u.w || '空欄') + '）')).join('<br>')}</p></div>` : ''}
+    ${a.adding ? `<div class="card"><p class="big">${esc(t('acAdd'))}</p>
+        <label class="field">${esc(t('acMaker'))}</label><input type="text" id="acAddMk" autocapitalize="characters">
+        <label class="field">${esc(t('acConnL'))}</label><select id="acAddConn">${connOpts.map(o => `<option>${esc(o)}</option>`).join('')}</select>
+        <label class="field">${esc(t('acW'))}</label><select id="acAddW">${wOpts.map(o => `<option>${esc(o)}</option>`).join('')}</select>
+        <div class="actions"><button class="secondary" id="acAddOk" type="button">${esc(t('acAddOk'))}</button></div></div>`
+      : `<button class="link" id="acAddBtn" type="button">${esc(t('acAdd'))}</button>`}
+    <p class="note">${esc(t('acAfter'))}</p>
+    <div class="actions"><button class="primary" id="acSave" type="button">${esc(t('acSave'))}</button></div>
+    <button class="link" id="acBack" type="button">${esc(t('back') || '‹')}</button>`;
+  $app.querySelectorAll('[data-ac]').forEach(inp => inp.oninput = () => { a.types[+inp.dataset.ac].v = inp.value; a.dirty = true; });
+  const ab = document.getElementById('acAddBtn');
+  if (ab) ab.onclick = () => { a.adding = true; render(); };
+  const ok = document.getElementById('acAddOk');
+  if (ok) ok.onclick = () => {
+    const m = document.getElementById('acAddMk').value.trim(), c = document.getElementById('acAddConn').value, w = document.getElementById('acAddW').value;
+    if (!c || !w) return alert(t('acAddNeed'));
+    if (a.types.some(x => acKey(x.maker, x.conn, x.w) === acKey(m, c, w))) return alert(t('acAddDup'));
+    a.types.push({ maker: m, conn: c, w: w, units: 0, names: [], extra: true, v: '' });
+    a.adding = false; a.dirty = true; render();
+  };
+  document.getElementById('acSave').onclick = saveAc;
+  document.getElementById('acBack').onclick = goBack;
+  document.getElementById('acPrint').onclick = () => {
+    if (a.dirty && !confirm(t('acLeave'))) return;
+    state.screen = 'acPrint'; render(); window.scrollTo(0, 0);
+  };
+}
+// ロットの見せ方：261030SBF → 【261030】SBF（ロットファイルの名前と同じ形）
+function acLotName(lot) { const m = String(lot || '').match(/^(\d{6})(.*)$/); return m ? '【' + m[1] + '】' + m[2] : String(lot || ''); }
+// ACの看板（A5 横）：ロット名・入荷日・仕入先と、このロットのACの数の画面を開くQR
+function acSheetHtml(info) {
+  const url = location.origin + location.pathname + '?ac=' + encodeURIComponent(info.lot);
+  return `<div class="sheet"><div style="position:absolute;left:12mm;top:10mm;right:12mm;bottom:10mm;display:flex;gap:8mm">
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;min-width:0">
+      <div style="font-size:30pt;font-weight:700;border-bottom:1mm dashed #000;padding-bottom:3mm">ACの看板</div>
+      <div style="font-size:48pt;font-weight:700;line-height:1.1;word-break:break-all">${esc(acLotName(info.lot))}</div>
+      <div style="font-size:20pt;font-weight:700;line-height:1.5">入荷日：${esc(info.date || '')}<br>仕入先：${esc(info.supplier || '')}</div>
+      <div style="font-size:11pt;color:#555">QRを読み取ると、このロットのACの入荷数が分かります（ロット ${esc(info.lot)}）</div>
+    </div>
+    <div style="width:70mm;display:flex;align-items:center;justify-content:center"><div style="width:68mm;height:68mm">${slipQrSvg(url).replace('<svg ', '<svg style="width:100%;height:100%;display:block" ')}</div></div>
+  </div></div>`;
+}
+function renderAcPrint() {
+  const r = state.ac.info;
+  $app.innerHTML = `<div class="card"><p class="big">${esc(t('acPrintT', { l: acLotName(r.lot) }))}</p>
+      <p class="note">${esc(t('acPrintNote'))}</p>
+      <div class="actions"><button class="primary" id="acDoPrint" type="button">${esc(t('slipDoPrint'))}</button></div></div>
+    <div id="printArea" class="printarea"><p class="note">${esc(t('loading'))}</p></div>`;
+  loadQrLib().then(() => {
+    const pa = document.getElementById('printArea');
+    if (pa) pa.innerHTML = acSheetHtml(r);
+  }).catch(e => alert(e.message || e));
+  document.getElementById('acDoPrint').onclick = () => {
+    document.body.classList.add('printing');
+    setTimeout(() => { window.print(); setTimeout(() => document.body.classList.remove('printing'), 500); }, 50);
+  };
+}
+async function saveAc() {
+  const a = state.ac;
+  if (a.types.some(x => !/^\d+$/.test(String(x.v).trim()))) return alert(t('acNeedNum'));
+  const items = a.types.map(x => ({ maker: x.maker, conn: x.conn, w: x.w, n: Number(String(x.v).trim()) }));
+  try {
+    await call('kAcSave', [state.deviceId, a.info.lot, items], 'saving');
+    toast(t('acSaved', { l: a.info.lot }));
+    state.ac = null;
+    openAcLots(false);
   } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
 }
 
