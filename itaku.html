@@ -444,8 +444,9 @@ const T = {
   acbNeedStart:{ ja: '開始位置は1〜24で入れてください', en: 'Start position must be 1–24', id: 'Posisi mulai harus 1–24' },
   acbChangeAsk:{ ja: '1箱の個数を {a}個 から {b}個 に変えます。次からも {b}個 になります。よろしいですか？', en: 'Change the number per box from {a} to {b}? It will be used next time too.', id: 'Ubah jumlah per kotak dari {a} ke {b}? Akan dipakai seterusnya.' },
   acbNewT:   { ja: '{t} は、まだ登録されていません', en: '{t} is not registered yet', id: '{t} belum terdaftar' },
-  acbNewAsk: { ja: '同じメーカーで、すでに写真のあるACです。手元のACが、この中のどれかと同じではないか見比べてください（呼び方が違うだけで、同じACのことがあります）', en: 'These ACs of the same maker already have photos. Check that your AC is not one of them (the name may just differ)', id: 'AC merek yang sama ini sudah punya foto. Pastikan AC Anda bukan salah satunya (mungkin hanya beda nama)' },
-  acbThisSame:{ ja: 'これと同じ', en: 'Same as this', id: 'Sama dengan ini' },
+  acbNewAsk: { ja: '同じメーカーで、すでに写真のあるACです。手元のACの差し込む口の形が、この中のどれかと同じではないか見比べてください（呼び方が違うだけで、同じ形のことがあります。Wは違っていてもかまいません）', en: 'These ACs of the same maker already have photos. Check that your AC is not one of them (the name may just differ)', id: 'AC merek yang sama ini sudah punya foto. Pastikan AC Anda bukan salah satunya (mungkin hanya beda nama)' },
+  acbThisSame:{ ja: 'これと同じ口の形（Wはそのまま）', en: 'Same plug shape (keep the W)', id: 'Bentuk colokan sama (W tetap)' },
+  acbShapeSet:{ ja: '口型を {c} にしました（Wは {w}W のまま）', en: 'Connector set to {c} (W stays {w}W)', id: 'Konektor diubah ke {c} (W tetap {w}W)' },
   acbNoneSame:{ ja: 'どれとも違う（新しい種類として写真を撮る）', en: 'None of these (take a photo as a new type)', id: 'Tidak ada yang sama (foto sebagai jenis baru)' },
   acbNoneAsk:{ ja: '上のどのACとも違う、新しい種類（{t}）として登録します。よろしいですか？', en: 'Register as a new type ({t}), different from all above?', id: 'Daftarkan sebagai jenis baru ({t}), berbeda dari semua di atas?' },
   acbSwitched:{ ja: '{t} に切り替えました', en: 'Switched to {t}', id: 'Beralih ke {t}' },
@@ -2665,11 +2666,17 @@ function renderAcBox() {
   const sh = document.getElementById('acbShoot'); if (sh) sh.onclick = () => document.getElementById('acPhotoIn').click();
   const rt = document.getElementById('acbRetake'); if (rt) rt.onclick = () => { if (confirm(t('acbRetakeAsk'))) document.getElementById('acPhotoIn').click(); };
   const sm = document.getElementById('acbSame'); if (sm) sm.onclick = () => { b.ok = true; render(); };
-  $app.querySelectorAll('[data-same]').forEach(x => x.onclick = () => {   // 写真のあるACと同じだった → その種類に切り替える
+  $app.querySelectorAll('[data-same]').forEach(x => x.onclick = async () => {   // 口の形が同じだった → 口型だけ切り替える（Wはそのまま）
     const y = b.similar[+x.dataset.same];
-    b.conn = y.conn; b.w = String(y.w); acbFill();
-    b.photo = { thumb: y.thumb, by: y.by, at: y.at }; b.ok = true; b.similar = null; b.newOk = false;
-    toast(t('acbSwitched', { t: acTypeText(y) })); render(); window.scrollTo(0, 0);
+    b.conn = y.conn; acbFill();
+    toast(t('acbShapeSet', { c: y.conn, w: b.w }));
+    b.photo = undefined; b.ok = false; render();
+    try {
+      const r = await call('kAcPhotoGet', [state.deviceId, b.maker, b.conn, b.w], 'loading');
+      b.photo = r.photo || null;
+    } catch (e) { b.photo = null; }
+    b.similar = []; b.newOk = true;   // 口の形は見比べ済み。写真が無ければ、このWの写真を撮る
+    render(); window.scrollTo(0, 0);
   });
   const nn = document.getElementById('acbNone'); if (nn) nn.onclick = () => {
     if (!confirm(t('acbNoneAsk', { t: [b.maker, b.conn, b.w + 'W'].join(' ') }))) return;
@@ -2798,10 +2805,17 @@ function renderAcTc() {
   on('tcCancel', () => { state.screen = tc.back; state.acTc = null; render(); });
   on('tcShoot', () => document.getElementById('acPhotoIn').click());
   on('tcNone', () => { if (!confirm(t('acbNoneAsk', { t: name }))) return; tc.newOk = true; render(); });
-  $app.querySelectorAll('[data-tcs]').forEach(b => b.onclick = () => {
+  $app.querySelectorAll('[data-tcs]').forEach(b => b.onclick = async () => {   // 口の形が同じだった → 口型だけ切り替える（Wはそのまま）
     const y = tc.similar[+b.dataset.tcs];
-    toast(t('acbSwitched', { t: acTypeText(y) }));
-    acTcDone({ maker: y.maker, conn: y.conn, w: String(y.w) });
+    tc.type = { maker: tc.type.maker, conn: y.conn, w: tc.type.w };
+    toast(t('acbShapeSet', { c: y.conn, w: tc.type.w }));
+    tc.photo = undefined; render();
+    try {
+      const r = await call('kAcPhotoGet', [state.deviceId, tc.type.maker, tc.type.conn, tc.type.w], 'loading');
+      tc.photo = r.photo || null;
+    } catch (e) { tc.photo = null; }
+    tc.similar = []; tc.newOk = true;   // 口の形は見比べ済み。写真が無ければ、このWの写真を撮る
+    if (state.acTc === tc) render();
   });
 }
 
