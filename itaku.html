@@ -149,6 +149,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--amber);outline-
 <input type="file" id="camPhoto" accept="image/*" capture="environment" hidden>
 <input type="file" id="camQr" accept="image/*" capture="environment" hidden>
 <input type="file" id="stockPhoto" accept="image/*" capture="environment" hidden>
+<input type="file" id="acPhotoIn" accept="image/*" capture="environment" hidden>
 <div id="busy" hidden></div>
 <div id="toast" role="status"></div>
 <script>
@@ -291,7 +292,7 @@ const T = {
   toBoard:   { ja: 'この台の看板を開く', en: 'Open this board', id: 'Buka papan ini' },
   modeSym:   { ja: '🔍 症状を入力する', en: '🔍 Enter defects', id: '🔍 Input cacat' },
   modeSpec:  { ja: '📝 スペックを入力する', en: '📝 Enter specs', id: '📝 Input spesifikasi' },
-  modeAc:    { ja: '🔌 ACの数を入力する', en: '🔌 Enter AC count', id: '🔌 Input jumlah AC' },
+  modeAc:    { ja: '🔌 AC（入荷・パレット・棚卸し）', en: '🔌 AC (arrival, pallet, count)', id: '🔌 AC (masuk, palet, stok opname)' },
   boardRetired:{ ja: '看板 {id} は使われていない看板です（案件管理で消されました）。正しい看板のQRを読み取ってください。', en: 'Board {id} is no longer used (removed in the case file). Scan the correct board.', id: 'Papan {id} tidak dipakai lagi (dihapus). Pindai papan yang benar.' },
   retiredNote:{ ja: 'この看板は使われていません（案件管理で消されました）。登録されている台は、下の「台を別の看板へ移す」で、正しい看板へ移してください。', en: 'This board is no longer used. Move its units to the correct board below.', id: 'Papan ini tidak dipakai lagi. Pindahkan unitnya ke papan yang benar di bawah.' },
   moveTitle: { ja: '台を別の看板へ移す', en: 'Move units to another board', id: 'Pindahkan unit ke papan lain' },
@@ -420,6 +421,122 @@ const T = {
   acPrintBtn:{ ja: '🖨 このロットのACの看板を印刷する', en: '🖨 Print the AC board for this lot', id: '🖨 Cetak papan AC untuk lot ini' },
   acPrintT:  { ja: 'ACの看板（ロット {l}）', en: 'AC board (lot {l})', id: 'Papan AC (lot {l})' },
   acPrintNote:{ ja: '印刷の画面で、用紙は「A5」・向きは「横」・倍率は「100%」にしてください。QRを読み取ると、このロットのACの数の画面が開きます。', en: 'Use A5 landscape at 100%. Scanning the QR opens the AC count for this lot.', id: 'Pakai A5 lanskap 100%. Memindai QR membuka jumlah AC lot ini.' },
+  acMenuT:   { ja: 'ACの作業を選んでください', en: 'Choose an AC task', id: 'Pilih pekerjaan AC' },
+  acmIn:     { ja: '📥 入荷数を入力する', en: '📥 Enter arrival count', id: '📥 Input jumlah masuk' },
+  acmMove:   { ja: '📦 パレットに移す', en: '📦 Move to pallet', id: '📦 Pindah ke palet' },
+  acmCount:  { ja: '🔢 棚卸しをする', en: '🔢 Count stock', id: '🔢 Stok opname' },
+  acmView:   { ja: '🔍 在庫を見る（看板を読む）', en: '🔍 View stock (scan a board)', id: '🔍 Lihat stok (pindai papan)' },
+  acmPallet: { ja: '🧺 パレットの一覧（在庫・棚卸し・看板）', en: '🧺 Pallets (stock, count, boards)', id: '🧺 Daftar palet (stok, opname, papan)' },
+  acmBox:    { ja: '🏷 ACの箱のシールを発行する', en: '🏷 Print AC box labels', id: '🏷 Cetak label kotak AC' },
+  acbTitle:  { ja: 'ACの箱のシール（40×40mm）', en: 'AC box labels (40×40mm)', id: 'Label kotak AC (40×40mm)' },
+  acbNote:   { ja: 'メーカー・AC口型・Wを選ぶと、前に決めた「1箱の個数」が入ります。用紙は番号入りQRシールと同じです。', en: 'Choose maker, connector and W. The saved number per box is filled in. Same paper as the seal labels.', id: 'Pilih merek, konektor dan W. Jumlah per kotak yang tersimpan akan terisi. Kertas sama dengan label segel.' },
+  acbOther:  { ja: 'ほかのメーカー', en: 'Other maker', id: 'Merek lain' },
+  acbPerBox: { ja: '1箱の個数', en: 'Number per box', id: 'Jumlah per kotak' },
+  acbSavedN: { ja: 'この種類は、1箱 {n}個 に決まっています（変えると、次からその数になります）', en: 'Saved: {n} per box (changing it updates it for next time)', id: 'Tersimpan: {n} per kotak (jika diubah, berlaku berikutnya)' },
+  acbNewN:   { ja: '初めての種類です。1箱の個数を入れてください（次からこの数が入ります）', en: 'New type. Enter the number per box (it will be saved)', id: 'Jenis baru. Masukkan jumlah per kotak (akan disimpan)' },
+  acbCopies: { ja: '印刷する枚数（箱の数）', en: 'Number of labels (boxes)', id: 'Jumlah label (kotak)' },
+  acbSheets: { ja: '枚', en: 'labels', id: 'label' },
+  acbStart:  { ja: '開始位置（1〜24。左上が1、右へ2、3…）', en: 'Start position (1–24, top-left is 1)', id: 'Posisi mulai (1–24, kiri atas 1)' },
+  acbPrint:  { ja: '🖨 シールを印刷する', en: '🖨 Print labels', id: '🖨 Cetak label' },
+  acbChoose: { ja: 'メーカー・AC口型・Wを選んでください', en: 'Choose maker, connector and W', id: 'Pilih merek, konektor dan W' },
+  acbNeedN:  { ja: '1箱の個数を入れてください', en: 'Enter the number per box', id: 'Masukkan jumlah per kotak' },
+  acbNeedCopies:{ ja: '印刷する枚数を入れてください（240枚まで）', en: 'Enter the number of labels (up to 240)', id: 'Masukkan jumlah label (maks 240)' },
+  acbNeedStart:{ ja: '開始位置は1〜24で入れてください', en: 'Start position must be 1–24', id: 'Posisi mulai harus 1–24' },
+  acbChangeAsk:{ ja: '1箱の個数を {a}個 から {b}個 に変えます。次からも {b}個 になります。よろしいですか？', en: 'Change the number per box from {a} to {b}? It will be used next time too.', id: 'Ubah jumlah per kotak dari {a} ke {b}? Akan dipakai seterusnya.' },
+  acbNewT:   { ja: '{t} は、まだ登録されていません', en: '{t} is not registered yet', id: '{t} belum terdaftar' },
+  acbNewAsk: { ja: '同じメーカーで、すでに写真のあるACです。手元のACが、この中のどれかと同じではないか見比べてください（呼び方が違うだけで、同じACのことがあります）', en: 'These ACs of the same maker already have photos. Check that your AC is not one of them (the name may just differ)', id: 'AC merek yang sama ini sudah punya foto. Pastikan AC Anda bukan salah satunya (mungkin hanya beda nama)' },
+  acbThisSame:{ ja: 'これと同じ', en: 'Same as this', id: 'Sama dengan ini' },
+  acbNoneSame:{ ja: 'どれとも違う（新しい種類として写真を撮る）', en: 'None of these (take a photo as a new type)', id: 'Tidak ada yang sama (foto sebagai jenis baru)' },
+  acbNoneAsk:{ ja: '上のどのACとも違う、新しい種類（{t}）として登録します。よろしいですか？', en: 'Register as a new type ({t}), different from all above?', id: 'Daftarkan sebagai jenis baru ({t}), berbeda dari semua di atas?' },
+  acbSwitched:{ ja: '{t} に切り替えました', en: 'Switched to {t}', id: 'Beralih ke {t}' },
+  acTcTitle: { ja: '足すACの確認', en: 'Check the AC to add', id: 'Periksa AC yang ditambah' },
+  acTcSame:  { ja: '✅ 写真と同じAC（足す）', en: '✅ Same as the photo (add)', id: '✅ Sama dengan foto (tambah)' },
+  acTcNoSwitch:{ ja: '同じメーカーで、写真のあるACです。この中に同じACがあれば、在庫の種類の書き方が違っています（棚卸しで正しい種類に直してください）。どれとも違うときだけ、写真を撮ってください', en: 'These have photos. If one is the same, the stock type name is wrong (fix it in a count). Take a photo only if none is the same', id: 'Ini sudah punya foto. Jika ada yang sama, nama jenis stok salah (perbaiki saat opname). Foto hanya jika tidak ada yang sama' },
+  acBulkT:   { ja: '箱のシールをまとめて発行：{l}', en: 'Box labels in bulk: {l}', id: 'Label kotak sekaligus: {l}' },
+  acBulkNote:{ ja: 'この場所の今の在庫を、ACの種類ごとに「1箱の個数」で分けて、箱の数だけシールを作ります。写真と見比べてから印刷してください。', en: 'Splits the current stock here into boxes by the number per box and makes one label per box. Compare with the photos first.', id: 'Stok saat ini dibagi per kotak dan dibuat satu label per kotak. Cocokkan dengan foto dulu.' },
+  acBulkFull:{ ja: '{p}個×{b}箱', en: '{p} × {b} boxes', id: '{p} × {b} kotak' },
+  acBulkRest:{ ja: '{r}個×1箱', en: '{r} × 1 box', id: '{r} × 1 kotak' },
+  acBulkNoPhoto:{ ja: 'このACの写真がまだありません。写真を撮ってください', en: 'No photo for this AC yet. Take a photo', id: 'Belum ada foto AC ini. Ambil foto' },
+  acBulkCount:{ ja: 'シール {n}枚', en: '{n} labels', id: '{n} label' },
+  acBulkNotReady:{ ja: '印刷する種類を、すべて写真と見比べ（写真が無ければ撮り）、1箱の個数を入れてください', en: 'Check every type against its photo (take one if missing) and enter the number per box', id: 'Cocokkan semua jenis dengan fotonya (ambil jika belum ada) dan isi jumlah per kotak' },
+  acBulkNone:{ ja: '印刷する種類を選んでください', en: 'Choose the types to print', id: 'Pilih jenis yang dicetak' },
+  acBulkChangeAsk:{ ja: '1箱の個数を変えます（{l}）。次からもこの数になります。よろしいですか？', en: 'Change the number per box ({l})? It will be used next time too.', id: 'Ubah jumlah per kotak ({l})? Akan dipakai seterusnya.' },
+  acBulkBtn: { ja: '🏷 この場所の箱のシールをまとめて発行', en: '🏷 Box labels for this place', id: '🏷 Label kotak untuk tempat ini' },
+  acBulkAfter:{ ja: '続けて、この場所の箱のシールをまとめて発行しますか？', en: 'Print box labels for this place now?', id: 'Cetak label kotak untuk tempat ini sekarang?' },
+  acbPhotoT: { ja: '手元のACと、写真を見比べてください', en: 'Compare the AC in your hand with the photo', id: 'Bandingkan AC di tangan dengan foto' },
+  acbPhotoBy:{ ja: '写真：{w}　{t}', en: 'Photo: {w} {t}', id: 'Foto: {w} {t}' },
+  acbSame:   { ja: '✅ 同じAC（シールを作る）', en: '✅ Same AC (make labels)', id: '✅ AC sama (buat label)' },
+  acbDiff:   { ja: '違うAC（口型・Wを選び直す）', en: 'Different AC (choose again)', id: 'AC berbeda (pilih ulang)' },
+  acbRetake: { ja: '写真を撮り直す', en: 'Retake the photo', id: 'Ambil ulang foto' },
+  acbRetakeAsk:{ ja: 'この種類の写真を撮り直します。前の写真は置き換わります。よろしいですか？', en: 'Retake the photo for this type? The old one will be replaced.', id: 'Ambil ulang foto jenis ini? Foto lama akan diganti.' },
+  acbNoPhoto:{ ja: 'このACの写真がまだありません。シールを作る前に、ACのプラグ（差し込む先）とラベル（W）が写るように写真を撮ってください', en: 'No photo for this AC yet. Before making labels, take a photo showing the plug and the label (W)', id: 'Belum ada foto AC ini. Sebelum membuat label, foto colokan dan label (W)' },
+  acbShoot:  { ja: '📷 写真を撮る', en: '📷 Take a photo', id: '📷 Ambil foto' },
+  acbPhotoSaved:{ ja: '写真を保存しました', en: 'Photo saved', id: 'Foto tersimpan' },
+  acbOk:     { ja: '写真と同じACであることを確かめました', en: 'Checked against the photo', id: 'Sudah dicocokkan dengan foto' },
+  acbHasPhoto:{ ja: '📷', en: '📷', id: '📷' },
+  acViewShort:{ ja: '見る', en: 'View', id: 'Lihat' },
+  acCountShort:{ ja: '棚卸し', en: 'Count', id: 'Opname' },
+  acTakeHere:{ ja: '{p} から出す', en: 'Take from {p}', id: 'Ambil dari {p}' },
+  acTakeScanLot:{ ja: 'このロットのACの看板を読み取って出してください', en: 'Scan this lot\'s AC board to take them', id: 'Pindai papan AC lot ini untuk mengambil' },
+  acAllOld:  { ja: '古いロットにもACが残っています（今回は使いません）。パレットに移してください', en: 'Older lots still have ACs (not used now). Move them to pallets', id: 'Lot lama masih punya AC (tidak dipakai). Pindahkan ke palet' },
+  acMoveScan:{ ja: 'パレットに移すロットのACの看板を読み取ってください', en: 'Scan the AC board of the lot to move', id: 'Pindai papan AC lot yang akan dipindah' },
+  acCountScan:{ ja: '棚卸しをするACの看板（ロットかパレット）を読み取ってください。パレットは「パレットの一覧」からも選べます', en: 'Scan the AC board (lot or pallet) to count', id: 'Pindai papan AC (lot atau palet) untuk dihitung' },
+  acViewScan:{ ja: 'ACの看板（ロットかパレット）を読み取ってください', en: 'Scan an AC board (lot or pallet)', id: 'Pindai papan AC (lot atau palet)' },
+  acMoveNotPallet:{ ja: 'パレットの看板です。移すときは、ロットのACの看板を読み取ってください', en: 'This is a pallet board. Scan the lot AC board to move', id: 'Ini papan palet. Pindai papan AC lot untuk memindah' },
+  acStockNone:{ ja: 'ACはありません', en: 'No ACs', id: 'Tidak ada AC' },
+  acStockTotal:{ ja: '在庫：合計 {n}個', en: 'Stock: {n} in total', id: 'Stok: total {n}' },
+  acPalletMakers:{ ja: 'メーカー：{m}', en: 'Makers: {m}', id: 'Merek: {m}' },
+  acLotInfo2:{ ja: '入荷日 {d}　仕入先 {s}', en: 'Arrival {d}  Supplier {s}', id: 'Tiba {d}  Pemasok {s}' },
+  acPrintThis:{ ja: '🖨 この看板を印刷する', en: '🖨 Print this board', id: '🖨 Cetak papan ini' },
+  acPrintShort:{ ja: '印刷', en: 'Print', id: 'Cetak' },
+  acPrintPT: { ja: 'ACのパレットの看板（{p}）', en: 'AC pallet board ({p})', id: 'Papan palet AC ({p})' },
+  acPrintPNote:{ ja: '印刷の画面で、用紙は「A5」・向きは「横」・倍率は「100%」にしてください。QRを読み取ると、このパレットのACの在庫が分かります。', en: 'Use A5 landscape at 100%. Scanning the QR shows this pallet\'s AC stock.', id: 'Pakai A5 lanskap 100%. Memindai QR menampilkan stok AC palet ini.' },
+  acPalletNone:{ ja: 'パレットがありません', en: 'No pallets', id: 'Tidak ada palet' },
+  acPalletSet:{ ja: 'メーカーごとのパレットは、業務委託のスプレッドシートの「ACのパレット」シートで決めます。', en: 'Pallets per maker are set on the “ACのパレット” sheet.', id: 'Palet per merek diatur di sheet “ACのパレット”.' },
+  acMoveNote:{ ja: 'このロットに残っているACを、メーカーごとに決まったパレットへ移します。', en: 'Moves the remaining ACs of this lot to each maker\'s pallet.', id: 'Memindah sisa AC lot ini ke palet tiap merek.' },
+  acMoveNone:{ ja: 'このロットに、移せるACはありません', en: 'No ACs to move in this lot', id: 'Tidak ada AC untuk dipindah di lot ini' },
+  acNoPallet:{ ja: 'パレットが決まっていないメーカーのACです（移しません）。「ACのパレット」シートにメーカーとパレットを入れてください', en: 'These makers have no pallet (not moved). Add them on the “ACのパレット” sheet', id: 'Merek ini belum punya palet (tidak dipindah). Tambahkan di sheet “ACのパレット”' },
+  acMoveGo:  { ja: 'パレットに移す（{n}個）', en: 'Move to pallets ({n})', id: 'Pindah ke palet ({n})' },
+  acMoveAsk: { ja: '{l} のAC {n}個を、パレットに移します。よろしいですか？', en: 'Move {n} ACs of {l} to pallets?', id: 'Pindahkan {n} AC dari {l} ke palet?' },
+  acMoved:   { ja: '{n}個をパレットに移しました。次のロットの看板を読み取ってください', en: 'Moved {n}. Scan the next lot board', id: '{n} dipindah. Pindai papan lot berikutnya' },
+  acCountT:  { ja: '棚卸し：{l}', en: 'Count: {l}', id: 'Stok opname: {l}' },
+  acCountNote:{ ja: 'ACの種類ごとに、実際に数えた数を入れてください（無ければ 0）。今の数との差が記録されます。', en: 'Enter the counted number for each AC type (0 if none). The difference is recorded.', id: 'Masukkan jumlah hitungan tiap jenis AC (0 jika tidak ada). Selisihnya dicatat.' },
+  acCountNow:{ ja: '今の数：{n}個', en: 'Current: {n}', id: 'Sekarang: {n}' },
+  acCounted: { ja: '{l} の棚卸しを保存しました（変わった種類 {n}件）', en: 'Saved the count for {l} ({n} types changed)', id: 'Stok opname {l} tersimpan ({n} jenis berubah)' },
+  pickAcQty: { ja: 'この商品の出荷：{q}台（ACを出した数：{d}個）', en: 'Units picked: {q} (ACs so far: {d})', id: 'Unit diambil: {q} (AC sejauh ini: {d})' },
+  pickAcNeed:{ ja: 'ACを {n}個 一緒に出してください（{t}）', en: 'Add {n} ACs ({t})', id: 'Sertakan {n} AC ({t})' },
+  pickAcStep:{ ja: '{l} の看板から {n}個', en: '{n} from {l}', id: '{n} dari {l}' },
+  pickAcShort:{ ja: 'ACの在庫が {n}個 足りません（パレット {p} にもありません）', en: '{n} ACs short (none on pallet {p})', id: 'AC kurang {n} (tidak ada di palet {p})' },
+  pickAcUnknown:{ ja: 'この機種のACの種類（口型・W）が決まっていません。出すACの看板を読んで、種類を選んでください（{n}個）', en: 'AC type of this model is unknown. Scan the AC board and choose the type ({n})', id: 'Jenis AC model ini belum ditentukan. Pindai papan AC dan pilih jenisnya ({n})' },
+  pickAcScanBtn:{ ja: '📷 ACの看板を読み取る', en: '📷 Scan the AC board', id: '📷 Pindai papan AC' },
+  pickAcScanDesc:{ ja: '{l} のACの看板を読み取ってください', en: 'Scan the AC board of {l}', id: 'Pindai papan AC {l}' },
+  pickAcScanAny:{ ja: '出すACの看板（ロットかパレット）を読み取ってください', en: 'Scan the AC board (lot or pallet) to take from', id: 'Pindai papan AC (lot atau palet) yang diambil' },
+  pickAcWrong:{ ja: '違う看板です。{l} の看板を読み取ってください', en: 'Wrong board. Scan the board of {l}', id: 'Papan salah. Pindai papan {l}' },
+  pickAcSkip:{ ja: 'ACを出さずに、次の商品へ', en: 'Skip the AC, next item', id: 'Lewati AC, barang berikutnya' },
+  pickAcSkipAsk:{ ja: 'ACを {n}個 出さずに進みます。よろしいですか？（あとで、ピッキングの一覧の🔌から出せます）', en: 'Continue without {n} ACs? (You can add them later with 🔌 in the list)', id: 'Lanjut tanpa {n} AC? (Bisa ditambah nanti dengan 🔌 di daftar)' },
+  pickAcFrom:{ ja: '{t}　この看板の在庫：{h}個', en: '{t}  Stock here: {h}', id: '{t}  Stok di sini: {h}' },
+  pickAcChoose:{ ja: '出すACの種類を選んでください', en: 'Choose the AC type', id: 'Pilih jenis AC' },
+  pickAcQtyL:{ ja: '出すACの個数', en: 'Number of ACs', id: 'Jumlah AC' },
+  pickAcTooMany:{ ja: 'この看板の在庫（{n}個）より多い数です', en: 'More than the stock here ({n})', id: 'Lebih dari stok di sini ({n})' },
+  pickAcMore:{ ja: '必要な数（{need}個）より多い {n}個を出します。よろしいですか？', en: 'Take {n}, more than needed ({need})?', id: 'Ambil {n}, lebih dari yang dibutuhkan ({need})?' },
+  pickAcSaved:{ ja: 'AC {n}個（{l}）を保存しました', en: 'Saved {n} ACs ({l})', id: '{n} AC ({l}) tersimpan' },
+  pickAcDone:{ ja: 'ACは、もう {n}個出してあります', en: '{n} ACs already added', id: '{n} AC sudah ditambahkan' },
+  pickAcList:{ ja: '一緒に出すAC', en: 'ACs to ship', id: 'AC yang dikirim' },
+  pickAcMade:{ ja: '（AC {n}個は、ファイルの「AC」シートに書きました）', en: '(ACs: {n}, on the “AC” sheet)', id: '(AC: {n}, di sheet “AC”)' },
+  pickAcAllBtn:{ ja: '🔌 一緒に出すACをまとめて出す', en: '🔌 Add ACs for the whole list', id: '🔌 Tambah AC untuk seluruh daftar' },
+  acAllLeft: { ja: 'あと {n}個 のACを出します', en: '{n} ACs still to add', id: 'Masih {n} AC yang harus ditambah' },
+  acAllDone: { ja: 'ACは全部出してあります', en: 'All ACs have been added', id: 'Semua AC sudah ditambahkan' },
+  acAllTaken:{ ja: '（出した数：{n}個）', en: '(added: {n})', id: '(sudah: {n})' },
+  acAllTypes:{ ja: '必要なAC（種類ごと）', en: 'ACs needed (by type)', id: 'AC yang dibutuhkan (per jenis)' },
+  acAllWhere:{ ja: '出す場所（この看板から出してください）', en: 'Where to take them (from these boards)', id: 'Ambil dari (papan berikut)' },
+  acAllShort:{ ja: 'ACの在庫が足りません', en: 'Not enough AC stock', id: 'Stok AC tidak cukup' },
+  acAllUnknown:{ ja: 'ACの種類（口型・W）が決まっていない商品です。「選ぶ」で、出すACの看板を読んで種類を選んでください（選んだ種類は、その看板のスペックに記録されます）', en: 'AC type unknown for these. Tap “Choose”, scan the AC board and pick the type (saved to the board\'s specs)', id: 'Jenis AC belum ditentukan. Ketuk “Pilih”, pindai papan AC lalu pilih jenisnya (disimpan ke spesifikasi papan)' },
+  acAllChoose:{ ja: '選ぶ', en: 'Choose', id: 'Pilih' },
+  acAllScan: { ja: '上の「出す場所」の看板（ロットかパレット）を読み取ってください', en: 'Scan one of the boards listed under “Where to take them”', id: 'Pindai salah satu papan di “Ambil dari”' },
+  acAllWrong:{ ja: 'この看板から出すACはありません。次の看板を読み取ってください：{l}', en: 'No ACs to take from this board. Scan one of: {l}', id: 'Tidak ada AC dari papan ini. Pindai salah satu: {l}' },
+  acTakeNote:{ ja: 'この看板から出すACの個数です。実際に出した数に直して保存してください。', en: 'ACs to take from this board. Correct to the actual number and save.', id: 'AC yang diambil dari papan ini. Sesuaikan dengan jumlah sebenarnya lalu simpan.' },
+  acTakeHave:{ ja: '出す数の目安 {n}個（この看板の在庫 {h}個）', en: 'Suggested {n} (stock here {h})', id: 'Saran {n} (stok di sini {h})' },
+  pickAcLeftAsk:{ ja: 'まだ出していないACが {n}個あります。このままファイルを作りますか？', en: '{n} ACs not added yet. Make the file anyway?', id: 'Masih {n} AC belum ditambahkan. Tetap buat file?' },
   acLeave:   { ja: '保存していない入力があります。戻りますか？', en: 'You have unsaved input. Go back?', id: 'Ada input yang belum disimpan. Kembali?' },
   specNeed:  { ja: '要確認の項目', en: 'Items to check', id: 'Item yang perlu dicek' },
   specNoNeed:{ ja: '要確認の項目はありません', en: 'No items to check', id: 'Tidak ada item yang perlu dicek' },
@@ -664,7 +781,7 @@ function start() {
     try { localStorage.setItem(LS_KMASTER, JSON.stringify(r.master)); } catch (e) {}
     if (INIT.s) return openSeal(INIT.s);
     if (INIT.k) return openBoard(INIT.k);
-    if (INIT.ac) { state.screen = 'home'; render(); return openAcLot(normId(INIT.ac)); }
+    if (INIT.ac) { state.screen = 'home'; render(); return openAcPlace(normId(INIT.ac)); }
     state.screen = 'home'; render();
   }).catch(e => { state.error = String(e.message || e); state.screen = 'error'; render(); });
 }
@@ -685,7 +802,7 @@ function parseCode(text) {
   try {
     const u = new URL(text);
     const k = u.searchParams.get('k'), s = u.searchParams.get('s'), no = u.searchParams.get('no'), ac = u.searchParams.get('ac');
-    if (ac) return { type: 'acLot', id: normId(ac) };   // ACの看板（ロットごと）
+    if (ac) return { type: 'acPlace', id: normId(ac) };   // ACの看板（ロット）・パレットの看板
     if (k) { const g = String(u.searchParams.get('g') || '').toUpperCase(); return { type: 'board', id: normId(k), g: ['B', 'C', 'NG'].includes(g) ? g : 'A' }; }
     if (s) return { type: 'seal', id: normSeal(s) };
     if (no) return { type: 'ec', no: no, raw: text };
@@ -702,7 +819,8 @@ let scanPurpose = 'any';
 function handleCode(code) {
   if (!code) return alert(t('qrFail'));
   if (code.type === 'ec') { toast(t('ecMove')); location.href = 'index.html?no=' + encodeURIComponent(code.no); return; }
-  if (code.type === 'acLot') { scanPurpose = 'any'; return openAcLot(code.id); }   // ACの看板は、どの画面で読んでも、そのロットのACの数を開く
+  if (code.type === 'acPlace') return handleAcPlace(code.id);   // ACの看板・パレットの看板
+  if (scanPurpose === 'pickAc' || scanPurpose === 'pickAcAll') { const back = scanPurpose; scanPurpose = 'any'; alert(t('qrWrong')); state.screen = back; return render(); }
   if (scanPurpose === 'pick') {
     if (code.type !== 'board') { alert(t('qrWrong')); return pickScan(); }
     return openPickItem(code.id, code.g || 'A');
@@ -1141,6 +1259,8 @@ function render() {
   const R = { loading: renderLoading, error: renderError, request: renderRequest, pending: renderPending, home: renderHome,
               board: renderBoard, unit: renderUnit, cat: renderCat, sym: renderSym, mark: renderMark,
               grade: renderGrade, repair: renderRepair, photo: renderSym, stock: renderStock, gradeMany: renderGradeMany, spec: renderSpec, acLots: renderAcLots, ac: renderAc, acPrint: renderAcPrint,
+              acMenu: renderAcMenu, acPlace: renderAcPlace, acMove: renderAcMove, acCount: renderAcCount, acPallets: renderAcPallets,
+              acBox: renderAcBox, acTc: renderAcTc, acBulk: renderAcBulk, pickAc: renderPickAc, pickAcQty: renderPickAcQty, pickAcAll: renderPickAcAll, pickAcTake: renderPickAcTake,
               shipList: renderShipList, ship: renderShip, shipItem: renderShipItem,
               batchCount: renderBatchCount, batch: renderBatch,
               gradeBoard: renderGradeBoard, slipList: renderSlipList, slipPrint: renderSlipPrint,
@@ -1154,11 +1274,12 @@ function render() {
 // どの画面でも「‹ 戻る」と「⌂ ホーム」を押せるようにする（誤操作したときに戻れるように）
 // ===============================================================
 // 入力の途中の画面（戻ると、保存していない入力が消える画面）
-const NAV_EDITING = ['cat', 'sym', 'photo', 'mark', 'grade', 'repair', 'spec', 'ac', 'stock', 'gradeMany', 'shipItem', 'batch'];
+const NAV_EDITING = ['cat', 'sym', 'photo', 'mark', 'grade', 'repair', 'spec', 'ac', 'acCount', 'stock', 'gradeMany', 'shipItem', 'batch'];
 function hasUnsaved() {
   const S = state.screen;
   if (S === 'spec') return !!(state.spec && Object.keys(state.spec.edits).length);
   if (S === 'ac') return !!(state.ac && state.ac.dirty);
+  if (S === 'acCount') return !!(state.acCount && state.acCount.dirty);
   if (S === 'stock') return !!(state.stock && (state.stock.photo || state.stock.boxes.some(x => x.per || x.n)));
   if (['cat', 'sym', 'photo', 'mark'].includes(S)) return state.adds.size > 0 || state.removes.size > 0;
   if (S === 'repair') return state.repairSel.size > 0;
@@ -1188,9 +1309,18 @@ function goBack() {
   else if (S === 'slipList') { state.slip = null; state.screen = 'home'; }
   else if (S === 'slipPrint') { state.screen = 'slipList'; }
   else if (S === 'spec') { state.spec = null; state.screen = 'home'; }
-  else if (S === 'acLots') { state.acLots = null; state.screen = 'home'; }
+  else if (S === 'acLots') { state.acLots = null; state.screen = 'acMenu'; }
+  else if (S === 'acMenu') { state.screen = 'home'; }
+  else if (S === 'acBox') { state.screen = 'acMenu'; }
+  else if (S === 'acTc') { const tc = state.acTc; state.acTc = null; state.screen = tc ? tc.back : 'acMenu'; }
+  else if (S === 'acBulk') { state.acBulk = null; state.screen = 'acMenu'; }
+  else if (S === 'acPlace' || S === 'acMove' || S === 'acCount' || S === 'acPallets') { state.acPlace = null; state.acMove = null; state.acCount = null; state.screen = 'acMenu'; }
+  else if (S === 'pickAc') { state.pick.ac = null; if (state.pick.acFrom === 'all') { openPickAcAll(); return; } openPick(state.pick.sel.dest, state.pick.sel.date); return; }
+  else if (S === 'pickAcAll') { state.pick.acAll = null; state.pick.acFrom = null; openPick(state.pick.sel.dest, state.pick.sel.date); return; }
+  else if (S === 'pickAcTake') { state.pick.acTake = null; state.screen = 'pickAcAll'; }
+  else if (S === 'pickAcQty') { state.screen = 'pickAc'; }
   else if (S === 'ac') { state.ac = null; openAcLots(false); return; }
-  else if (S === 'acPrint') { state.screen = 'ac'; }
+  else if (S === 'acPrint') { state.screen = (state.acPrint && state.acPrint.back) || 'acMenu'; }
   else if (S === 'stock') { state.stock = null; state.screen = 'home'; }
   else if (S === 'batchCount' || S === 'batch') { state.batch = null; state.screen = 'board'; }
   else if (S === 'shipList') { state.ship = null; state.screen = 'home'; }
@@ -1204,7 +1334,7 @@ function goHome() {
   if (NAV_EDITING.includes(S) && hasUnsaved() && !confirm(t('leaveAsk'))) return;
   stopCamera();
   resetEdit();
-  state.spec = null; state.ac = null; state.acLots = null; state.stock = null; state.grpEdit = null; state.ship = null; state.batch = null; state.slip = null; state.pick = null; state.sd = null;
+  state.spec = null; state.ac = null; state.acLots = null; state.acPlace = null; state.acMove = null; state.acCount = null; state.acPallets = null; state.acPrint = null; state.acTc = null; state.acBulk = null; state.acBox = null; state.stock = null; state.grpEdit = null; state.ship = null; state.batch = null; state.slip = null; state.pick = null; state.sd = null;
   scanPurpose = 'any'; scanBack = 'home';
   state.screen = 'home';
   render(); window.scrollTo(0, 0);
@@ -1270,7 +1400,7 @@ function renderHome() {
     <div class="actions"><button class="secondary" id="openBtn" type="button">${esc(t('open'))}</button></div></div>`;
   document.getElementById('scanBtn').onclick = () => { scanPurpose = 'any'; scanBack = 'home'; openScanner(); };
   document.getElementById('specBtn').onclick = () => { scanPurpose = 'spec'; scanBack = 'home'; openScanner(t('specScan')); };
-  document.getElementById('acBtn').onclick = () => openAcLots(false);
+  document.getElementById('acBtn').onclick = acMenu;
   document.getElementById('shipBtn').onclick = openShipFiles;
   document.getElementById('pickBtn').onclick = openPickLists;
   document.getElementById('gradeBtn').onclick = gradeScan;
@@ -1353,7 +1483,7 @@ function renderPickLists() {
 async function openPick(dest, date) {
   try {
     const r = await call('kPickLoad', [state.deviceId, dest, date], 'loading');
-    state.pick.sel = { dest: dest, date: date }; state.pick.items = r.items || [];
+    state.pick.sel = { dest: dest, date: date }; state.pick.items = r.items || []; state.pick.acRows = r.ac || [];
     state.screen = 'pick'; render(); window.scrollTo(0, 0);
   } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); }
 }
@@ -1364,21 +1494,29 @@ function renderPick() {
       <p class="note">${esc(t('pickTotal', { r: p.items.length, n: total }))}</p></div>
     <div class="actions"><button class="primary" id="pickScan" type="button">${esc(t('pickScanBtn'))}</button></div>
     ${p.items.length ? `<ul class="spec">${p.items.map((x, i) => `<li><div class="sh" style="cursor:default"><span class="sl">${esc(x.name)}　<span class="grade ${esc(x.grade)}" style="font-size:14px;padding:2px 8px">${esc(x.grade)}</span><br><span class="note" style="font-weight:400">${esc(x.board)}　${esc(x.by)} ${esc(x.at)}</span></span>
-      <span class="gn">${esc(t('slipN', { n: x.qty }))}</span><button class="secondary" type="button" data-pdel="${i}">×</button></div></li>`).join('')}</ul>` : `<p class="note">${esc(t('pickEmpty'))}</p>`}
+      <span class="gn">${esc(t('slipN', { n: x.qty }))}</span><button class="secondary" type="button" data-pac="${i}" aria-label="AC">🔌</button><button class="secondary" type="button" data-pdel="${i}">×</button></div></li>`).join('')}</ul>` : `<p class="note">${esc(t('pickEmpty'))}</p>`}
+    ${(p.acRows || []).length ? `<h2>${esc(t('pickAcList'))}</h2><ul class="spec">${p.acRows.map(a => `<li><div class="sh" style="cursor:default"><span class="sl">${esc(acTypeText(a))}<br><span class="note" style="font-weight:400">${esc(a.label)}　${esc(a.board)}</span></span><span class="gn">${esc(a.n)}${esc(t('acUnit'))}</span></div></li>`).join('')}</ul>` : ''}
+    ${p.items.length ? `<div class="actions"><button class="secondary" id="pickAcAll" type="button">${esc(t('pickAcAllBtn'))}</button></div>` : ''}
     <div class="actions"><button class="primary" id="pickMake" type="button" ${p.items.length ? '' : 'disabled'}>${esc(t('pickMake'))}</button></div>
     <p class="note">${esc(t('pickAfter'))}</p>`;
   document.getElementById('pickScan').onclick = pickScan;
+  $app.querySelectorAll('[data-pac]').forEach(b => b.onclick = () => { const x = p.items[Number(b.dataset.pac)]; p.acFrom = null; openPickAc(x.board, x.grade); });
   $app.querySelectorAll('[data-pdel]').forEach(b => b.onclick = async () => {
     const x = p.items[Number(b.dataset.pdel)];
     if (!confirm(t('pickDelAsk', { s: x.name + ' ' + x.grade }))) return;
-    try { const r = await call('kPickDelete', [state.deviceId, sel.dest, sel.date, x.key, x.grade], 'saving'); p.items = r.items || []; render(); }
+    try { const r = await call('kPickDelete', [state.deviceId, sel.dest, sel.date, x.key, x.grade], 'saving'); p.items = r.items || []; p.acRows = r.ac || []; render(); }
     catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
   });
+  const aab = document.getElementById('pickAcAll'); if (aab) aab.onclick = openPickAcAll;
   document.getElementById('pickMake').onclick = async () => {
+    try {
+      const sum = await call('kPickAcSummary', [state.deviceId, sel.dest, sel.date], 'loading');
+      if (sum.left > 0 && !confirm(t('pickAcLeftAsk', { n: sum.left }))) return;
+    } catch (e) {}
     if (!confirm(t('pickMakeAsk', { r: p.items.length, n: total }))) return;
     try {
       const r = await call('kPickMakeFile', [state.deviceId, sel.dest, sel.date], 'saving');
-      alert(t('pickMadeOk', { f: r.name, r: r.lines, n: r.qty }));
+      alert(t('pickMadeOk', { f: r.name, r: r.lines, n: r.qty }) + (r.ac ? '\n' + t('pickAcMade', { n: r.ac }) : ''));
       openPick(sel.dest, sel.date);
     } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
   };
@@ -1412,9 +1550,9 @@ function renderPickItem() {
     const sel = state.pick.sel;
     try {
       const res = await call('kPickSave', [state.deviceId, sel.dest, sel.date, r.board.id, r.grade, q], 'saving');
-      state.pick.items = res.items || []; state.pick.item = null;
+      state.pick.items = res.items || []; state.pick.acRows = res.ac || []; state.pick.item = null;
       toast(t('pickSaved', { s: (r.inv.name || r.board.name) + ' ' + r.grade, n: q }));
-      pickScan();   // そのまま次の看板を読む
+      pickScan();   // そのまま次の看板を読む（ACは、読み終わってから「一緒に出すACをまとめて出す」でまとめて出す）
     } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
   };
 }
@@ -1917,11 +2055,11 @@ function renderAcLots() {
         <small class="${x.entered ? '' : 'warn'}">${esc(x.entered ? t('acDoneBy', { n: x.entered.total, w: x.entered.by, t: x.entered.at }) : t('acNotYet'))}</small></button>`).join('')}</div>`
       : `<p class="note">${esc(t('acLotsNone'))}</p>`}
     ${L.older ? `<button class="link" id="acOlder" type="button">${esc(t('acOlder', { n: L.older }))}</button>` : ''}
-    <button class="link" id="acLotsHome" type="button">${esc(t('stockBack'))}</button>`;
+    <button class="link" id="acLotsHome" type="button">${esc(t('back'))}</button>`;
   $app.querySelectorAll('[data-lot]').forEach(b => b.onclick = () => openAcLot(L.list[+b.dataset.lot].lot));
   const ob = document.getElementById('acOlder');
   if (ob) ob.onclick = () => openAcLots(true);
-  document.getElementById('acLotsHome').onclick = () => { state.acLots = null; state.screen = 'home'; render(); };
+  document.getElementById('acLotsHome').onclick = goBack;
 }
 function acKey(m, c, w) { return [String(m || '').trim().toUpperCase(), String(c || '').trim(), String(w || '').replace(/[WＷ]/g, '').trim()].join('\t'); }
 async function openAcLot(lot) {
@@ -1966,14 +2104,17 @@ function renderAc() {
     const m = document.getElementById('acAddMk').value.trim(), c = document.getElementById('acAddConn').value, w = document.getElementById('acAddW').value;
     if (!c || !w) return alert(t('acAddNeed'));
     if (a.types.some(x => acKey(x.maker, x.conn, x.w) === acKey(m, c, w))) return alert(t('acAddDup'));
-    a.types.push({ maker: m, conn: c, w: w, units: 0, names: [], extra: true, v: '' });
-    a.adding = false; a.dirty = true; render();
+    acCheckType({ maker: m, conn: c, w: w }, ty => {   // 写真と見比べてから足す
+      if (a.types.some(x => acKey(x.maker, x.conn, x.w) === acKey(ty.maker, ty.conn, ty.w))) return alert(t('acAddDup'));
+      a.types.push({ maker: ty.maker, conn: ty.conn, w: ty.w, units: 0, names: [], extra: true, v: '' });
+      a.adding = false; a.dirty = true;
+    });
   };
   document.getElementById('acSave').onclick = saveAc;
   document.getElementById('acBack').onclick = goBack;
   document.getElementById('acPrint').onclick = () => {
     if (a.dirty && !confirm(t('acLeave'))) return;
-    state.screen = 'acPrint'; render(); window.scrollTo(0, 0);
+    openAcPrint({ kind: 'lot', lot: r.lot, date: r.date, supplier: r.supplier }, 'ac');
   };
 }
 // ロットの見せ方：261030SBF → 【261030】SBF（ロットファイルの名前と同じ形）
@@ -1991,21 +2132,6 @@ function acSheetHtml(info) {
     <div style="width:70mm;display:flex;align-items:center;justify-content:center"><div style="width:68mm;height:68mm">${slipQrSvg(url).replace('<svg ', '<svg style="width:100%;height:100%;display:block" ')}</div></div>
   </div></div>`;
 }
-function renderAcPrint() {
-  const r = state.ac.info;
-  $app.innerHTML = `<div class="card"><p class="big">${esc(t('acPrintT', { l: acLotName(r.lot) }))}</p>
-      <p class="note">${esc(t('acPrintNote'))}</p>
-      <div class="actions"><button class="primary" id="acDoPrint" type="button">${esc(t('slipDoPrint'))}</button></div></div>
-    <div id="printArea" class="printarea"><p class="note">${esc(t('loading'))}</p></div>`;
-  loadQrLib().then(() => {
-    const pa = document.getElementById('printArea');
-    if (pa) pa.innerHTML = acSheetHtml(r);
-  }).catch(e => alert(e.message || e));
-  document.getElementById('acDoPrint').onclick = () => {
-    document.body.classList.add('printing');
-    setTimeout(() => { window.print(); setTimeout(() => document.body.classList.remove('printing'), 500); }, 50);
-  };
-}
 async function saveAc() {
   const a = state.ac;
   if (a.types.some(x => !/^\d+$/.test(String(x.v).trim()))) return alert(t('acNeedNum'));
@@ -2014,8 +2140,705 @@ async function saveAc() {
     await call('kAcSave', [state.deviceId, a.info.lot, items], 'saving');
     toast(t('acSaved', { l: a.info.lot }));
     state.ac = null;
+    if (confirm(t('acBulkAfter'))) return openAcBulk(a.info.lot);   // 入荷数を入れたあとに、そのロットのシールをまとめて出せる
     openAcLots(false);
   } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
+}
+
+// ===============================================================
+// 🔌 ACのメニュー：入荷数を入力 / パレットに移す / 棚卸し / 在庫を見る / パレットの看板を印刷
+// ===============================================================
+function renderAcMenu() {
+  $app.innerHTML = `<div class="card"><p class="big">${esc(t('acMenuT'))}</p>
+    <div class="modes">
+      <button class="primary" id="acmIn" type="button">${esc(t('acmIn'))}</button>
+      <button class="primary" id="acmMove" type="button">${esc(t('acmMove'))}</button>
+      <button class="primary" id="acmCount" type="button">${esc(t('acmCount'))}</button>
+      <button class="primary" id="acmView" type="button">${esc(t('acmView'))}</button>
+      <button class="secondary" id="acmPallet" type="button">${esc(t('acmPallet'))}</button>
+      <button class="secondary" id="acmBox" type="button">${esc(t('acmBox'))}</button>
+    </div></div>
+    <button class="link" id="acmHome" type="button">${esc(t('stockBack'))}</button>`;
+  document.getElementById('acmIn').onclick = () => openAcLots(false);
+  document.getElementById('acmMove').onclick = () => { scanPurpose = 'acMove'; scanBack = 'acMenu'; openScanner(t('acMoveScan')); };
+  document.getElementById('acmCount').onclick = () => { scanPurpose = 'acCount'; scanBack = 'acMenu'; openScanner(t('acCountScan')); };
+  document.getElementById('acmView').onclick = () => { scanPurpose = 'acView'; scanBack = 'acMenu'; openScanner(t('acViewScan')); };
+  document.getElementById('acmPallet').onclick = openAcPallets;
+  document.getElementById('acmBox').onclick = openAcBox;
+  document.getElementById('acmHome').onclick = goHome;
+}
+function acMenu() { state.screen = 'acMenu'; render(); window.scrollTo(0, 0); }
+function acTypeText(x) { return [x.maker || '-', x.conn, x.w + 'W'].join('　'); }
+function isPalletId(id) { return /^PL\d+$/i.test(String(id || '')); }
+// ACの看板・パレットの看板を読んだとき（目的ごとに分ける）
+function handleAcPlace(id) {
+  const p = scanPurpose;
+  scanPurpose = 'any';
+  if (p === 'pickAc') return pickAcScanned(id);
+  if (p === 'pickAcAll') return pickAcAllScanned(id);
+  if (p === 'pick') { alert(t('qrWrong')); return pickScan(); }   // 商品の看板を読む画面で、ACの看板を読んだとき
+  if (p === 'acMove') return isPalletId(id) ? (alert(t('acMoveNotPallet')), acMenu()) : openAcMove(id);
+  if (p === 'acCount') return openAcCount(id);
+  return openAcPlace(id);
+}
+
+// ---- 置き場所の在庫を見る ----
+async function openAcPlace(id) {
+  try {
+    const r = await call('kAcPlaceLoad', [state.deviceId, id], 'loading');
+    state.acPlace = r; state.screen = 'acPlace'; render(); window.scrollTo(0, 0);
+  } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); acMenu(); }
+}
+function acStockListHtml(list) {
+  if (!list.length) return `<p class="note">${esc(t('acStockNone'))}</p>`;
+  return `<ul class="spec">${list.map(x => `<li><div class="sh" style="cursor:default"><span class="sl">${esc(acTypeText(x))}</span><span class="sv" style="font-size:22px">${esc(x.n)}${esc(t('acUnit'))}</span></div></li>`).join('')}</ul>`;
+}
+function renderAcPlace() {
+  const r = state.acPlace;
+  $app.innerHTML = `<div class="card"><p class="big">${esc(r.label)}</p>
+      <p class="note">${r.pallet ? esc(t('acPalletMakers', { m: (r.makers || []).join('、') || '-' })) : esc(t('acLotInfo2', { d: r.date || '-', s: r.supplier || '-' }))}</p>
+      <p class="note"><b style="font-size:20px">${esc(t('acStockTotal', { n: r.stock.reduce((s, x) => s + x.n, 0) }))}</b></p></div>
+    ${acStockListHtml(r.stock)}
+    <div class="actions">
+      ${r.pallet ? '' : `<button class="secondary" id="apIn" type="button">${esc(t('acmIn'))}</button><button class="secondary" id="apMove" type="button">${esc(t('acmMove'))}</button>`}
+      <button class="secondary" id="apCount" type="button">${esc(t('acmCount'))}</button>
+      <button class="secondary" id="apPrint" type="button">${esc(t('acPrintThis'))}</button>
+      <button class="secondary" id="apBulk" type="button">${esc(t('acBulkBtn'))}</button></div>
+    <button class="link" id="apBack" type="button">${esc(t('back'))}</button>`;
+  const inB = document.getElementById('apIn'); if (inB) inB.onclick = () => openAcLot(r.place);
+  const mvB = document.getElementById('apMove'); if (mvB) mvB.onclick = () => openAcMove(r.place);
+  document.getElementById('apCount').onclick = () => openAcCount(r.place);
+  document.getElementById('apPrint').onclick = () => openAcPrint(r.pallet ? { kind: 'pallet', place: r.place, makers: r.makers || [] } : { kind: 'lot', lot: r.place, date: r.date, supplier: r.supplier }, 'acPlace');
+  document.getElementById('apBulk').onclick = () => openAcBulk(r.place);
+  document.getElementById('apBack').onclick = goBack;
+}
+
+// ---- パレットに移す ----
+async function openAcMove(lot) {
+  try {
+    const r = await call('kAcMovePlan', [state.deviceId, lot], 'loading');
+    state.acMove = r; state.screen = 'acMove'; render(); window.scrollTo(0, 0);
+  } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); acMenu(); }
+}
+function renderAcMove() {
+  const r = state.acMove, n = r.items.reduce((s, x) => s + x.n, 0);
+  $app.innerHTML = `<div class="card"><p class="big">${esc(r.label)}</p><p class="note">${esc(t('acMoveNote'))}</p></div>
+    ${r.items.length ? `<ul class="spec">${r.items.map(x => `<li><div class="sh" style="cursor:default"><span class="sl">${esc(acTypeText(x))}　${esc(x.n)}${esc(t('acUnit'))}</span><span class="sv" style="font-size:20px">→ ${esc(x.to)}</span></div></li>`).join('')}</ul>`
+      : `<p class="note">${esc(t('acMoveNone'))}</p>`}
+    ${r.noPallet.length ? `<div class="card"><p class="warn">${esc(t('acNoPallet'))}</p><p class="note">${r.noPallet.map(x => esc(acTypeText(x) + '　' + x.n + t('acUnit'))).join('<br>')}</p></div>` : ''}
+    <div class="actions"><button class="primary" id="amGo" type="button" ${r.items.length ? '' : 'disabled'}>${esc(t('acMoveGo', { n: n }))}</button></div>
+    <button class="link" id="amBack" type="button">${esc(t('back'))}</button>`;
+  document.getElementById('amGo').onclick = async () => {
+    if (!confirm(t('acMoveAsk', { l: r.label, n: n }))) return;
+    try {
+      const res = await call('kAcMove', [state.deviceId, r.lot], 'saving');
+      toast(t('acMoved', { n: res.moved }));
+      state.acMove = null; scanPurpose = 'acMove'; scanBack = 'acMenu'; openScanner(t('acMoveScan'));
+    } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
+  };
+  document.getElementById('amBack').onclick = goBack;
+}
+
+// ---- 棚卸し（置き場所の数を数え直す） ----
+async function openAcCount(id) {
+  try {
+    const r = await call('kAcPlaceLoad', [state.deviceId, id], 'loading');
+    state.acCount = { info: r, types: r.stock.map(x => Object.assign({}, x, { v: '' })), dirty: false, adding: false };
+    state.screen = 'acCount'; render(); window.scrollTo(0, 0);
+  } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); acMenu(); }
+}
+function acAddFormHtml() {
+  const connOpts = (SPEC_DEF['AC口型'] || {}).opts || [], wOpts = (SPEC_DEF['W'] || {}).opts || [];
+  return `<div class="card"><p class="big">${esc(t('acAdd'))}</p>
+    <label class="field">${esc(t('acMaker'))}</label><input type="text" id="acAddMk" autocapitalize="characters">
+    <label class="field">${esc(t('acConnL'))}</label><select id="acAddConn">${connOpts.map(o => `<option>${esc(o)}</option>`).join('')}</select>
+    <label class="field">${esc(t('acW'))}</label><select id="acAddW">${wOpts.map(o => `<option>${esc(o)}</option>`).join('')}</select>
+    <div class="actions"><button class="secondary" id="acAddOk" type="button">${esc(t('acAddOk'))}</button></div></div>`;
+}
+function bindAcAdd(obj) {
+  const ab = document.getElementById('acAddBtn');
+  if (ab) ab.onclick = () => { obj.adding = true; render(); };
+  const ok = document.getElementById('acAddOk');
+  if (ok) ok.onclick = () => {
+    const m = document.getElementById('acAddMk').value.trim(), c = document.getElementById('acAddConn').value, w = document.getElementById('acAddW').value;
+    if (!c || !w) return alert(t('acAddNeed'));
+    if (obj.types.some(x => acKey(x.maker, x.conn, x.w) === acKey(m, c, w))) return alert(t('acAddDup'));
+    acCheckType({ maker: m, conn: c, w: w }, ty => {   // 写真と見比べてから足す
+      if (obj.types.some(x => acKey(x.maker, x.conn, x.w) === acKey(ty.maker, ty.conn, ty.w))) return alert(t('acAddDup'));
+      obj.types.push({ maker: ty.maker, conn: ty.conn, w: ty.w, n: 0, v: '' });
+      obj.adding = false; obj.dirty = true;
+    });
+  };
+}
+function renderAcCount() {
+  const a = state.acCount, r = a.info;
+  $app.innerHTML = `<div class="card"><p class="big">${esc(t('acCountT', { l: r.label }))}</p><p class="note">${esc(t('acCountNote'))}</p></div>
+    ${a.types.map((x, i) => `<div class="card" style="margin-bottom:8px"><p class="big" style="margin:0">${esc(acTypeText(x))}</p>
+      <p class="note">${esc(t('acCountNow', { n: x.n || 0 }))}</p>
+      <div class="boxrow"><input type="number" inputmode="numeric" min="0" data-acc="${i}" value="${esc(x.v)}" placeholder="0"><span>${esc(t('acUnit'))}</span></div></div>`).join('')}
+    ${a.adding ? acAddFormHtml() : `<button class="link" id="acAddBtn" type="button">${esc(t('acAdd'))}</button>`}
+    <div class="actions"><button class="primary" id="accSave" type="button" ${a.types.length ? '' : 'disabled'}>${esc(t('acSave'))}</button></div>
+    <button class="link" id="accBack" type="button">${esc(t('back'))}</button>`;
+  $app.querySelectorAll('[data-acc]').forEach(inp => inp.oninput = () => { a.types[+inp.dataset.acc].v = inp.value; a.dirty = true; });
+  bindAcAdd(a);
+  document.getElementById('accSave').onclick = async () => {
+    if (a.types.some(x => !/^\d+$/.test(String(x.v).trim()))) return alert(t('acNeedNum'));
+    const items = a.types.map(x => ({ maker: x.maker, conn: x.conn, w: x.w, n: Number(String(x.v).trim()) }));
+    try {
+      const res = await call('kAcCountSave', [state.deviceId, r.place, items], 'saving');
+      toast(t('acCounted', { l: r.label, n: res.changed }));
+      state.acCount = null;
+      if (confirm(t('acBulkAfter'))) return openAcBulk(r.place);   // 棚卸しのあとに、まとめてシールを出せる
+      scanPurpose = 'acCount'; scanBack = 'acMenu'; openScanner(t('acCountScan'));
+    } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
+  };
+  document.getElementById('accBack').onclick = goBack;
+}
+
+// ---- パレットの一覧（看板の印刷） ----
+async function openAcPallets() {
+  try {
+    const r = await call('kAcPallets', [state.deviceId], 'loading');
+    state.acPallets = r.pallets || []; state.screen = 'acPallets'; render(); window.scrollTo(0, 0);
+  } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); acMenu(); }
+}
+function renderAcPallets() {
+  const L = state.acPallets;
+  $app.innerHTML = `<h2>${esc(t('acmPallet'))}</h2>
+    ${L.length ? `<ul class="grp">${L.map((x, i) => `<li><span class="gs"><b>${esc(x.place)}</b><br><span class="note">${esc(x.makers.join('、') || '-')}</span></span>
+      <span class="gn">${esc(x.total)}${esc(t('acUnit'))}</span><button class="secondary" type="button" data-pv="${i}">${esc(t('acViewShort'))}</button><button class="secondary" type="button" data-pc="${i}">${esc(t('acCountShort'))}</button><button class="secondary" type="button" data-pp="${i}">${esc(t('acPrintShort'))}</button></li>`).join('')}</ul>`
+      : `<p class="note">${esc(t('acPalletNone'))}</p>`}
+    <p class="note">${esc(t('acPalletSet'))}</p>
+    <button class="link" id="appBack" type="button">${esc(t('back'))}</button>`;
+  $app.querySelectorAll('[data-pp]').forEach(b => b.onclick = () => { const x = L[+b.dataset.pp]; openAcPrint({ kind: 'pallet', place: x.place, makers: x.makers }, 'acPallets'); });
+  $app.querySelectorAll('[data-pv]').forEach(b => b.onclick = () => openAcPlace(L[+b.dataset.pv].place));
+  $app.querySelectorAll('[data-pc]').forEach(b => b.onclick = () => openAcCount(L[+b.dataset.pc].place));
+  document.getElementById('appBack').onclick = goBack;
+}
+
+// ---- 看板の印刷（ロットのACの看板・パレットの看板） ----
+function openAcPrint(target, back) { state.acPrint = { target: target, back: back }; state.screen = 'acPrint'; render(); window.scrollTo(0, 0); }
+function acPalletSheetHtml(x) {
+  const url = location.origin + location.pathname + '?ac=' + encodeURIComponent(x.place);
+  return `<div class="sheet"><div style="position:absolute;left:12mm;top:10mm;right:12mm;bottom:10mm;display:flex;gap:8mm">
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;min-width:0">
+      <div style="font-size:30pt;font-weight:700;border-bottom:1mm dashed #000;padding-bottom:3mm">ACのパレット</div>
+      <div style="font-size:72pt;font-weight:700;line-height:1">${esc(x.place)}</div>
+      <div style="font-size:22pt;font-weight:700;line-height:1.4;word-break:break-all">メーカー：${esc((x.makers || []).join('・') || '')}</div>
+      <div style="font-size:11pt;color:#555">QRを読み取ると、このパレットのACの在庫が分かります</div>
+    </div>
+    <div style="width:70mm;display:flex;align-items:center;justify-content:center"><div style="width:68mm;height:68mm">${slipQrSvg(url).replace('<svg ', '<svg style="width:100%;height:100%;display:block" ')}</div></div>
+  </div></div>`;
+}
+function renderAcPrint() {
+  const x = state.acPrint.target;
+  const title = x.kind === 'pallet' ? t('acPrintPT', { p: x.place }) : t('acPrintT', { l: acLotName(x.lot) });
+  $app.innerHTML = `<div class="card"><p class="big">${esc(title)}</p>
+      <p class="note">${esc(x.kind === 'pallet' ? t('acPrintPNote') : t('acPrintNote'))}</p>
+      <div class="actions"><button class="primary" id="acDoPrint" type="button">${esc(t('slipDoPrint'))}</button></div></div>
+    <div id="printArea" class="printarea"><p class="note">${esc(t('loading'))}</p></div>`;
+  loadQrLib().then(() => {
+    const pa = document.getElementById('printArea');
+    if (pa) pa.innerHTML = x.kind === 'pallet' ? acPalletSheetHtml(x) : acSheetHtml(x);
+  }).catch(e => alert(e.message || e));
+  document.getElementById('acDoPrint').onclick = () => {
+    document.body.classList.add('printing');
+    setTimeout(() => { window.print(); setTimeout(() => document.body.classList.remove('printing'), 500); }, 50);
+  };
+}
+
+// ===============================================================
+// ピッキングのときのAC：本体の台数を保存 → 出すACと、読む看板（ロット or パレット）を指示 → ACの看板を読む → 個数 → 保存
+// ===============================================================
+async function openPickAc(boardId, grade) {
+  const sel = state.pick.sel;
+  try {
+    const r = await call('kPickAcPlan', [state.deviceId, sel.dest, sel.date, boardId, grade], 'loading');
+    if (!r.need) { if (r.done) toast(t('pickAcDone', { n: r.done })); return state.pick.acFrom === 'all' ? openPickAcAll() : pickScan(); }
+    state.pick.ac = { plan: r, place: null, qty: '', types: null };
+    state.screen = 'pickAc'; render(); window.scrollTo(0, 0);
+  } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); pickScan(); }
+}
+function renderPickAc() {
+  const a = state.pick.ac, r = a.plan;
+  const head = `<div class="card"><p class="big">${esc(r.board.name)}　<span class="grade ${esc(r.grade)}">${esc(r.grade)}</span></p>
+      <p class="note">${esc(t('pickAcQty', { q: r.qty, d: r.done }))}</p></div>`;
+  if (r.type && r.type.unknown) {
+    $app.innerHTML = head + `<div class="card"><p class="warn">${esc(t('pickAcUnknown', { n: r.need }))}</p></div>
+      <div class="actions"><button class="primary" id="paScan" type="button">${esc(t('pickAcScanBtn'))}</button></div>
+      <div class="actions"><button class="secondary" id="paSkip" type="button">${esc(t('pickAcSkip'))}</button></div>`;
+  } else {
+    $app.innerHTML = head + `<div class="card"><p class="big">${esc(t('pickAcNeed', { n: r.need, t: acTypeText(r.type) }))}</p>
+      ${r.steps.map((s, i) => `<p style="font-size:20px;font-weight:700;margin:10px 0">${i + 1}. ${esc(t('pickAcStep', { l: s.label, n: s.n }))}</p>`).join('')}
+      ${r.short ? `<p class="warn">${esc(t('pickAcShort', { n: r.short, p: r.pallet || '-' }))}</p>` : ''}</div>
+      ${r.steps.length ? `<div class="actions"><button class="primary" id="paScan" type="button">${esc(t('pickAcScanBtn'))}</button></div>` : ''}
+      <div class="actions"><button class="secondary" id="paSkip" type="button">${esc(t('pickAcSkip'))}</button></div>`;
+  }
+  const sc = document.getElementById('paScan');
+  if (sc) sc.onclick = () => { scanPurpose = 'pickAc'; scanBack = 'pickAc'; openScanner(r.type && r.type.unknown ? t('pickAcScanAny') : t('pickAcScanDesc', { l: r.steps[0].label })); };
+  document.getElementById('paSkip').onclick = () => {
+    if (!confirm(t('pickAcSkipAsk', { n: r.need }))) return;
+    state.pick.ac = null;
+    if (state.pick.acFrom === 'all') openPickAcAll(); else pickScan();
+  };
+}
+async function pickAcScanned(id) {
+  const a = state.pick.ac;
+  if (!a) return pickScan();
+  const r = a.plan;
+  if (r.type && r.type.unknown) {
+    try {
+      const pl = await call('kAcPlaceLoad', [state.deviceId, id], 'loading');
+      a.place = { place: pl.place, label: pl.label, have: 0 };
+      a.types = pl.stock.filter(x => x.n > 0);
+      a.sel = null; a.qty = String(r.need);
+      state.screen = 'pickAcQty'; render(); window.scrollTo(0, 0);
+    } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); state.screen = 'pickAc'; render(); }
+    return;
+  }
+  const step = r.steps.find(s => s.place === id);
+  if (!step) { alert(t('pickAcWrong', { l: r.steps.length ? r.steps[0].label : '-' })); state.screen = 'pickAc'; return render(); }
+  a.place = step; a.types = null; a.qty = String(step.n);
+  state.screen = 'pickAcQty'; render(); window.scrollTo(0, 0);
+}
+function renderPickAcQty() {
+  const a = state.pick.ac, r = a.plan;
+  const choose = a.types ? (a.types.length ? `<p class="note">${esc(t('pickAcChoose'))}</p><div class="sb c2">${a.types.map((x, i) => `<button class="secondary${a.sel === i ? ' cur' : ''}" type="button" data-pt="${i}">${esc(acTypeText(x))}<br><small>${esc(x.n)}${esc(t('acUnit'))}</small></button>`).join('')}</div>`
+                                       : `<p class="warn">${esc(t('acStockNone'))}</p>`) : '';
+  $app.innerHTML = `<div class="card"><p class="big">${esc(a.place.label)}</p>
+      ${a.types ? '' : `<p class="note">${esc(t('pickAcFrom', { t: acTypeText(r.type), h: a.place.have }))}</p>`}${choose}</div>
+    <div class="card"><label class="field" for="paQty">${esc(t('pickAcQtyL'))}</label>
+      <input type="number" id="paQty" inputmode="numeric" min="1" value="${esc(a.qty)}" style="width:100%;font:inherit;font-size:28px;padding:12px;border:1px solid var(--ink);border-radius:10px"></div>
+    <div class="actions"><button class="primary" id="paSave" type="button">${esc(t('acSave'))}</button></div>
+    <button class="link" id="paBack" type="button">${esc(t('back'))}</button>`;
+  $app.querySelectorAll('[data-pt]').forEach(b => b.onclick = () => { a.qty = document.getElementById('paQty').value; a.sel = +b.dataset.pt; render(); });
+  document.getElementById('paQty').oninput = e => { a.qty = e.target.value; };
+  document.getElementById('paBack').onclick = goBack;
+  document.getElementById('paSave').onclick = async () => {
+    const n = Math.floor(Number(a.qty) || 0);
+    if (n <= 0) return alert(t('pickNeedQty'));
+    let type = null;
+    if (a.types) {
+      if (a.sel == null) return alert(t('pickAcChoose'));
+      type = a.types[a.sel];
+      if (n > type.n) return alert(t('pickAcTooMany', { n: type.n }));
+    } else if (n > a.place.have) return alert(t('pickAcTooMany', { n: a.place.have }));
+    if (n > r.need && !confirm(t('pickAcMore', { n: n, need: r.need }))) return;
+    const sel = state.pick.sel;
+    try {
+      const res = await call('kPickAcSave', [state.deviceId, sel.dest, sel.date, r.board.id, r.grade, a.place.place, n, type], 'saving');
+      toast(t('pickAcSaved', { n: n, l: a.place.label }));
+      if (res.need > 0) { state.pick.ac = { plan: res, place: null, qty: '', types: null }; state.screen = 'pickAc'; render(); window.scrollTo(0, 0); }
+      else { state.pick.ac = null; if (state.pick.acFrom === 'all') openPickAcAll(); else pickScan(); }
+    } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
+  };
+}
+
+// ---- ピッキングのリスト全体で、一緒に出すACをまとめて出す ----
+async function openPickAcAll() {
+  const sel = state.pick.sel;
+  try {
+    const r = await call('kPickAcSummary', [state.deviceId, sel.dest, sel.date], 'loading');
+    state.pick.acAll = r; state.pick.acFrom = 'all';
+    state.screen = 'pickAcAll'; render(); window.scrollTo(0, 0);
+  } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); }
+}
+function renderPickAcAll() {
+  const r = state.pick.acAll, sel = state.pick.sel;
+  $app.innerHTML = `<div class="card"><p class="big">${esc(sel.date)}　${esc(sel.dest)}</p>
+      <p class="note"><b style="font-size:20px">${esc(r.left ? t('acAllLeft', { n: r.left }) : t('acAllDone'))}</b>${r.done ? '　' + esc(t('acAllTaken', { n: r.done })) : ''}</p></div>
+    ${r.types.length ? `<h2>${esc(t('acAllTypes'))}</h2><ul class="spec">${r.types.map(x => `<li><div class="sh" style="cursor:default"><span class="sl">${esc(acTypeText(x))}</span><span class="sv" style="font-size:22px">${esc(x.need)}${esc(t('acUnit'))}</span></div></li>`).join('')}</ul>` : ''}
+    ${r.places.length ? `<h2>${esc(t('acAllWhere'))}</h2>${r.places.map(P => `<div class="card" style="margin-bottom:8px"><p class="big" style="margin:0">${esc(P.label)}</p>
+        <p class="note">${P.items.map(x => esc(acTypeText(x) + '　' + x.n + t('acUnit'))).join('<br>')}</p>
+        ${isPalletId(P.place) ? `<div class="actions"><button class="secondary" type="button" data-tp="${esc(P.place)}">${esc(t('acTakeHere', { p: P.place }))}</button></div>` : `<p class="note">${esc(t('acTakeScanLot'))}</p>`}</div>`).join('')}` : ''}
+    ${(r.oldLots || []).length ? `<div class="card"><p class="warn">${esc(t('acAllOld'))}</p><p class="note">${r.oldLots.map(L => esc(L.label + '：' + L.items.map(x => acTypeText(x) + ' ' + x.n + t('acUnit')).join('、'))).join('<br>')}</p></div>` : ''}
+    ${r.short.length ? `<div class="card"><p class="warn">${esc(t('acAllShort'))}</p><p class="note">${r.short.map(x => esc(acTypeText(x) + '　' + x.n + t('acUnit'))).join('<br>')}</p></div>` : ''}
+    ${r.unknown.length ? `<div class="card"><p class="warn">${esc(t('acAllUnknown'))}</p>${r.unknown.map((u, i) => `<div class="boxrow" style="justify-content:space-between"><span>${esc(u.name)}　${esc(u.grade)}　${esc(u.need)}${esc(t('acUnit'))}</span><button class="secondary" type="button" data-pu="${i}">${esc(t('acAllChoose'))}</button></div>`).join('')}</div>` : ''}
+    ${r.places.length ? `<div class="actions"><button class="primary" id="paaScan" type="button">${esc(t('pickAcScanBtn'))}</button></div>` : ''}
+    <button class="link" id="paaBack" type="button">${esc(t('back'))}</button>`;
+  const sc = document.getElementById('paaScan');
+  if (sc) sc.onclick = () => { scanPurpose = 'pickAcAll'; scanBack = 'pickAcAll'; openScanner(t('acAllScan')); };
+  $app.querySelectorAll('[data-pu]').forEach(b => b.onclick = () => { const u = r.unknown[+b.dataset.pu]; openPickAc(u.board, u.grade); });
+  $app.querySelectorAll('[data-tp]').forEach(b => b.onclick = () => pickAcAllScanned(b.dataset.tp));   // パレットは、看板を読まずに選べる
+  document.getElementById('paaBack').onclick = goBack;
+}
+function pickAcAllScanned(id) {
+  const r = state.pick.acAll;
+  const P = r && r.places.find(x => x.place === id);
+  if (!P) { alert(t('acAllWrong', { l: (r ? r.places.map(x => x.label).join('、') : '') || '-' })); state.screen = 'pickAcAll'; return render(); }
+  state.pick.acTake = { place: P, qty: P.items.map(x => String(x.n)) };
+  state.screen = 'pickAcTake'; render(); window.scrollTo(0, 0);
+}
+function renderPickAcTake() {
+  const a = state.pick.acTake, P = a.place;
+  $app.innerHTML = `<div class="card"><p class="big">${esc(P.label)}</p><p class="note">${esc(t('acTakeNote'))}</p></div>
+    ${P.items.map((x, i) => `<div class="card" style="margin-bottom:8px"><p class="big" style="margin:0">${esc(acTypeText(x))}</p>
+      <p class="note">${esc(t('acTakeHave', { n: x.n, h: x.have }))}</p>
+      <div class="boxrow"><input type="number" inputmode="numeric" min="0" data-tk="${i}" value="${esc(a.qty[i])}"><span>${esc(t('acUnit'))}</span></div></div>`).join('')}
+    <div class="actions"><button class="primary" id="ptkSave" type="button">${esc(t('acSave'))}</button></div>
+    <button class="link" id="ptkBack" type="button">${esc(t('back'))}</button>`;
+  $app.querySelectorAll('[data-tk]').forEach(inp => inp.oninput = () => { a.qty[+inp.dataset.tk] = inp.value; });
+  document.getElementById('ptkBack').onclick = goBack;
+  document.getElementById('ptkSave').onclick = async () => {
+    if (a.qty.some(v => !/^\d+$/.test(String(v).trim()))) return alert(t('acNeedNum'));
+    const items = P.items.map((x, i) => ({ maker: x.maker, conn: x.conn, w: x.w, n: Number(String(a.qty[i]).trim()) })).filter(x => x.n > 0);
+    if (!items.length) return alert(t('pickNeedQty'));
+    const sel = state.pick.sel;
+    try {
+      const res = await call('kPickAcTake', [state.deviceId, sel.dest, sel.date, P.place, items], 'saving');
+      toast(t('pickAcSaved', { n: items.reduce((s, x) => s + x.n, 0), l: P.label }));
+      state.pick.acAll = res; state.pick.acTake = null;
+      if (res.left > 0) { state.screen = 'pickAcAll'; render(); window.scrollTo(0, 0); }
+      else { toast(t('acAllDone')); openPick(sel.dest, sel.date); }
+    } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
+  };
+}
+
+// ===============================================================
+// 🏷 ACの箱のシール（40×40mm・4列×6段。番号入りQRシールと同じ用紙 TRUSCO 410-4552）
+//   メーカー名・AC口型・Wを選ぶ → 1箱の個数（前に決めた数が入る）→ 枚数・開始位置 → 印刷
+//   用紙の寸法は、シール発行のページ（seals.html）で合わせた値を使う
+// ===============================================================
+const ACB_COLS = 4, ACB_ROWS = 6, ACB_PER = 24, ACB_SIZE = 40;
+const ACB_POS_DEFAULT = { mx: 17.5, my: 16, gx: 5, gy: 5 };
+function acbPos() { try { return Object.assign({}, ACB_POS_DEFAULT, JSON.parse(localStorage.getItem('label_pos_v1') || '{}')); } catch (e) { return Object.assign({}, ACB_POS_DEFAULT); } }
+async function openAcBox() {
+  try {
+    const r = await call('kAcBoxLoad', [state.deviceId], 'loading');
+    const prev = state.acBox || {};
+    state.acBox = { makers: r.makers || [], boxes: r.boxes || [], photos: r.photos || [], maker: prev.maker || '', conn: prev.conn || '', w: prev.w || '', n: '', copies: prev.copies || '1', start: '1', typing: false, photo: undefined, ok: false };
+    acbFill();
+    if (state.acBox.maker && state.acBox.conn && state.acBox.w) acbLoadPhoto();
+    state.screen = 'acBox'; render(); window.scrollTo(0, 0);
+  } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); acMenu(); }
+}
+function acbSaved() { const b = state.acBox; return b.boxes.find(x => acKey(x.maker, x.conn, x.w) === acKey(b.maker, b.conn, b.w)); }
+function acbFill() { const b = state.acBox, s = acbSaved(); b.n = s ? String(s.n) : ''; }
+// 選んだ種類の写真を読む（写真と見比べて「同じ」を押すまで、シールは作れない）
+async function acbLoadPhoto() {
+  const b = state.acBox;
+  b.photo = undefined; b.ok = false;
+  const key = acKey(b.maker, b.conn, b.w);
+  try {
+    const r = await call('kAcPhotoGet', [state.deviceId, b.maker, b.conn, b.w], 'loading');
+    if (state.acBox !== b || acKey(b.maker, b.conn, b.w) !== key) return;
+    b.photo = r.photo || null;
+    b.similar = null; b.newOk = false;
+    if (!b.photo) {   // 新しい種類：同じメーカーの、写真のあるACを見比べてもらう
+      const l = await call('kAcPhotoList', [state.deviceId, b.maker], 'loading');
+      if (state.acBox !== b || acKey(b.maker, b.conn, b.w) !== key) return;
+      b.similar = (l.photos || []).filter(x => acKey(x.maker, x.conn, x.w) !== key)
+        .sort((x, y) => (String(y.w) === String(b.w) ? 1 : 0) - (String(x.w) === String(b.w) ? 1 : 0));
+    }
+  } catch (e) { b.photo = null; b.similar = []; alert(t('errLoad') + '\n' + (e.message || e)); }
+  if (state.screen === 'acBox') render();
+}
+function renderAcBox() {
+  const b = state.acBox, saved = acbSaved();
+  const connOpts = (SPEC_DEF['AC口型'] || {}).opts || [], wOpts = (SPEC_DEF['W'] || {}).opts || [];
+  const btns = (list, cur, attr) => list.map(v => `<button class="secondary${String(cur) === String(v) ? ' cur' : ''}" type="button" ${attr}="${esc(v)}">${esc(v)}</button>`).join('');
+  const ready = b.maker && b.conn && b.w;
+  const hasPh = (m, c, w) => (b.photos || []).includes(acKey(m, c, w));
+  let photoHtml = '';
+  if (ready) {
+    if (b.photo === undefined) photoHtml = `<div class="card"><p class="note">${esc(t('loading'))}</p></div>`;
+    else if (!b.photo && b.similar === null) photoHtml = `<div class="card"><p class="note">${esc(t('loading'))}</p></div>`;
+    else if (!b.photo && b.similar.length && !b.newOk) photoHtml = `<div class="card"><p class="big">${esc(t('acbNewT', { t: [b.maker, b.conn, b.w + 'W'].join(' ') }))}</p>
+        <p class="warn">${esc(t('acbNewAsk'))}</p></div>
+        ${b.similar.map((x, i) => `<div class="card" style="margin-bottom:8px"><p class="big" style="margin:0">${esc(acTypeText(x))}</p>
+          <img src="${esc(x.thumb)}" alt="" style="width:100%;max-width:420px;display:block;margin:6px auto;border:1px solid var(--rule);border-radius:10px">
+          <div class="actions"><button class="secondary" type="button" data-same="${i}">${esc(t('acbThisSame'))}</button></div></div>`).join('')}
+        <div class="actions"><button class="primary" id="acbNone" type="button">${esc(t('acbNoneSame'))}</button></div>`;
+    else if (!b.photo) photoHtml = `<div class="card"><p class="warn">${esc(t('acbNoPhoto'))}</p>
+        <div class="actions"><button class="primary" id="acbShoot" type="button">${esc(t('acbShoot'))}</button></div></div>`;
+    else photoHtml = `<div class="card"><p class="big">${esc(t('acbPhotoT'))}</p>
+        <img src="${esc(b.photo.thumb)}" alt="" style="width:100%;max-width:420px;display:block;margin:6px auto;border:1px solid var(--rule);border-radius:10px">
+        <p class="note">${esc(t('acbPhotoBy', { w: b.photo.by, t: b.photo.at }))}</p>
+        ${b.ok ? `<p class="note"><b>✅ ${esc(t('acbOk'))}</b></p>` : `<div class="actions"><button class="primary" id="acbSame" type="button">${esc(t('acbSame'))}</button></div>
+        <div class="actions"><button class="secondary" id="acbDiff" type="button">${esc(t('acbDiff'))}</button></div>`}
+        <button class="link" id="acbRetake" type="button">${esc(t('acbRetake'))}</button></div>`;
+  }
+  $app.innerHTML = `<div class="card"><p class="big">${esc(t('acbTitle'))}</p><p class="note">${esc(t('acbNote'))}</p></div>
+    <div class="card"><p class="big">${esc(t('acMaker'))}</p><div class="sb c3">${btns(b.makers, b.maker, 'data-bm')}</div>
+      <div class="res"><input type="text" id="acbMk" autocapitalize="characters" placeholder="${esc(t('acbOther'))}" style="flex:1;width:auto"><button class="secondary" style="width:auto;padding:0 18px" type="button" id="acbMkOk">${esc(t('specOk'))}</button></div></div>
+    <div class="card"><p class="big">${esc(t('acConnL'))}</p><div class="sb c2">${btns(connOpts, b.conn, 'data-bc')}</div></div>
+    <div class="card"><p class="big">${esc(t('acW'))}</p><div class="sb c3">${wOpts.map(v => `<button class="secondary${String(b.w) === String(v) ? ' cur' : ''}" type="button" data-bw="${esc(v)}">${esc(v)}${b.maker && b.conn && hasPh(b.maker, b.conn, v) ? ' 📷' : ''}</button>`).join('')}</div>
+      <div class="res"><input type="number" inputmode="numeric" id="acbWIn" placeholder="W" style="flex:1;width:auto"><button class="secondary" style="width:auto;padding:0 18px" type="button" id="acbWOk">${esc(t('specOk'))}</button></div></div>
+    ${photoHtml}
+    ${ready && b.ok ? `<div class="card"><p class="big">${esc([b.maker, b.conn, b.w + 'W'].join('　'))}</p>
+      <label class="field" for="acbN">${esc(t('acbPerBox'))}</label>
+      <div class="boxrow"><input type="number" inputmode="numeric" min="1" id="acbN" value="${esc(b.n)}"><span>${esc(t('acUnit'))}</span></div>
+      <p class="note">${esc(saved ? t('acbSavedN', { n: saved.n }) : t('acbNewN'))}</p>
+      <label class="field" for="acbCopies">${esc(t('acbCopies'))}</label>
+      <div class="boxrow"><input type="number" inputmode="numeric" min="1" max="${ACB_PER * 10}" id="acbCopies" value="${esc(b.copies)}"><span>${esc(t('acbSheets'))}</span></div>
+      <label class="field" for="acbStart">${esc(t('acbStart'))}</label>
+      <div class="boxrow"><input type="number" inputmode="numeric" min="1" max="${ACB_PER}" id="acbStart" value="${esc(b.start)}"></div></div>
+      <div class="actions"><button class="primary" id="acbPrint" type="button">${esc(t('acbPrint'))}</button></div>` : (ready ? '' : `<p class="note">${esc(t('acbChoose'))}</p>`)}
+    <div id="printArea" class="printarea"></div>
+    <button class="link" id="acbBack" type="button">${esc(t('back'))}</button>`;
+  const pick = (k, v) => { b[k] = v; acbFill(); b.photo = undefined; b.ok = false; render(); if (b.maker && b.conn && b.w) acbLoadPhoto(); };
+  const sh = document.getElementById('acbShoot'); if (sh) sh.onclick = () => document.getElementById('acPhotoIn').click();
+  const rt = document.getElementById('acbRetake'); if (rt) rt.onclick = () => { if (confirm(t('acbRetakeAsk'))) document.getElementById('acPhotoIn').click(); };
+  const sm = document.getElementById('acbSame'); if (sm) sm.onclick = () => { b.ok = true; render(); };
+  $app.querySelectorAll('[data-same]').forEach(x => x.onclick = () => {   // 写真のあるACと同じだった → その種類に切り替える
+    const y = b.similar[+x.dataset.same];
+    b.conn = y.conn; b.w = String(y.w); acbFill();
+    b.photo = { thumb: y.thumb, by: y.by, at: y.at }; b.ok = true; b.similar = null; b.newOk = false;
+    toast(t('acbSwitched', { t: acTypeText(y) })); render(); window.scrollTo(0, 0);
+  });
+  const nn = document.getElementById('acbNone'); if (nn) nn.onclick = () => {
+    if (!confirm(t('acbNoneAsk', { t: [b.maker, b.conn, b.w + 'W'].join(' ') }))) return;
+    b.newOk = true; render();
+  };
+  const df = document.getElementById('acbDiff'); if (df) df.onclick = () => { b.conn = ''; b.w = ''; b.photo = undefined; b.ok = false; render(); window.scrollTo(0, 0); };
+  $app.querySelectorAll('[data-bm]').forEach(x => x.onclick = () => pick('maker', x.dataset.bm));
+  $app.querySelectorAll('[data-bc]').forEach(x => x.onclick = () => pick('conn', x.dataset.bc));
+  $app.querySelectorAll('[data-bw]').forEach(x => x.onclick = () => pick('w', x.dataset.bw));
+  document.getElementById('acbMkOk').onclick = () => { const v = document.getElementById('acbMk').value.trim().toUpperCase(); if (v) { if (!b.makers.includes(v)) b.makers.push(v); pick('maker', v); } };
+  document.getElementById('acbWOk').onclick = () => { const v = String(document.getElementById('acbWIn').value || '').replace(/[^0-9.]/g, ''); if (v) pick('w', v); };
+  const nIn = document.getElementById('acbN'); if (nIn) nIn.oninput = e => { b.n = e.target.value; };
+  const cIn = document.getElementById('acbCopies'); if (cIn) cIn.oninput = e => { b.copies = e.target.value; };
+  const sIn = document.getElementById('acbStart'); if (sIn) sIn.oninput = e => { b.start = e.target.value; };
+  const pb = document.getElementById('acbPrint'); if (pb) pb.onclick = printAcBox;
+  document.getElementById('acbBack').onclick = goBack;
+}
+function acbLabelHtml(b, n) {
+  const mk = String(b.maker || ''), fs = mk.length > 9 ? 9 : mk.length > 6 ? 11 : 13;
+  return `<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;line-height:1.1;font-family:'Meiryo','Noto Sans JP',sans-serif;color:#000">
+    <div style="font-size:${fs}pt;font-weight:700">${esc(mk)}</div>
+    <div style="font-size:13pt;font-weight:700;margin-top:1mm">${esc(b.conn)}</div>
+    <div style="font-size:16pt;font-weight:700">${esc(b.w)}W</div>
+    <div style="font-size:24pt;font-weight:700;margin-top:1mm;border-top:0.4mm solid #000;padding-top:1mm;width:30mm">${esc(n)}個</div></div>`;
+}
+// ACの写真を撮って保存する（小さい写真は画面用、元の写真はドライブへ）
+document.getElementById('acPhotoIn').addEventListener('change', async ev => {
+  const file = ev.target.files && ev.target.files[0];
+  ev.target.value = '';
+  if (!file) return;
+  if (state.screen === 'acTc' && state.acTc) return acTcPhoto(file);
+  const b = state.acBox;
+  if (!b || !(b.maker && b.conn && b.w)) return;
+  try {
+    showBusy(t('saving'));
+    const full = await resizeImage(file, PHOTO_MAX, PHOTO_QUALITY);
+    let thumb = await resizeImage(file, 360, 0.7);
+    if (thumb.length > 44000) thumb = await resizeImage(file, 260, 0.6);
+    hideBusy();
+    const r = await call('kAcPhotoSave', [state.deviceId, b.maker, b.conn, b.w, thumb, full], 'saving');
+    b.photo = r.photo; b.ok = true;
+    const k = acKey(b.maker, b.conn, b.w);
+    if (!(b.photos || []).includes(k)) (b.photos = b.photos || []).push(k);
+    toast(t('acbPhotoSaved'));
+    render();
+  } catch (e) { hideBusy(); alert(t('errSave') + '\n' + (e.message || e)); }
+});
+// 種類の確認の画面で撮った写真を保存して、確認を終える
+async function acTcPhoto(file) {
+  const tc = state.acTc, ty = tc.type;
+  try {
+    showBusy(t('saving'));
+    const full = await resizeImage(file, PHOTO_MAX, PHOTO_QUALITY);
+    let thumb = await resizeImage(file, 360, 0.7);
+    if (thumb.length > 44000) thumb = await resizeImage(file, 260, 0.6);
+    hideBusy();
+    await call('kAcPhotoSave', [state.deviceId, ty.maker, ty.conn, ty.w, thumb, full], 'saving');
+    toast(t('acbPhotoSaved'));
+    acTcDone(ty);
+  } catch (e) { hideBusy(); alert(t('errSave') + '\n' + (e.message || e)); }
+}
+async function printAcBox() {
+  const b = state.acBox;
+  if (!b.ok) return alert(t('acbPhotoT'));
+  const n = Math.floor(Number(b.n) || 0), copies = Math.floor(Number(b.copies) || 0), start = Math.floor(Number(b.start) || 1);
+  if (n <= 0) return alert(t('acbNeedN'));
+  if (copies <= 0 || copies > ACB_PER * 10) return alert(t('acbNeedCopies'));
+  if (start < 1 || start > ACB_PER) return alert(t('acbNeedStart'));
+  const saved = acbSaved();
+  if (saved && saved.n !== n && !confirm(t('acbChangeAsk', { a: saved.n, b: n }))) return;
+  try {
+    if (!saved || saved.n !== n) { const r = await call('kAcBoxSave', [state.deviceId, b.maker, b.conn, b.w, n], 'saving'); b.boxes = r.boxes || b.boxes; }
+  } catch (e) { return alert(t('errSave') + '\n' + (e.message || e)); }
+  const labels = [];
+  for (let i = 0; i < copies; i++) labels.push({ b: b, n: n });
+  acPrintLabels(labels, start);
+}
+
+// ===============================================================
+// ACの種類の写真の確認（種類を新しく足すときに使う）
+//   写真があれば見比べる → 写真が無ければ、同じメーカーの写真のあるACと見比べる → どれとも違えば写真を撮る
+//   opt.allowSwitch：写真のあるACと「同じ」だったときに、その種類に切り替えてよいか
+//   onOk(type)：確認が済んだ種類（切り替えたときは、切り替えた種類）
+// ===============================================================
+async function acCheckType(type, onOk, opt) {
+  opt = opt || {};
+  const tc = { type: { maker: String(type.maker || '').trim().toUpperCase(), conn: type.conn, w: String(type.w) }, photo: undefined, similar: null, newOk: false,
+               back: state.screen, onOk: onOk, allowSwitch: opt.allowSwitch !== false };
+  state.acTc = tc; state.screen = 'acTc'; render(); window.scrollTo(0, 0);
+  try {
+    const r = await call('kAcPhotoGet', [state.deviceId, tc.type.maker, tc.type.conn, tc.type.w], 'loading');
+    tc.photo = r.photo || null;
+    if (!tc.photo) {
+      const l = await call('kAcPhotoList', [state.deviceId, tc.type.maker], 'loading');
+      const key = acKey(tc.type.maker, tc.type.conn, tc.type.w);
+      tc.similar = (l.photos || []).filter(x => acKey(x.maker, x.conn, x.w) !== key)
+        .sort((x, y) => (String(y.w) === String(tc.type.w) ? 1 : 0) - (String(x.w) === String(tc.type.w) ? 1 : 0));
+    }
+  } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); state.screen = tc.back; state.acTc = null; return render(); }
+  if (state.acTc === tc) render();
+}
+function acTcDone(type) {
+  const tc = state.acTc;
+  state.acTc = null; state.screen = tc.back;
+  tc.onOk(type);
+  render(); window.scrollTo(0, 0);
+}
+function renderAcTc() {
+  const tc = state.acTc, ty = tc.type, name = acTypeText(ty);
+  let body;
+  if (tc.photo === undefined || (!tc.photo && tc.similar === null)) body = `<p class="note">${esc(t('loading'))}</p>`;
+  else if (tc.photo) body = `<div class="card"><p class="big">${esc(t('acbPhotoT'))}</p>
+      <img src="${esc(tc.photo.thumb)}" alt="" style="width:100%;max-width:420px;display:block;margin:6px auto;border:1px solid var(--rule);border-radius:10px">
+      <p class="note">${esc(t('acbPhotoBy', { w: tc.photo.by, t: tc.photo.at }))}</p>
+      <div class="actions"><button class="primary" id="tcSame" type="button">${esc(t('acTcSame'))}</button></div>
+      <div class="actions"><button class="secondary" id="tcBack" type="button">${esc(t('acbDiff'))}</button></div></div>`;
+  else if (tc.similar.length && !tc.newOk) body = `<div class="card"><p class="big">${esc(t('acbNewT', { t: name }))}</p>
+      <p class="warn">${esc(tc.allowSwitch ? t('acbNewAsk') : t('acTcNoSwitch'))}</p></div>
+      ${tc.similar.map((x, i) => `<div class="card" style="margin-bottom:8px"><p class="big" style="margin:0">${esc(acTypeText(x))}</p>
+        <img src="${esc(x.thumb)}" alt="" style="width:100%;max-width:420px;display:block;margin:6px auto;border:1px solid var(--rule);border-radius:10px">
+        ${tc.allowSwitch ? `<div class="actions"><button class="secondary" type="button" data-tcs="${i}">${esc(t('acbThisSame'))}</button></div>` : ''}</div>`).join('')}
+      <div class="actions"><button class="primary" id="tcNone" type="button">${esc(t('acbNoneSame'))}</button></div>`;
+  else body = `<div class="card"><p class="big">${esc(name)}</p><p class="warn">${esc(t('acbNoPhoto'))}</p>
+      <div class="actions"><button class="primary" id="tcShoot" type="button">${esc(t('acbShoot'))}</button></div></div>`;
+  $app.innerHTML = `<div class="card"><p class="big">${esc(t('acTcTitle'))}</p><p class="note">${esc(name)}</p></div>${body}
+    <button class="link" id="tcCancel" type="button">${esc(t('back'))}</button>`;
+  const on = (id, f) => { const el = document.getElementById(id); if (el) el.onclick = f; };
+  on('tcSame', () => acTcDone(ty));
+  on('tcBack', () => { state.screen = tc.back; state.acTc = null; render(); });
+  on('tcCancel', () => { state.screen = tc.back; state.acTc = null; render(); });
+  on('tcShoot', () => document.getElementById('acPhotoIn').click());
+  on('tcNone', () => { if (!confirm(t('acbNoneAsk', { t: name }))) return; tc.newOk = true; render(); });
+  $app.querySelectorAll('[data-tcs]').forEach(b => b.onclick = () => {
+    const y = tc.similar[+b.dataset.tcs];
+    toast(t('acbSwitched', { t: acTypeText(y) }));
+    acTcDone({ maker: y.maker, conn: y.conn, w: String(y.w) });
+  });
+}
+
+// ===============================================================
+// 🏷 置き場所（ロット・パレット）の箱のシールを、まとめて発行する
+//   その場所の今の在庫を、ACの種類ごとに「1箱の個数」で分けて、箱の数だけシールを作る（端数の箱は、その数のシール）
+//   どの種類も、写真と見比べてから（写真が無ければ撮ってから）でないと印刷できない
+// ===============================================================
+async function openAcBulk(place) {
+  try {
+    const r = await call('kAcBoxBulkLoad', [state.deviceId, place], 'loading');
+    state.acBulk = { info: r, items: r.items.map(x => Object.assign({}, x, { per: x.perBox ? String(x.perBox) : '', use: true, ok: false })), start: '1' };
+    state.screen = 'acBulk'; render(); window.scrollTo(0, 0);
+  } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); acMenu(); }
+}
+function acBulkSplit(n, per) {
+  per = Math.floor(Number(per) || 0); n = Math.floor(Number(n) || 0);
+  if (per <= 0 || n <= 0) return [];
+  const out = [];
+  for (let i = 0; i < Math.floor(n / per); i++) out.push(per);
+  if (n % per) out.push(n % per);
+  return out;
+}
+function acBulkSplitText(n, per) {
+  const p = Math.floor(Number(per) || 0), full = p > 0 ? Math.floor(n / p) : 0, rest = p > 0 ? n % p : 0;
+  if (p <= 0) return '';
+  return [full ? t('acBulkFull', { p: p, b: full }) : '', rest ? t('acBulkRest', { r: rest }) : ''].filter(Boolean).join('＋');
+}
+function renderAcBulk() {
+  const a = state.acBulk, r = a.info;
+  const used = a.items.filter(x => x.use);
+  const labels = used.reduce((s, x) => s + acBulkSplit(x.n, x.per).length, 0);
+  const ready = used.length && used.every(x => x.ok && Number(x.per) > 0);
+  $app.innerHTML = `<div class="card"><p class="big">${esc(t('acBulkT', { l: r.label }))}</p><p class="note">${esc(t('acBulkNote'))}</p></div>
+    ${a.items.length ? a.items.map((x, i) => `<div class="card" style="margin-bottom:8px">
+      <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" data-bu="${i}" ${x.use ? 'checked' : ''} style="width:24px;height:24px"><span class="big" style="margin:0">${esc(acTypeText(x))}　${esc(x.n)}${esc(t('acUnit'))}</span></label>
+      ${x.use ? `${x.photo ? `<img src="${esc(x.photo.thumb)}" alt="" style="width:100%;max-width:300px;display:block;margin:6px 0;border:1px solid var(--rule);border-radius:10px">` : ''}
+        ${x.ok ? `<p class="note"><b>✅ ${esc(t('acbOk'))}</b></p>`
+          : (x.photo ? `<div class="actions"><button class="secondary" type="button" data-bok="${i}">${esc(t('acbSame'))}</button></div>`
+                     : `<p class="warn">${esc(t('acBulkNoPhoto'))}</p><div class="actions"><button class="primary" type="button" data-bph="${i}">${esc(t('acbShoot'))}</button></div>`)}
+        <label class="field">${esc(t('acbPerBox'))}</label>
+        <div class="boxrow"><input type="number" inputmode="numeric" min="1" data-bpr="${i}" value="${esc(x.per)}"><span>${esc(t('acUnit'))}</span></div>
+        <p class="note">${esc(x.perBox ? t('acbSavedN', { n: x.perBox }) : t('acbNewN'))}</p>
+        <p class="note"><b>${esc(acBulkSplitText(x.n, x.per))}</b></p>` : ''}</div>`).join('') : `<p class="note">${esc(t('acStockNone'))}</p>`}
+    ${a.items.length ? `<div class="card"><label class="field" for="abStart">${esc(t('acbStart'))}</label>
+      <div class="boxrow"><input type="number" inputmode="numeric" min="1" max="${ACB_PER}" id="abStart" value="${esc(a.start)}"></div>
+      <p class="note">${esc(t('acBulkCount', { n: labels }))}</p></div>
+      <div class="actions"><button class="primary" id="abPrint" type="button">${esc(t('acbPrint'))}</button></div>
+      ${ready ? '' : `<p class="note">${esc(t('acBulkNotReady'))}</p>`}` : ''}
+    <div id="printArea" class="printarea"></div>
+    <button class="link" id="abBack" type="button">${esc(t('back'))}</button>`;
+  $app.querySelectorAll('[data-bu]').forEach(c => c.onchange = () => { a.items[+c.dataset.bu].use = c.checked; render(); });
+  $app.querySelectorAll('[data-bok]').forEach(b => b.onclick = () => { a.items[+b.dataset.bok].ok = true; render(); });
+  $app.querySelectorAll('[data-bpr]').forEach(inp => inp.oninput = () => { a.items[+inp.dataset.bpr].per = inp.value; });
+  $app.querySelectorAll('[data-bpr]').forEach(inp => inp.onchange = () => render());
+  $app.querySelectorAll('[data-bph]').forEach(b => b.onclick = () => {
+    const x = a.items[+b.dataset.bph];
+    // 在庫の種類のまま写真を撮る（同じメーカーの写真と見比べるが、ほかの種類への切り替えはしない）
+    acCheckType(x, () => { x.ok = true; x.photo = x.photo || { thumb: '' }; openAcBulkRefresh(); }, { allowSwitch: false });
+  });
+  const st = document.getElementById('abStart'); if (st) st.oninput = e => { a.start = e.target.value; };
+  const pb = document.getElementById('abPrint'); if (pb) pb.onclick = printAcBulk;
+  document.getElementById('abBack').onclick = goBack;
+}
+// 写真を撮ったあと、写真を読み直す（確認済みの印は残す）
+async function openAcBulkRefresh() {
+  const a = state.acBulk;
+  if (!a) return;
+  try {
+    const r = await call('kAcBoxBulkLoad', [state.deviceId, a.info.place], 'loading');
+    const old = {};
+    a.items.forEach(x => { old[acKey(x.maker, x.conn, x.w)] = x; });
+    a.items = r.items.map(x => { const o = old[acKey(x.maker, x.conn, x.w)] || {}; return Object.assign({}, x, { per: o.per != null ? o.per : (x.perBox ? String(x.perBox) : ''), use: o.use !== false, ok: !!o.ok }); });
+    if (state.screen === 'acBulk') render();
+  } catch (e) {}
+}
+async function printAcBulk() {
+  const a = state.acBulk, used = a.items.filter(x => x.use);
+  const start = Math.floor(Number(a.start) || 1);
+  if (!used.length) return alert(t('acBulkNone'));
+  if (used.some(x => !x.ok)) return alert(t('acBulkNotReady'));
+  if (used.some(x => !(Math.floor(Number(x.per) || 0) > 0))) return alert(t('acbNeedN'));
+  if (start < 1 || start > ACB_PER) return alert(t('acbNeedStart'));
+  const changed = used.filter(x => Math.floor(Number(x.per)) !== x.perBox);
+  if (changed.some(x => x.perBox) && !confirm(t('acBulkChangeAsk', { l: changed.filter(x => x.perBox).map(x => acTypeText(x) + '：' + x.perBox + '→' + x.per).join('、') }))) return;
+  try {
+    for (const x of changed) { await call('kAcBoxSave', [state.deviceId, x.maker, x.conn, x.w, Math.floor(Number(x.per))], 'saving'); x.perBox = Math.floor(Number(x.per)); }
+  } catch (e) { return alert(t('errSave') + '\n' + (e.message || e)); }
+  const labels = [];
+  used.forEach(x => acBulkSplit(x.n, x.per).forEach(n => labels.push({ b: x, n: n })));
+  acPrintLabels(labels, start);
+}
+// シールを並べて印刷する（labels: [{ b: { maker, conn, w }, n }]）
+function acPrintLabels(labels, start) {
+  const p = acbPos(), slots = [];
+  for (let k = 0; k < start - 1; k++) slots.push(null);
+  labels.forEach(l => slots.push(l));
+  let html = '';
+  for (let s = 0; s < slots.length; s += ACB_PER) {
+    html += '<div class="lsheet" style="width:210mm;height:296mm;position:relative;background:#fff;overflow:hidden;break-after:page;page-break-after:always">';
+    slots.slice(s, s + ACB_PER).forEach((u, k) => {
+      if (!u) return;
+      const col = k % ACB_COLS, row = Math.floor(k / ACB_COLS);
+      html += `<div style="position:absolute;width:${ACB_SIZE}mm;height:${ACB_SIZE}mm;left:${p.mx + col * (ACB_SIZE + p.gx)}mm;top:${p.my + row * (ACB_SIZE + p.gy)}mm;overflow:hidden">${acbLabelHtml(u.b, u.n)}</div>`;
+    });
+    html += '</div>';
+  }
+  const pa = document.getElementById('printArea');
+  pa.innerHTML = html;
+  const css = document.createElement('style');
+  css.id = 'acbPrintCss';
+  css.textContent = '@media print{@page{size:A4;margin:0}body.printing .lsheet:last-child{break-after:auto;page-break-after:auto}}';
+  document.head.appendChild(css);
+  document.body.classList.add('printing');
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => { document.body.classList.remove('printing'); css.remove(); pa.innerHTML = ''; }, 500);
+  }, 50);
 }
 
 // ===============================================================
