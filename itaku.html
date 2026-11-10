@@ -841,7 +841,7 @@ function saveSymptoms() {
   const u = state.unit;
   state.unit = Object.assign({}, u, {
     registered: true, current: list.map(e => ({ symptom: e.symptom, hy: (state.masterMap[e.symptom] || {}).hy || e.symptom, photo: e.photo, cat: e.cat, kind: e.kind || '検査' })),
-    auto: auto, sales: changed ? '' : u.sales, grade: changed ? auto : (u.sales || auto), recheck: changed && u.sales ? true : u.recheck,
+    auto: auto, sales: changed ? '' : u.sales, grade: changed ? auto : (u.sales || auto), recheck: false,
     board: u.board || state.board
   });
   resetEdit();
@@ -1248,7 +1248,7 @@ function gradeHtml(u) {
   const g = u.grade || 'A';
   const who = u.sales ? t('gradeSales') : t('gradeAuto');
   return `<p class="note">${esc(t('gradeNow'))}　<span class="grade ${esc(g)}">${esc(g)}</span>　<small>（${esc(who)}）</small></p>
-    ${u.recheck ? `<p class="warn">${esc(t('recheck'))}</p>` : ''}`;
+`;
 }
 
 // ===============================================================
@@ -1954,7 +1954,7 @@ function renderBoard() {
       <div class="err" id="sealErr"></div>
       <div class="actions"><button class="secondary" id="sealOpen" type="button">${esc(t('open'))}</button></div></details>
     <h2>${esc(t('regUnits', { n: units.length }))}</h2>
-    ${units.length ? `<div class="units">${units.map((u, i) => `<button class="btn" type="button" data-i="${i}">${esc(u.seal)}<small><span class="grade ${esc(u.grade)}" style="font-size:14px;padding:2px 8px">${esc(u.grade)}</span>${u.recheck ? ' ⚠' : ''}</small></button>`).join('')}</div>`
+    ${units.length ? `<div class="units">${units.map((u, i) => `<button class="btn" type="button" data-i="${i}">${esc(u.seal)}<small><span class="grade ${esc(u.grade)}" style="font-size:14px;padding:2px 8px">${esc(u.grade)}</span></small></button>`).join('')}</div>`
       : `<div class="empty">${esc(t('noUnits'))}</div>`}
 
     <button class="link" id="homeBtn" type="button">${esc(t('next'))}</button>`;
