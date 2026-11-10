@@ -2989,9 +2989,9 @@ function renderAcCountType() {
       }
       await call('kAcCountType', [state.deviceId, items], 'saving');
       toast(t('acCtSaved', { n: items.length }));
-      state.acCt = null;
-      if (confirm(t('acCtLabelAsk'))) return openAcBulkItems(t('acCtLabelT'), items);   // 数えたACの箱のシールを、まとめて発行する
-      acMenu();
+      // 続けて次のACを数えられるように、「ACの種類を足す」の欄を開いた状態に戻す（シールは、あとで「在庫を見る」からまとめて出す）
+      state.acCt = { items: [], adding: true, maker: '', dirty: false };
+      render(); window.scrollTo(0, 0);
     } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
   };
   document.getElementById('actBack').onclick = goBack;
