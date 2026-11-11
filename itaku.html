@@ -471,6 +471,7 @@ const T = {
   acCtLabelAsk:{ ja: '続けて、数えたACの箱のシールをまとめて発行しますか？', en: 'Print box labels for the counted ACs now?', id: 'Cetak label kotak untuk AC yang dihitung sekarang?' },
   acCtLabelT:{ ja: '棚卸しで数えたAC', en: 'Counted ACs', id: 'AC yang dihitung' },
   acNoPhotoNote:{ ja: 'この口型（タイプC・四角口）は形がすべて同じなので、写真は要りません', en: 'This connector (Type-C / square) is always the same shape, so no photo is needed', id: 'Konektor ini (Tipe-C / kotak) bentuknya selalu sama, jadi tidak perlu foto' },
+  acPhotoMem:{ ja: '写真を読み込めませんでした（スマホのメモリが足りない可能性があります）。ほかのアプリやブラウザのタブを閉じてから、もう一度撮ってください', en: 'Could not read the photo (the phone may be low on memory). Close other apps or tabs and try again', id: 'Foto tidak bisa dibaca (memori ponsel mungkin kurang). Tutup aplikasi/tab lain lalu coba lagi' },
   acTcTitle: { ja: '足すACの確認', en: 'Check the AC to add', id: 'Periksa AC yang ditambah' },
   acTcSame:  { ja: '✅ 写真と同じAC（足す）', en: '✅ Same as the photo (add)', id: '✅ Sama dengan foto (tambah)' },
   acTcNoSwitch:{ ja: '同じメーカーで、写真のあるACです。この中に同じACがあれば、在庫の種類の書き方が違っています（棚卸しで正しい種類に直してください）。どれとも違うときだけ、写真を撮ってください', en: 'These have photos. If one is the same, the stock type name is wrong (fix it in a count). Take a photo only if none is the same', id: 'Ini sudah punya foto. Jika ada yang sama, nama jenis stok salah (perbaiki saat opname). Foto hanya jika tidak ada yang sama' },
@@ -1227,6 +1228,40 @@ function drawScaled(img, max) {
   c.width = Math.round(img.naturalWidth * r); c.height = Math.round(img.naturalHeight * r);
   c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
   return c;
+}
+// ACの写真：元の写真を1回だけ読み込み、読み込むときに縮める（スマホのメモリを使いすぎないように）
+//   戻り値: { full: 保存用（長い辺 1024px）, thumb: 画面用（長い辺 360px 以下・シートに入る大きさ） }
+async function acMakePhotos(file) {
+  let src = null, w = 0, h = 0;
+  try {
+    // 読み込みながら縮める（対応しているブラウザなら、大きな写真でもメモリをほとんど使わない）
+    // 横の長さだけ指定すると、縦は元の比率のまま縮む（縦長の写真は、このあと長い辺 1024px にそろえる）
+    src = await createImageBitmap(file, { resizeWidth: PHOTO_MAX, resizeQuality: 'high' });
+    w = src.width; h = src.height;
+  } catch (e) {
+    if (src && src.close) src.close();
+    const img = await loadImage(file);
+    src = img; w = img.naturalWidth; h = img.naturalHeight;
+  }
+  const draw = (max, q) => {
+    const r = Math.min(1, max / Math.max(w, h));
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(w * r)); c.height = Math.max(1, Math.round(h * r));
+    c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
+    const d = c.toDataURL('image/jpeg', q);
+    c.width = 1; c.height = 1;   // 使い終わったキャンバスのメモリを返す
+    return d;
+  };
+  try {
+    const full = draw(PHOTO_MAX, PHOTO_QUALITY);
+    let thumb = draw(360, 0.7);
+    if (thumb.length > 44000) thumb = draw(260, 0.6);
+    if (thumb.length > 44000) thumb = draw(200, 0.5);
+    return { full: full, thumb: thumb };
+  } finally {
+    if (src && src.close) src.close();
+    if (src && src.src) src.src = '';
+  }
 }
 async function resizeImage(file, max, quality) {
   const img = await loadImage(file);
@@ -2706,9 +2741,10 @@ document.getElementById('acPhotoIn').addEventListener('change', async ev => {
   if (!b || !(b.maker && b.conn && b.w)) return;
   try {
     showBusy(t('saving'));
-    const full = await resizeImage(file, PHOTO_MAX, PHOTO_QUALITY);
-    let thumb = await resizeImage(file, 360, 0.7);
-    if (thumb.length > 44000) thumb = await resizeImage(file, 260, 0.6);
+    let ph;
+    try { ph = await acMakePhotos(file); }
+    catch (e2) { hideBusy(); return alert(t('acPhotoMem')); }
+    const full = ph.full, thumb = ph.thumb;
     hideBusy();
     const r = await call('kAcPhotoSave', [state.deviceId, b.maker, b.conn, b.w, thumb, full], 'saving');
     b.photo = r.photo; b.ok = true;
@@ -2723,9 +2759,10 @@ async function acTcPhoto(file) {
   const tc = state.acTc, ty = tc.type;
   try {
     showBusy(t('saving'));
-    const full = await resizeImage(file, PHOTO_MAX, PHOTO_QUALITY);
-    let thumb = await resizeImage(file, 360, 0.7);
-    if (thumb.length > 44000) thumb = await resizeImage(file, 260, 0.6);
+    let ph;
+    try { ph = await acMakePhotos(file); }
+    catch (e2) { hideBusy(); return alert(t('acPhotoMem')); }
+    const full = ph.full, thumb = ph.thumb;
     hideBusy();
     await call('kAcPhotoSave', [state.deviceId, ty.maker, ty.conn, ty.w, thumb, full], 'saving');
     toast(t('acbPhotoSaved'));
