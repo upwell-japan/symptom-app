@@ -425,8 +425,8 @@ const T = {
   acmIn:     { ja: '📥 入荷数を入力する', en: '📥 Enter arrival count', id: '📥 Input jumlah masuk' },
   acmMove:   { ja: '📦 パレットに移す', en: '📦 Move to pallet', id: '📦 Pindah ke palet' },
   acmCount:  { ja: '🔢 棚卸しをする', en: '🔢 Count stock', id: '🔢 Stok opname' },
-  acmView:   { ja: '🔍 在庫を見る（看板を読む）', en: '🔍 View stock (scan a board)', id: '🔍 Lihat stok (pindai papan)' },
-  acmPallet: { ja: '🧺 パレットの一覧（在庫・棚卸し・看板）', en: '🧺 Pallets (stock, count, boards)', id: '🧺 Daftar palet (stok, opname, papan)' },
+  acmView:   { ja: '🔍 ロットの在庫を見る（看板を読む）', en: '🔍 Lot stock (scan a board)', id: '🔍 Stok lot (pindai papan)' },
+  acmPallet: { ja: '🧺 パレットの在庫を見る', en: '🧺 Pallet stock', id: '🧺 Stok palet' },
   acmBox:    { ja: '🏷 ACの箱のシールを発行する', en: '🏷 Print AC box labels', id: '🏷 Cetak label kotak AC' },
   acbTitle:  { ja: 'ACの箱のシール（40×40mm）', en: 'AC box labels (40×40mm)', id: 'Label kotak AC (40×40mm)' },
   acbNote:   { ja: 'メーカー・AC口型・Wを選ぶと、前に決めた「1箱の個数」が入ります。用紙は番号入りQRシールと同じです。', en: 'Choose maker, connector and W. The saved number per box is filled in. Same paper as the seal labels.', id: 'Pilih merek, konektor dan W. Jumlah per kotak yang tersimpan akan terisi. Kertas sama dengan label segel.' },
@@ -502,8 +502,8 @@ const T = {
   acTakeScanLot:{ ja: 'このロットのACの看板を読み取って出してください', en: 'Scan this lot\'s AC board to take them', id: 'Pindai papan AC lot ini untuk mengambil' },
   acAllOld:  { ja: '古いロットにもACが残っています（今回は使いません）。パレットに移してください', en: 'Older lots still have ACs (not used now). Move them to pallets', id: 'Lot lama masih punya AC (tidak dipakai). Pindahkan ke palet' },
   acMoveScan:{ ja: 'パレットに移すロットのACの看板を読み取ってください', en: 'Scan the AC board of the lot to move', id: 'Pindai papan AC lot yang akan dipindah' },
-  acCountScan:{ ja: '棚卸しをするACの看板（ロットかパレット）を読み取ってください。パレットは「パレットの一覧」からも選べます', en: 'Scan the AC board (lot or pallet) to count', id: 'Pindai papan AC (lot atau palet) untuk dihitung' },
-  acViewScan:{ ja: 'ACの看板（ロットかパレット）を読み取ってください', en: 'Scan an AC board (lot or pallet)', id: 'Pindai papan AC (lot atau palet)' },
+  acCountScan:{ ja: '数を直すロットのACの看板を読み取ってください', en: 'Scan the lot AC board to correct', id: 'Pindai papan AC lot yang dikoreksi' },
+  acViewScan:{ ja: 'ロットのACの看板を読み取ってください（パレットは「パレットの在庫を見る」から選べます）', en: 'Scan a lot AC board (pallets: use “Pallet stock”)', id: 'Pindai papan AC lot (palet: pakai “Stok palet”)' },
   acMoveNotPallet:{ ja: 'パレットの看板です。移すときは、ロットのACの看板を読み取ってください', en: 'This is a pallet board. Scan the lot AC board to move', id: 'Ini papan palet. Pindai papan AC lot untuk memindah' },
   acStockNone:{ ja: 'ACはありません', en: 'No ACs', id: 'Tidak ada AC' },
   acStockTotal:{ ja: '在庫：合計 {n}個', en: 'Stock: {n} in total', id: 'Stok: total {n}' },
@@ -511,8 +511,6 @@ const T = {
   acLotInfo2:{ ja: '入荷日 {d}　仕入先 {s}', en: 'Arrival {d}  Supplier {s}', id: 'Tiba {d}  Pemasok {s}' },
   acPrintThis:{ ja: '🖨 この看板を印刷する', en: '🖨 Print this board', id: '🖨 Cetak papan ini' },
   acPrintShort:{ ja: '印刷', en: 'Print', id: 'Cetak' },
-  acPrintPT: { ja: 'ACのパレットの看板（{p}）', en: 'AC pallet board ({p})', id: 'Papan palet AC ({p})' },
-  acPrintPNote:{ ja: '印刷の画面で、用紙は「A5」・向きは「横」・倍率は「100%」にしてください。QRを読み取ると、このパレットのACの在庫が分かります。', en: 'Use A5 landscape at 100%. Scanning the QR shows this pallet\'s AC stock.', id: 'Pakai A5 lanskap 100%. Memindai QR menampilkan stok AC palet ini.' },
   acPalletNone:{ ja: 'パレットがありません', en: 'No pallets', id: 'Tidak ada palet' },
   acPalletSet:{ ja: 'メーカーごとのパレットは、業務委託のスプレッドシートの「ACのパレット」シートで決めます。', en: 'Pallets per maker are set on the “ACのパレット” sheet.', id: 'Palet per merek diatur di sheet “ACのパレット”.' },
   acMoveNote:{ ja: 'このロットに残っているACを、メーカーごとに決まったパレットへ移します。', en: 'Moves the remaining ACs of this lot to each maker\'s pallet.', id: 'Memindah sisa AC lot ini ke palet tiap merek.' },
@@ -528,11 +526,14 @@ const T = {
   pickAcQty: { ja: 'この商品の出荷：{q}台（ACを出した数：{d}個）', en: 'Units picked: {q} (ACs so far: {d})', id: 'Unit diambil: {q} (AC sejauh ini: {d})' },
   pickAcNeed:{ ja: 'ACを {n}個 一緒に出してください（{t}）', en: 'Add {n} ACs ({t})', id: 'Sertakan {n} AC ({t})' },
   pickAcStep:{ ja: '{l} の看板から {n}個', en: '{n} from {l}', id: '{n} dari {l}' },
+  pickAcStepP:{ ja: '{l} から {n}個', en: '{n} from {l}', id: '{n} dari {l}' },
+  pickAcFromP:{ ja: '{p} から出す', en: 'Take from {p}', id: 'Ambil dari {p}' },
+  pickAcScanLot:{ ja: '📷 ロットのACの看板を読み取る', en: '📷 Scan the lot AC board', id: '📷 Pindai papan AC lot' },
   pickAcShort:{ ja: 'ACの在庫が {n}個 足りません（パレット {p} にもありません）', en: '{n} ACs short (none on pallet {p})', id: 'AC kurang {n} (tidak ada di palet {p})' },
   pickAcUnknown:{ ja: 'この機種のACの種類（口型・W）が決まっていません。出すACの看板を読んで、種類を選んでください（{n}個）', en: 'AC type of this model is unknown. Scan the AC board and choose the type ({n})', id: 'Jenis AC model ini belum ditentukan. Pindai papan AC dan pilih jenisnya ({n})' },
   pickAcScanBtn:{ ja: '📷 ACの看板を読み取る', en: '📷 Scan the AC board', id: '📷 Pindai papan AC' },
   pickAcScanDesc:{ ja: '{l} のACの看板を読み取ってください', en: 'Scan the AC board of {l}', id: 'Pindai papan AC {l}' },
-  pickAcScanAny:{ ja: '出すACの看板（ロットかパレット）を読み取ってください', en: 'Scan the AC board (lot or pallet) to take from', id: 'Pindai papan AC (lot atau palet) yang diambil' },
+  pickAcScanAny:{ ja: '出すACのロットの看板を読み取ってください（パレットから出すときは、前の画面でパレットを押してください）', en: 'Scan the lot AC board (for pallets, tap the pallet on the previous screen)', id: 'Pindai papan AC lot (untuk palet, ketuk palet di layar sebelumnya)' },
   pickAcWrong:{ ja: '違う看板です。{l} の看板を読み取ってください', en: 'Wrong board. Scan the board of {l}', id: 'Papan salah. Pindai papan {l}' },
   pickAcSkip:{ ja: 'ACを出さずに、次の商品へ', en: 'Skip the AC, next item', id: 'Lewati AC, barang berikutnya' },
   pickAcSkipAsk:{ ja: 'ACを {n}個 出さずに進みます。よろしいですか？（あとで、ピッキングの一覧の🔌から出せます）', en: 'Continue without {n} ACs? (You can add them later with 🔌 in the list)', id: 'Lanjut tanpa {n} AC? (Bisa ditambah nanti dengan 🔌 di daftar)' },
@@ -554,7 +555,7 @@ const T = {
   acAllShort:{ ja: 'ACの在庫が足りません', en: 'Not enough AC stock', id: 'Stok AC tidak cukup' },
   acAllUnknown:{ ja: 'ACの種類（口型・W）が決まっていない商品です。「選ぶ」で、出すACの看板を読んで種類を選んでください（選んだ種類は、その看板のスペックに記録されます）', en: 'AC type unknown for these. Tap “Choose”, scan the AC board and pick the type (saved to the board\'s specs)', id: 'Jenis AC belum ditentukan. Ketuk “Pilih”, pindai papan AC lalu pilih jenisnya (disimpan ke spesifikasi papan)' },
   acAllChoose:{ ja: '選ぶ', en: 'Choose', id: 'Pilih' },
-  acAllScan: { ja: '上の「出す場所」の看板（ロットかパレット）を読み取ってください', en: 'Scan one of the boards listed under “Where to take them”', id: 'Pindai salah satu papan di “Ambil dari”' },
+  acAllScan: { ja: '上の「出す場所」のロットのACの看板を読み取ってください', en: 'Scan the lot AC board listed under “Where to take them”', id: 'Pindai papan AC lot di “Ambil dari”' },
   acAllWrong:{ ja: 'この看板から出すACはありません。次の看板を読み取ってください：{l}', en: 'No ACs to take from this board. Scan one of: {l}', id: 'Tidak ada AC dari papan ini. Pindai salah satu: {l}' },
   acTakeNote:{ ja: 'この看板から出すACの個数です。実際に出した数に直して保存してください。', en: 'ACs to take from this board. Correct to the actual number and save.', id: 'AC yang diambil dari papan ini. Sesuaikan dengan jumlah sebenarnya lalu simpan.' },
   acTakeHave:{ ja: '出す数の目安 {n}個（この看板の在庫 {h}個）', en: 'Suggested {n} (stock here {h})', id: 'Saran {n} (stok di sini {h})' },
@@ -2202,6 +2203,7 @@ function isPalletId(id) { return /^PL\d+$/i.test(String(id || '')); }
 function handleAcPlace(id) {
   const p = scanPurpose;
   scanPurpose = 'any';
+  if (isPalletId(id)) { alert(t('qrWrong')); return acMenu(); }   // パレットの看板は使わない（パレットは画面で選ぶ）
   if (p === 'pickAc') return pickAcScanned(id);
   if (p === 'pickAcAll') return pickAcAllScanned(id);
   if (p === 'pick') { alert(t('qrWrong')); return pickScan(); }   // 商品の看板を読む画面で、ACの看板を読んだとき
@@ -2230,13 +2232,13 @@ function renderAcPlace() {
     <div class="actions">
       ${r.pallet ? '' : `<button class="secondary" id="apIn" type="button">${esc(t('acmIn'))}</button><button class="secondary" id="apMove" type="button">${esc(t('acmMove'))}</button>`}
       ${r.pallet ? '' : `<button class="secondary" id="apCount" type="button">${esc(t('acLotCount'))}</button>`}
-      <button class="secondary" id="apPrint" type="button">${esc(t('acPrintThis'))}</button>
+      ${r.pallet ? '' : `<button class="secondary" id="apPrint" type="button">${esc(t('acPrintThis'))}</button>`}
       <button class="secondary" id="apBulk" type="button">${esc(t('acBulkBtn'))}</button></div>
     <button class="link" id="apBack" type="button">${esc(t('back'))}</button>`;
   const inB = document.getElementById('apIn'); if (inB) inB.onclick = () => openAcLot(r.place);
   const mvB = document.getElementById('apMove'); if (mvB) mvB.onclick = () => openAcMove(r.place);
   const cB = document.getElementById('apCount'); if (cB) cB.onclick = () => openAcCount(r.place);
-  document.getElementById('apPrint').onclick = () => openAcPrint(r.pallet ? { kind: 'pallet', place: r.place, makers: r.makers || [] } : { kind: 'lot', lot: r.place, date: r.date, supplier: r.supplier }, 'acPlace');
+  const prB = document.getElementById('apPrint'); if (prB) prB.onclick = () => openAcPrint({ kind: 'lot', lot: r.place, date: r.date, supplier: r.supplier }, 'acPlace');
   document.getElementById('apBulk').onclick = () => openAcBulk(r.place);
   document.getElementById('apBack').onclick = goBack;
 }
@@ -2397,39 +2399,26 @@ function renderAcPallets() {
   const L = state.acPallets;
   $app.innerHTML = `<h2>${esc(t('acmPallet'))}</h2>
     ${L.length ? `<ul class="grp">${L.map((x, i) => `<li><span class="gs"><b>${esc(x.place)}</b><br><span class="note">${esc(x.makers.join('、') || '-')}</span></span>
-      <span class="gn">${esc(x.total)}${esc(t('acUnit'))}</span><button class="secondary" type="button" data-pv="${i}">${esc(t('acViewShort'))}</button><button class="secondary" type="button" data-pp="${i}">${esc(t('acPrintShort'))}</button></li>`).join('')}</ul>`
+      <span class="gn">${esc(x.total)}${esc(t('acUnit'))}</span><button class="secondary" type="button" data-pv="${i}">${esc(t('acViewShort'))}</button></li>`).join('')}</ul>`
       : `<p class="note">${esc(t('acPalletNone'))}</p>`}
     <p class="note">${esc(t('acPalletSet'))}</p>
     <button class="link" id="appBack" type="button">${esc(t('back'))}</button>`;
-  $app.querySelectorAll('[data-pp]').forEach(b => b.onclick = () => { const x = L[+b.dataset.pp]; openAcPrint({ kind: 'pallet', place: x.place, makers: x.makers }, 'acPallets'); });
   $app.querySelectorAll('[data-pv]').forEach(b => b.onclick = () => openAcPlace(L[+b.dataset.pv].place));
   document.getElementById('appBack').onclick = goBack;
 }
 
 // ---- 看板の印刷（ロットのACの看板・パレットの看板） ----
 function openAcPrint(target, back) { state.acPrint = { target: target, back: back }; state.screen = 'acPrint'; render(); window.scrollTo(0, 0); }
-function acPalletSheetHtml(x) {
-  const url = location.origin + location.pathname + '?ac=' + encodeURIComponent(x.place);
-  return `<div class="sheet"><div style="position:absolute;left:12mm;top:10mm;right:12mm;bottom:10mm;display:flex;gap:8mm">
-    <div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;min-width:0">
-      <div style="font-size:30pt;font-weight:700;border-bottom:1mm dashed #000;padding-bottom:3mm">ACのパレット</div>
-      <div style="font-size:72pt;font-weight:700;line-height:1">${esc(x.place)}</div>
-      <div style="font-size:22pt;font-weight:700;line-height:1.4;word-break:break-all">メーカー：${esc((x.makers || []).join('・') || '')}</div>
-      <div style="font-size:11pt;color:#555">QRを読み取ると、このパレットのACの在庫が分かります</div>
-    </div>
-    <div style="width:70mm;display:flex;align-items:center;justify-content:center"><div style="width:68mm;height:68mm">${slipQrSvg(url).replace('<svg ', '<svg style="width:100%;height:100%;display:block" ')}</div></div>
-  </div></div>`;
-}
 function renderAcPrint() {
   const x = state.acPrint.target;
-  const title = x.kind === 'pallet' ? t('acPrintPT', { p: x.place }) : t('acPrintT', { l: acLotName(x.lot) });
+  const title = t('acPrintT', { l: acLotName(x.lot) });
   $app.innerHTML = `<div class="card"><p class="big">${esc(title)}</p>
-      <p class="note">${esc(x.kind === 'pallet' ? t('acPrintPNote') : t('acPrintNote'))}</p>
+      <p class="note">${esc(t('acPrintNote'))}</p>
       <div class="actions"><button class="primary" id="acDoPrint" type="button">${esc(t('slipDoPrint'))}</button></div></div>
     <div id="printArea" class="printarea"><p class="note">${esc(t('loading'))}</p></div>`;
   loadQrLib().then(() => {
     const pa = document.getElementById('printArea');
-    if (pa) pa.innerHTML = x.kind === 'pallet' ? acPalletSheetHtml(x) : acSheetHtml(x);
+    if (pa) pa.innerHTML = acSheetHtml(x);
   }).catch(e => alert(e.message || e));
   document.getElementById('acDoPrint').onclick = () => {
     document.body.classList.add('printing');
@@ -2445,7 +2434,8 @@ async function openPickAc(boardId, grade) {
   try {
     const r = await call('kPickAcPlan', [state.deviceId, sel.dest, sel.date, boardId, grade], 'loading');
     if (!r.need) { if (r.done) toast(t('pickAcDone', { n: r.done })); return state.pick.acFrom === 'all' ? openPickAcAll() : pickScan(); }
-    state.pick.ac = { plan: r, place: null, qty: '', types: null };
+    state.pick.ac = { plan: r, place: null, qty: '', types: null, pallets: [] };
+    if (r.type && r.type.unknown) { try { state.pick.ac.pallets = (await call('kAcPallets', [state.deviceId], 'loading')).pallets || []; } catch (e) {} }
     state.screen = 'pickAc'; render(); window.scrollTo(0, 0);
   } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); pickScan(); }
 }
@@ -2455,17 +2445,20 @@ function renderPickAc() {
       <p class="note">${esc(t('pickAcQty', { q: r.qty, d: r.done }))}</p></div>`;
   if (r.type && r.type.unknown) {
     $app.innerHTML = head + `<div class="card"><p class="warn">${esc(t('pickAcUnknown', { n: r.need }))}</p></div>
-      <div class="actions"><button class="primary" id="paScan" type="button">${esc(t('pickAcScanBtn'))}</button></div>
+      ${(a.pallets || []).map(x => `<div class="actions"><button class="secondary" type="button" data-pap="${esc(x.place)}">${esc(t('pickAcFromP', { p: x.place + (x.makers.length ? '（' + x.makers.join('・') + '）' : '') }))}</button></div>`).join('')}
+      <div class="actions"><button class="primary" id="paScan" type="button">${esc(t('pickAcScanLot'))}</button></div>
       <div class="actions"><button class="secondary" id="paSkip" type="button">${esc(t('pickAcSkip'))}</button></div>`;
   } else {
     $app.innerHTML = head + `<div class="card"><p class="big">${esc(t('pickAcNeed', { n: r.need, t: acTypeText(r.type) }))}</p>
-      ${r.steps.map((s, i) => `<p style="font-size:20px;font-weight:700;margin:10px 0">${i + 1}. ${esc(t('pickAcStep', { l: s.label, n: s.n }))}</p>`).join('')}
+      ${r.steps.map((s, i) => `<p style="font-size:20px;font-weight:700;margin:10px 0">${i + 1}. ${esc(t(isPalletId(s.place) ? 'pickAcStepP' : 'pickAcStep', { l: s.label, n: s.n }))}</p>`).join('')}
       ${r.short ? `<p class="warn">${esc(t('pickAcShort', { n: r.short, p: r.pallet || '-' }))}</p>` : ''}</div>
-      ${r.steps.length ? `<div class="actions"><button class="primary" id="paScan" type="button">${esc(t('pickAcScanBtn'))}</button></div>` : ''}
+      ${r.steps.filter(s => isPalletId(s.place)).map(s => `<div class="actions"><button class="secondary" type="button" data-pap="${esc(s.place)}">${esc(t('pickAcFromP', { p: s.place }))}</button></div>`).join('')}
+      ${r.steps.some(s => !isPalletId(s.place)) ? `<div class="actions"><button class="primary" id="paScan" type="button">${esc(t('pickAcScanLot'))}</button></div>` : ''}
       <div class="actions"><button class="secondary" id="paSkip" type="button">${esc(t('pickAcSkip'))}</button></div>`;
   }
   const sc = document.getElementById('paScan');
-  if (sc) sc.onclick = () => { scanPurpose = 'pickAc'; scanBack = 'pickAc'; openScanner(r.type && r.type.unknown ? t('pickAcScanAny') : t('pickAcScanDesc', { l: r.steps[0].label })); };
+  if (sc) sc.onclick = () => { const lotStep = (r.steps || []).find(s => !isPalletId(s.place)); scanPurpose = 'pickAc'; scanBack = 'pickAc'; openScanner(r.type && r.type.unknown ? t('pickAcScanAny') : t('pickAcScanDesc', { l: lotStep ? lotStep.label : '' })); };
+  $app.querySelectorAll('[data-pap]').forEach(b => b.onclick = () => pickAcScanned(b.dataset.pap));   // パレットは、看板を読まずに選ぶ
   document.getElementById('paSkip').onclick = () => {
     if (!confirm(t('pickAcSkipAsk', { n: r.need }))) return;
     state.pick.ac = null;
@@ -2518,7 +2511,7 @@ function renderPickAcQty() {
     try {
       const res = await call('kPickAcSave', [state.deviceId, sel.dest, sel.date, r.board.id, r.grade, a.place.place, n, type], 'saving');
       toast(t('pickAcSaved', { n: n, l: a.place.label }));
-      if (res.need > 0) { state.pick.ac = { plan: res, place: null, qty: '', types: null }; state.screen = 'pickAc'; render(); window.scrollTo(0, 0); }
+      if (res.need > 0) { state.pick.ac = { plan: res, place: null, qty: '', types: null, pallets: a.pallets || [] }; state.screen = 'pickAc'; render(); window.scrollTo(0, 0); }
       else { state.pick.ac = null; if (state.pick.acFrom === 'all') openPickAcAll(); else pickScan(); }
     } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
   };
