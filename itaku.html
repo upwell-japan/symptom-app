@@ -470,6 +470,7 @@ const T = {
   acCtSaved: { ja: '{n}種類の棚卸しを保存しました', en: 'Saved the count for {n} types', id: 'Stok opname {n} jenis tersimpan' },
   acCtLabelAsk:{ ja: '続けて、数えたACの箱のシールをまとめて発行しますか？', en: 'Print box labels for the counted ACs now?', id: 'Cetak label kotak untuk AC yang dihitung sekarang?' },
   acCtLabelT:{ ja: '棚卸しで数えたAC', en: 'Counted ACs', id: 'AC yang dihitung' },
+  acNoPhotoNote:{ ja: 'この口型（タイプC・四角口）は形がすべて同じなので、写真は要りません', en: 'This connector (Type-C / square) is always the same shape, so no photo is needed', id: 'Konektor ini (Tipe-C / kotak) bentuknya selalu sama, jadi tidak perlu foto' },
   acTcTitle: { ja: '足すACの確認', en: 'Check the AC to add', id: 'Periksa AC yang ditambah' },
   acTcSame:  { ja: '✅ 写真と同じAC（足す）', en: '✅ Same as the photo (add)', id: '✅ Sama dengan foto (tambah)' },
   acTcNoSwitch:{ ja: '同じメーカーで、写真のあるACです。この中に同じACがあれば、在庫の種類の書き方が違っています（棚卸しで正しい種類に直してください）。どれとも違うときだけ、写真を撮ってください', en: 'These have photos. If one is the same, the stock type name is wrong (fix it in a count). Take a photo only if none is the same', id: 'Ini sudah punya foto. Jika ada yang sama, nama jenis stok salah (perbaiki saat opname). Foto hanya jika tidak ada yang sama' },
@@ -1931,6 +1932,9 @@ async function saveShipItem() {
 // ACの選択肢（今まで使っていたACアダプター管理表の「設定」シートから。「丸」は、型番マスターの書き方に合わせて「丸口」）
 const AC_MAKERS = ['DELL', 'FUJITSU', 'HP', 'LENOVO', 'MICROSOFT', 'NEC', 'PANASONIC', 'TOSHIBA', 'VAIO', 'SONY', 'EPSON'];
 const AC_CONNS = ['丸口', '細丸', '太丸', '四角口', '四角口(小)', 'タイプC', '専用接続'];
+// 形がすべて同じなので、写真で見比べなくてよい口型（「四角口(小)」は形が違うので、写真で見比べる）
+const AC_NO_PHOTO = ['タイプC', '四角口'];
+function acNoPhoto(conn) { return AC_NO_PHOTO.includes(String(conn || '').trim()); }
 const AC_WS = ['24', '36', '40', '44', '45', '60', '65', '75', '80', '85', '90', '113', '120', '135', '150', '170', '180', '200'];
 // メーカーごとの口型とW（ACアダプター管理表の記録から。プルダウンには、このほかに今までの記録にある種類も出る）
 const AC_COMBOS = {"DELL": {"細丸": ["45", "65", "90"], "太丸": ["65", "90"], "タイプC": ["45"]}, "EPSON": {"細丸": ["40", "65"]}, "FUJITSU": {"丸口": ["36", "40", "60", "65", "80", "90"], "細丸": ["36", "65"], "タイプC": ["45", "65"]}, "HP": {"細丸": ["45", "65", "90", "120", "150", "200"], "太丸": ["45", "65", "90", "150", "200"], "タイプC": ["45", "65", "90"]}, "LENOVO": {"四角口": ["45", "65", "135", "170", "180"], "細丸": ["45"], "タイプC": ["45", "65"], "丸口": ["65"]}, "MICROSOFT": {"専用接続": ["24", "44", "60", "65"]}, "NEC": {"四角口": ["45", "65"], "四角口(小)": ["36"], "細丸": ["45"], "タイプC": ["45"], "丸口": ["40"]}, "PANASONIC": {"丸口": ["45", "60", "65", "85", "113"]}, "SONY": {"丸口": ["40", "45"], "タイプC": ["65"]}, "TOSHIBA": {"タイプC": ["45", "65"], "太丸": ["65", "75"], "丸口": ["45", "65", "75"]}, "VAIO": {"丸口": ["40", "45"], "タイプC": ["65"]}};
@@ -2600,6 +2604,7 @@ function acbFill() { const b = state.acBox, s = acbSaved(); b.n = s ? String(s.n
 // 選んだ種類の写真を読む（写真と見比べて「同じ」を押すまで、シールは作れない）
 async function acbLoadPhoto() {
   const b = state.acBox;
+  if (acNoPhoto(b.conn)) { b.photo = null; b.similar = []; b.ok = true; if (state.screen === 'acBox') render(); return; }   // タイプC・四角口は写真が要らない
   b.photo = undefined; b.ok = false;
   const key = acKey(b.maker, b.conn, b.w);
   try {
@@ -2623,7 +2628,8 @@ function renderAcBox() {
   const ready = b.maker && b.conn && b.w;
   const hasPh = (m, c, w) => (b.photos || []).includes(acKey(m, c, w));
   let photoHtml = '';
-  if (ready) {
+  if (ready && acNoPhoto(b.conn)) photoHtml = `<div class="card"><p class="note">${esc(t('acNoPhotoNote'))}</p></div>`;
+  else if (ready) {
     if (b.photo === undefined) photoHtml = `<div class="card"><p class="note">${esc(t('loading'))}</p></div>`;
     else if (!b.photo && b.similar === null) photoHtml = `<div class="card"><p class="note">${esc(t('loading'))}</p></div>`;
     else if (!b.photo && b.similar.length && !b.newOk) photoHtml = `<div class="card"><p class="big">${esc(t('acbNewT', { t: [b.maker, b.conn, b.w + 'W'].join(' ') }))}</p>
@@ -2751,6 +2757,11 @@ async function printAcBox() {
 // ===============================================================
 async function acCheckType(type, onOk, opt) {
   opt = opt || {};
+  if (acNoPhoto(type.conn)) {   // タイプC・四角口は、写真で見比べずにそのまま足す
+    onOk({ maker: String(type.maker || '').trim().toUpperCase(), conn: type.conn, w: String(type.w) });
+    render(); window.scrollTo(0, 0);
+    return;
+  }
   const tc = { type: { maker: String(type.maker || '').trim().toUpperCase(), conn: type.conn, w: String(type.w) }, photo: undefined, similar: null, newOk: false,
                back: state.screen, onOk: onOk, allowSwitch: opt.allowSwitch !== false };
   state.acTc = tc; state.screen = 'acTc'; render(); window.scrollTo(0, 0);
@@ -2815,7 +2826,7 @@ function renderAcTc() {
 async function openAcBulk(place) {
   try {
     const r = await call('kAcBoxBulkLoad', [state.deviceId, place], 'loading');
-    state.acBulk = { info: r, items: r.items.map(x => Object.assign({}, x, { per: x.perBox ? String(x.perBox) : '', use: true, ok: false })), start: '1' };
+    state.acBulk = { info: r, items: r.items.map(x => Object.assign({}, x, { per: x.perBox ? String(x.perBox) : '', use: true, ok: acNoPhoto(x.conn) })), start: '1' };
     state.screen = 'acBulk'; render(); window.scrollTo(0, 0);
   } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); acMenu(); }
 }
@@ -2841,7 +2852,7 @@ function renderAcBulk() {
     ${a.items.length ? a.items.map((x, i) => `<div class="card" style="margin-bottom:8px">
       <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" data-bu="${i}" ${x.use ? 'checked' : ''} style="width:24px;height:24px"><span class="big" style="margin:0">${esc(acTypeText(x))}　${esc(x.n)}${esc(t('acUnit'))}</span></label>
       ${x.use ? `${x.photo ? `<img src="${esc(x.photo.thumb)}" alt="" style="width:100%;max-width:300px;display:block;margin:6px 0;border:1px solid var(--rule);border-radius:10px">` : ''}
-        ${x.ok ? `<p class="note"><b>✅ ${esc(t('acbOk'))}</b></p>`
+        ${acNoPhoto(x.conn) ? `<p class="note">${esc(t('acNoPhotoNote'))}</p>` : x.ok ? `<p class="note"><b>✅ ${esc(t('acbOk'))}</b></p>`
           : (x.photo ? `<div class="actions"><button class="secondary" type="button" data-bok="${i}">${esc(t('acbSame'))}</button></div>`
                      : `<p class="warn">${esc(t('acBulkNoPhoto'))}</p><div class="actions"><button class="primary" type="button" data-bph="${i}">${esc(t('acbShoot'))}</button></div>`)}
         <label class="field">${esc(t('acbPerBox'))}</label>
@@ -2877,7 +2888,7 @@ async function openAcBulkRefresh() {
                             : await call('kAcBoxBulkLoad', [state.deviceId, a.info.place], 'loading');
     const old = {};
     a.items.forEach(x => { old[acKey(x.maker, x.conn, x.w)] = x; });
-    a.items = r.items.map(x => { const o = old[acKey(x.maker, x.conn, x.w)] || {}; return Object.assign({}, x, { per: o.per != null ? o.per : (x.perBox ? String(x.perBox) : ''), use: o.use !== false, ok: !!o.ok }); });
+    a.items = r.items.map(x => { const o = old[acKey(x.maker, x.conn, x.w)] || {}; return Object.assign({}, x, { per: o.per != null ? o.per : (x.perBox ? String(x.perBox) : ''), use: o.use !== false, ok: !!o.ok || acNoPhoto(x.conn) }); });
     if (state.screen === 'acBulk') render();
   } catch (e) {}
 }
@@ -3002,7 +3013,7 @@ function renderAcCountType() {
 async function openAcBulkItems(label, items) {
   try {
     const r = await call('kAcBoxItemsLoad', [state.deviceId, items], 'loading');
-    state.acBulk = { info: { place: '', label: label, preset: items }, items: r.items.map(x => Object.assign({}, x, { per: x.perBox ? String(x.perBox) : '', use: true, ok: false })), start: '1' };
+    state.acBulk = { info: { place: '', label: label, preset: items }, items: r.items.map(x => Object.assign({}, x, { per: x.perBox ? String(x.perBox) : '', use: true, ok: acNoPhoto(x.conn) })), start: '1' };
     state.screen = 'acBulk'; render(); window.scrollTo(0, 0);
   } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); acMenu(); }
 }
