@@ -461,6 +461,21 @@ const T = {
   acCtTotal: { ja: '合計：', en: 'Total: ', id: 'Total: ' },
   acCtDel:   { ja: 'この種類を消す', en: 'Remove this type', id: 'Hapus jenis ini' },
   acCtBad:   { ja: '{t}：1箱の個数・箱の数・端数を、正しく入れてください（箱があるときは、1箱の個数が必要です）', en: '{t}: enter the number per box, boxes and the partial box correctly', id: '{t}: isi jumlah per kotak, jumlah kotak, dan sisa dengan benar' },
+  acmClLabels:{ ja: '🏷 棚卸ししたACのシールを発行する', en: '🏷 Labels for counted ACs', id: '🏷 Label untuk AC yang dihitung' },
+  acClTitle: { ja: '棚卸ししたACのシール', en: 'Labels for counted ACs', id: 'Label AC yang dihitung' },
+  acClBar:   { ja: '今回 {n}枚（シート {s}枚・最後のシートは {c}枚中 {u}枚。あと {r}枚で使い切れます）', en: '{n} labels ({s} sheets; last sheet {u}/{c}, {r} left)', id: '{n} label ({s} lembar; lembar terakhir {u}/{c}, sisa {r})' },
+  acClStart: { ja: '開始位置（1〜24）', en: 'Start position (1–24)', id: 'Posisi mulai (1–24)' },
+  acClNote:  { ja: 'パレットにあるACの種類ごとに、今回印刷する枚数を入れてください。印刷済みの続きから出ます。', en: 'Enter how many labels to print for each type. Printing continues after the labels already printed.', id: 'Isi jumlah label tiap jenis. Pencetakan melanjutkan setelah yang sudah dicetak.' },
+  acClStock: { ja: '在庫 {n}個（{p}）', en: 'Stock {n} ({p})', id: 'Stok {n} ({p})' },
+  acClCount: { ja: 'シール {a}枚（印刷済み {d}枚・残り {l}枚）', en: '{a} labels ({d} printed, {l} left)', id: '{a} label ({d} dicetak, sisa {l})' },
+  acClTake:  { ja: '今回', en: 'This time', id: 'Kali ini' },
+  acClAll:   { ja: '残り全部', en: 'All left', id: 'Semua sisa' },
+  acClNoBox: { ja: '1箱の個数が決まっていません。棚卸しで、この種類を「1箱の個数 × 箱の数」で入れ直してください', en: 'Number per box not set. Re-enter this type in the count as per box × boxes', id: 'Jumlah per kotak belum diatur. Masukkan ulang jenis ini saat opname' },
+  acClNone:  { ja: '今回印刷する枚数を入れてください', en: 'Enter the number of labels to print', id: 'Isi jumlah label yang dicetak' },
+  acClPendingNote:{ ja: '{n}枚を印刷しました。きれいに印刷できたら、下のボタンを押してください（押すまでは「残り」のままです。印刷し直すときは、もう一度「シールを印刷する」）', en: '{n} labels printed. If they came out fine, tap the button below (until then they stay “left”)', id: '{n} label dicetak. Jika bagus, ketuk tombol di bawah (sebelum itu tetap “sisa”)' },
+  acClDoneBtn:{ ja: '✅ 印刷できたので「印刷済み」にする', en: '✅ Printed fine — mark as printed', id: '✅ Tercetak — tandai sudah dicetak' },
+  acClDoneAsk:{ ja: '{n}枚のシールを「印刷済み」にします。よろしいですか？', en: 'Did all {n} labels print correctly? (OK = mark as printed)', id: 'Apakah {n} label tercetak dengan baik? (OK = tandai sudah dicetak)' },
+  acClLogged:{ ja: '{n}枚を印刷済みにしました', en: 'Marked {n} labels as printed', id: '{n} label ditandai sudah dicetak' },
   acCtTitle: { ja: '棚卸し（ACの種類ごと）', en: 'Count (by AC type)', id: 'Stok opname (per jenis AC)' },
   acCtNote:  { ja: 'ACはすべてパレットに移してから数えます。「数えたACを足す」で種類を選び、「1箱の個数 × 箱の数 ＋ 端数の箱」で入れてください。数えた数がそのメーカーのパレットの数になり、ほかの場所（ロットなど）の記録は0になります。', en: 'Count after moving all ACs to pallets. Add each type and enter the count. It becomes the maker pallet\'s stock; other places are set to 0.', id: 'Hitung setelah semua AC dipindah ke palet. Tambah tiap jenis dan isi jumlahnya. Menjadi stok palet merek; tempat lain jadi 0.' },
   acCtAdd:   { ja: '＋ 数えたACを足す', en: '+ Add a counted AC', id: '+ Tambah AC yang dihitung' },
@@ -1323,7 +1338,7 @@ function render() {
               board: renderBoard, unit: renderUnit, cat: renderCat, sym: renderSym, mark: renderMark,
               grade: renderGrade, repair: renderRepair, photo: renderSym, stock: renderStock, gradeMany: renderGradeMany, spec: renderSpec, acLots: renderAcLots, ac: renderAc, acPrint: renderAcPrint,
               acMenu: renderAcMenu, acPlace: renderAcPlace, acMove: renderAcMove, acCount: renderAcCount, acPallets: renderAcPallets,
-              acBox: renderAcBox, acCountType: renderAcCountType, acTc: renderAcTc, acBulk: renderAcBulk, pickAc: renderPickAc, pickAcQty: renderPickAcQty, pickAcAll: renderPickAcAll, pickAcTake: renderPickAcTake,
+              acBox: renderAcBox, acCountType: renderAcCountType, acCtLabels: renderAcCtLabels, acTc: renderAcTc, acBulk: renderAcBulk, pickAc: renderPickAc, pickAcQty: renderPickAcQty, pickAcAll: renderPickAcAll, pickAcTake: renderPickAcTake,
               shipList: renderShipList, ship: renderShip, shipItem: renderShipItem,
               batchCount: renderBatchCount, batch: renderBatch,
               gradeBoard: renderGradeBoard, slipList: renderSlipList, slipPrint: renderSlipPrint,
@@ -1377,6 +1392,7 @@ function goBack() {
   else if (S === 'acMenu') { state.screen = 'home'; }
   else if (S === 'acBox') { state.screen = 'acMenu'; }
   else if (S === 'acCountType') { state.acCt = null; state.screen = 'acMenu'; }
+  else if (S === 'acCtLabels') { state.acCl = null; state.screen = 'acMenu'; }
   else if (S === 'acTc') { const tc = state.acTc; state.acTc = null; state.screen = tc ? tc.back : 'acMenu'; }
   else if (S === 'acBulk') { state.acBulk = null; state.screen = 'acMenu'; }
   else if (S === 'acPlace' || S === 'acMove' || S === 'acCount' || S === 'acPallets') { state.acPlace = null; state.acMove = null; state.acCount = null; state.screen = 'acMenu'; }
@@ -1399,7 +1415,7 @@ function goHome() {
   if (NAV_EDITING.includes(S) && hasUnsaved() && !confirm(t('leaveAsk'))) return;
   stopCamera();
   resetEdit();
-  state.spec = null; state.ac = null; state.acLots = null; state.acPlace = null; state.acMove = null; state.acCount = null; state.acPallets = null; state.acPrint = null; state.acTc = null; state.acBulk = null; state.acBox = null; state.acCt = null; state.stock = null; state.grpEdit = null; state.ship = null; state.batch = null; state.slip = null; state.pick = null; state.sd = null;
+  state.spec = null; state.ac = null; state.acLots = null; state.acPlace = null; state.acMove = null; state.acCount = null; state.acPallets = null; state.acPrint = null; state.acTc = null; state.acBulk = null; state.acBox = null; state.acCt = null; state.acCl = null; state.stock = null; state.grpEdit = null; state.ship = null; state.batch = null; state.slip = null; state.pick = null; state.sd = null;
   scanPurpose = 'any'; scanBack = 'home';
   state.screen = 'home';
   render(); window.scrollTo(0, 0);
@@ -2227,6 +2243,7 @@ function renderAcMenu() {
       <button class="primary" id="acmView" type="button">${esc(t('acmView'))}</button>
       <button class="secondary" id="acmPallet" type="button">${esc(t('acmPallet'))}</button>
       <button class="secondary" id="acmBox" type="button">${esc(t('acmBox'))}</button>
+      <button class="secondary" id="acmCl" type="button">${esc(t('acmClLabels'))}</button>
     </div></div>
     <button class="link" id="acmHome" type="button">${esc(t('stockBack'))}</button>`;
   document.getElementById('acmIn').onclick = () => openAcLots(false);
@@ -2235,6 +2252,7 @@ function renderAcMenu() {
   document.getElementById('acmView').onclick = () => { scanPurpose = 'acView'; scanBack = 'acMenu'; openScanner(t('acViewScan')); };
   document.getElementById('acmPallet').onclick = openAcPallets;
   document.getElementById('acmBox').onclick = openAcBox;
+  document.getElementById('acmCl').onclick = openAcCtLabels;
   document.getElementById('acmHome').onclick = goHome;
 }
 function acMenu() { state.screen = 'acMenu'; render(); window.scrollTo(0, 0); acLoadKnown(); }
@@ -3064,6 +3082,80 @@ async function openAcBulkItems(label, items) {
     state.acBulk = { info: { place: '', label: label, preset: items }, items: r.items.map(x => Object.assign({}, x, { per: x.perBox ? String(x.perBox) : '', use: true, ok: acNoPhoto(x.conn) })), start: '1' };
     state.screen = 'acBulk'; render(); window.scrollTo(0, 0);
   } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); acMenu(); }
+}
+
+// ===============================================================
+// 🏷 棚卸ししたACのシール（24枚のシートを使い切るように、種類ごとに今回の枚数を選んで印刷する）
+//   種類ごとのシールは「1箱の個数」で分けた順（40個・40個…・端数15個）に並び、印刷済みの続きから出す
+// ===============================================================
+async function openAcCtLabels() {
+  try {
+    const r = await call('kAcCountLabels', [state.deviceId], 'loading');
+    state.acCl = { items: r.items.map(x => Object.assign({}, x, { take: '' })), start: '1' };
+    state.screen = 'acCtLabels'; render(); window.scrollTo(0, 0);
+  } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); acMenu(); }
+}
+function acClLabels(x) { return acBulkSplit(x.n, x.perBox); }   // その種類のシール（1枚ずつの個数）
+function acClLeft(x) { return Math.max(0, acClLabels(x).length - x.printed); }
+function acClTake(x) { const v = Math.floor(Number(x.take) || 0); return Math.max(0, Math.min(v, acClLeft(x))); }
+function acClSum() { return state.acCl.items.reduce((s, x) => s + acClTake(x), 0); }
+function acClBar() {
+  const a = state.acCl, start = Math.min(ACB_PER, Math.max(1, Math.floor(Number(a.start) || 1)));
+  const room = ACB_PER - (start - 1), n = acClSum();
+  const sheets = n <= room ? (n ? 1 : 0) : 1 + Math.ceil((n - room) / ACB_PER);
+  const used = n <= room ? n : (n - room) % ACB_PER || ACB_PER;
+  const cap = n <= room ? room : ACB_PER;
+  return t('acClBar', { n: n, s: sheets, u: used, c: cap, r: cap - used });
+}
+function renderAcCtLabels() {
+  const a = state.acCl;
+  $app.innerHTML = `<div class="card" style="position:sticky;top:0;z-index:3"><p class="big">${esc(t('acClTitle'))}</p>
+      <p class="note"><b style="font-size:20px" id="clBar">${esc(acClBar())}</b></p>
+      <div class="boxrow"><span>${esc(t('acClStart'))}</span><input type="number" inputmode="numeric" min="1" max="${ACB_PER}" id="clStart" value="${esc(a.start)}"></div></div>
+    <p class="note">${esc(t('acClNote'))}</p>
+    ${a.items.length ? a.items.map((x, i) => {
+      const left = acClLeft(x);
+      return `<div class="card" style="margin-bottom:8px${left ? '' : ';opacity:.55'}"><p class="big" style="margin:0">${esc(acTypeText(x))}</p>
+        <p class="note">${esc(t('acClStock', { n: x.n, p: x.pallets.join('・') }))}${x.perBox ? '　' + esc(acBulkSplitText(x.n, x.perBox)) : ''}</p>
+        ${x.perBox ? `<p class="note">${esc(t('acClCount', { a: acClLabels(x).length, d: x.printed, l: left }))}</p>
+          ${left ? `<div class="boxrow"><span>${esc(t('acClTake'))}</span><input type="number" inputmode="numeric" min="0" max="${left}" data-clt="${i}" value="${esc(x.take)}" placeholder="0"><span>${esc(t('acbSheets'))}</span>
+            <button class="secondary" type="button" data-cla="${i}" style="width:auto;padding:0 14px">${esc(t('acClAll'))}</button></div>` : ''}`
+        : `<p class="warn">${esc(t('acClNoBox'))}</p>`}</div>`;
+    }).join('') : `<p class="note">${esc(t('acStockNone'))}</p>`}
+    <div class="actions"><button class="primary" id="clPrint" type="button">${esc(t('acbPrint'))}</button></div>
+    ${a.pending ? `<div class="card"><p class="note">${esc(t('acClPendingNote', { n: a.pending.n }))}</p>
+      <div class="actions"><button class="primary" id="clDone" type="button">${esc(t('acClDoneBtn'))}</button></div></div>` : ''}
+    <div id="printArea" class="printarea"></div>
+    <button class="link" id="clBack" type="button">${esc(t('back'))}</button>`;
+  const upd = () => { const el = document.getElementById('clBar'); if (el) el.textContent = acClBar(); };
+  $app.querySelectorAll('[data-clt]').forEach(inp => inp.oninput = () => { a.items[+inp.dataset.clt].take = inp.value; upd(); });
+  $app.querySelectorAll('[data-cla]').forEach(b => b.onclick = () => { const x = a.items[+b.dataset.cla]; x.take = String(acClLeft(x)); render(); });
+  document.getElementById('clStart').oninput = e => { a.start = e.target.value; upd(); };
+  document.getElementById('clPrint').onclick = printAcCtLabels;
+  const dn = document.getElementById('clDone'); if (dn) dn.onclick = acClMarkDone;
+  document.getElementById('clBack').onclick = goBack;
+}
+async function printAcCtLabels() {
+  const a = state.acCl, start = Math.floor(Number(a.start) || 1);
+  if (start < 1 || start > ACB_PER) return alert(t('acbNeedStart'));
+  const use = a.items.filter(x => acClTake(x) > 0);
+  if (!use.length) return alert(t('acClNone'));
+  const labels = [];
+  use.forEach(x => acClLabels(x).slice(x.printed, x.printed + acClTake(x)).forEach(n => labels.push({ b: x, n: n })));
+  // 印刷したあとに「印刷できたので印刷済みにする」を押してもらう（印刷し直すときは、押さずにもう一度印刷する）
+  a.pending = { n: labels.length, items: use.map(x => ({ maker: x.maker, conn: x.conn, w: x.w, count: acClTake(x) })) };
+  render();
+  acPrintLabels(labels, start);
+}
+async function acClMarkDone() {
+  const a = state.acCl, p = a && a.pending;
+  if (!p) return;
+  if (!confirm(t('acClDoneAsk', { n: p.n }))) return;
+  try {
+    await call('kAcLabelLog', [state.deviceId, p.items], 'saving');
+    toast(t('acClLogged', { n: p.n }));
+    openAcCtLabels();
+  } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
 }
 
 // ===============================================================
