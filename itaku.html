@@ -150,6 +150,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--amber);outline-
 <input type="file" id="camQr" accept="image/*" capture="environment" hidden>
 <input type="file" id="stockPhoto" accept="image/*" capture="environment" hidden>
 <input type="file" id="acPhotoIn" accept="image/*" capture="environment" hidden>
+<input type="file" id="acPhotoPick" accept="image/*" hidden>
 <div id="busy" hidden></div>
 <div id="toast" role="status"></div>
 <script>
@@ -471,6 +472,9 @@ const T = {
   acCtLabelAsk:{ ja: '続けて、数えたACの箱のシールをまとめて発行しますか？', en: 'Print box labels for the counted ACs now?', id: 'Cetak label kotak untuk AC yang dihitung sekarang?' },
   acCtLabelT:{ ja: '棚卸しで数えたAC', en: 'Counted ACs', id: 'AC yang dihitung' },
   acNoPhotoNote:{ ja: 'この口型（タイプC・四角口）は形がすべて同じなので、写真は要りません', en: 'This connector (Type-C / square) is always the same shape, so no photo is needed', id: 'Konektor ini (Tipe-C / kotak) bentuknya selalu sama, jadi tidak perlu foto' },
+  acbPickPhoto:{ ja: '🖼 撮った写真から選ぶ', en: '🖼 Choose a photo you took', id: '🖼 Pilih foto yang sudah diambil' },
+  acbPickNote:{ ja: 'カメラが開かない・メモリ不足と出るときは、スマホのカメラで先に撮ってから「撮った写真から選ぶ」を使ってください', en: 'If the camera fails or memory runs out, take the photo with the phone camera first, then use “Choose a photo you took”', id: 'Jika kamera gagal/memori kurang, foto dulu dengan kamera ponsel lalu pakai “Pilih foto yang sudah diambil”' },
+  acRetakeCam:{ ja: 'カメラで撮りますか？（「キャンセル」で、撮った写真から選びます）', en: 'Use the camera? (Cancel = choose a photo you took)', id: 'Pakai kamera? (Batal = pilih foto yang sudah diambil)' },
   acPhotoMem:{ ja: '写真を読み込めませんでした（スマホのメモリが足りない可能性があります）。ほかのアプリやブラウザのタブを閉じてから、もう一度撮ってください', en: 'Could not read the photo (the phone may be low on memory). Close other apps or tabs and try again', id: 'Foto tidak bisa dibaca (memori ponsel mungkin kurang). Tutup aplikasi/tab lain lalu coba lagi' },
   acTcTitle: { ja: '足すACの確認', en: 'Check the AC to add', id: 'Periksa AC yang ditambah' },
   acTcSame:  { ja: '✅ 写真と同じAC（足す）', en: '✅ Same as the photo (add)', id: '✅ Sama dengan foto (tambah)' },
@@ -2674,7 +2678,9 @@ function renderAcBox() {
           <div class="actions"><button class="secondary" type="button" data-same="${i}">${esc(t('acbThisSame'))}</button></div></div>`).join('')}
         <div class="actions"><button class="primary" id="acbNone" type="button">${esc(t('acbNoneSame'))}</button></div>`;
     else if (!b.photo) photoHtml = `<div class="card"><p class="warn">${esc(t('acbNoPhoto'))}</p>
-        <div class="actions"><button class="primary" id="acbShoot" type="button">${esc(t('acbShoot'))}</button></div></div>`;
+        <div class="actions"><button class="primary" id="acbShoot" type="button">${esc(t('acbShoot'))}</button></div>
+        <div class="actions"><button class="secondary" id="acbPick" type="button">${esc(t('acbPickPhoto'))}</button></div>
+        <p class="note">${esc(t('acbPickNote'))}</p></div>`;
     else photoHtml = `<div class="card"><p class="big">${esc(t('acbPhotoT'))}</p>
         <img src="${esc(b.photo.thumb)}" alt="" style="width:100%;max-width:420px;display:block;margin:6px auto;border:1px solid var(--rule);border-radius:10px">
         <p class="note">${esc(t('acbPhotoBy', { w: b.photo.by, t: b.photo.at }))}</p>
@@ -2698,7 +2704,8 @@ function renderAcBox() {
     <button class="link" id="acbBack" type="button">${esc(t('back'))}</button>`;
   const pick = (k, v) => { b[k] = v; acbFill(); b.photo = undefined; b.ok = false; render(); if (b.maker && b.conn && b.w) acbLoadPhoto(); };
   const sh = document.getElementById('acbShoot'); if (sh) sh.onclick = () => document.getElementById('acPhotoIn').click();
-  const rt = document.getElementById('acbRetake'); if (rt) rt.onclick = () => { if (confirm(t('acbRetakeAsk'))) document.getElementById('acPhotoIn').click(); };
+  const pk2 = document.getElementById('acbPick'); if (pk2) pk2.onclick = () => document.getElementById('acPhotoPick').click();
+  const rt = document.getElementById('acbRetake'); if (rt) rt.onclick = () => { if (confirm(t('acbRetakeAsk'))) document.getElementById(confirm(t('acRetakeCam')) ? 'acPhotoIn' : 'acPhotoPick').click(); };
   const sm = document.getElementById('acbSame'); if (sm) sm.onclick = () => { b.ok = true; render(); };
   $app.querySelectorAll('[data-same]').forEach(x => x.onclick = async () => {   // 口の形が同じだった → 口型だけ切り替える（Wはそのまま）
     const y = b.similar[+x.dataset.same];
@@ -2732,7 +2739,8 @@ function acbLabelHtml(b, n) {
     <div style="font-size:24pt;font-weight:700;margin-top:1mm;border-top:0.4mm solid #000;padding-top:1mm;width:30mm">${esc(n)}個</div></div>`;
 }
 // ACの写真を撮って保存する（小さい写真は画面用、元の写真はドライブへ）
-document.getElementById('acPhotoIn').addEventListener('change', async ev => {
+['acPhotoIn', 'acPhotoPick'].forEach(id => document.getElementById(id).addEventListener('change', acPhotoChosen));
+async function acPhotoChosen(ev) {
   const file = ev.target.files && ev.target.files[0];
   ev.target.value = '';
   if (!file) return;
@@ -2753,7 +2761,7 @@ document.getElementById('acPhotoIn').addEventListener('change', async ev => {
     toast(t('acbPhotoSaved'));
     render();
   } catch (e) { hideBusy(); alert(t('errSave') + '\n' + (e.message || e)); }
-});
+}
 // 種類の確認の画面で撮った写真を保存して、確認を終える
 async function acTcPhoto(file) {
   const tc = state.acTc, ty = tc.type;
@@ -2836,7 +2844,9 @@ function renderAcTc() {
         ${tc.allowSwitch ? `<div class="actions"><button class="secondary" type="button" data-tcs="${i}">${esc(t('acbThisSame'))}</button></div>` : ''}</div>`).join('')}
       <div class="actions"><button class="primary" id="tcNone" type="button">${esc(t('acbNoneSame'))}</button></div>`;
   else body = `<div class="card"><p class="big">${esc(name)}</p><p class="warn">${esc(t('acbNoPhoto'))}</p>
-      <div class="actions"><button class="primary" id="tcShoot" type="button">${esc(t('acbShoot'))}</button></div></div>`;
+      <div class="actions"><button class="primary" id="tcShoot" type="button">${esc(t('acbShoot'))}</button></div>
+      <div class="actions"><button class="secondary" id="tcPick" type="button">${esc(t('acbPickPhoto'))}</button></div>
+      <p class="note">${esc(t('acbPickNote'))}</p></div>`;
   $app.innerHTML = `<div class="card"><p class="big">${esc(t('acTcTitle'))}</p><p class="note">${esc(name)}</p></div>${body}
     <button class="link" id="tcCancel" type="button">${esc(t('back'))}</button>`;
   const on = (id, f) => { const el = document.getElementById(id); if (el) el.onclick = f; };
@@ -2844,6 +2854,7 @@ function renderAcTc() {
   on('tcBack', () => { state.screen = tc.back; state.acTc = null; render(); });
   on('tcCancel', () => { state.screen = tc.back; state.acTc = null; render(); });
   on('tcShoot', () => document.getElementById('acPhotoIn').click());
+  on('tcPick', () => document.getElementById('acPhotoPick').click());
   on('tcNone', () => { if (!confirm(t('acbNoneAsk', { t: name }))) return; tc.newOk = true; render(); });
   $app.querySelectorAll('[data-tcs]').forEach(b => b.onclick = async () => {   // 口の形が同じだった → 口型だけ切り替える（Wはそのまま）
     const y = tc.similar[+b.dataset.tcs];
