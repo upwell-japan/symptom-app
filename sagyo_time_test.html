@@ -1,0 +1,1766 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>作業時間入力（テスト版）</title>
+<style>
+  :root{
+    --bg:#FFFFFF;
+    --surface:#FFFFFF;
+    --ink:#1B1F23;
+    --muted:#6B7280;
+    --border:#E1E2DE;
+    --accent:#F5A623;
+    --accent-ink:#5C3A00;
+    --success:#2F9E44;
+    --danger:#D64545;
+    --radius:14px;
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);}
+  body{padding-bottom:96px;min-height:100vh;}
+  .app{max-width:640px;margin:0 auto;position:relative;}
+
+  header.top{
+    position:sticky;top:0;z-index:10;
+    background:#2F5D8A;color:#fff;   /* テスト版は本番と見分けられるよう、上の帯を青にしている */
+    padding:14px 16px;
+    display:flex;align-items:center;justify-content:space-between;
+    gap:10px;
+  }
+  header.top .who{display:flex;flex-direction:row;align-items:center;gap:8px;flex-wrap:wrap;}
+  header.top .who b{font-size:17px;letter-spacing:.02em;line-height:1;}
+  header.top .chip-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px;}
+  header.top .chip{
+    font-size:11px;background:rgba(255,255,255,0.18);color:#fff;
+    padding:3px 9px;border-radius:10px;white-space:nowrap;line-height:1.4;
+  }
+  header.top .gear{
+    background:none;border:none;color:#fff;font-size:20px;cursor:pointer;
+    padding:4px 8px;flex:none;
+  }
+
+  main{padding:16px;}
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:16px;
+    margin-bottom:14px;
+  }
+
+  .time-row{display:flex;align-items:center;gap:10px;}
+  .time-box{flex:1;}
+  .time-box label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;}
+  .time-box input[type=time]{
+    width:100%;font-size:30px;padding:14px 8px;border-radius:10px;
+    border:1px solid var(--border);background:#fafafa;
+    font-variant-numeric:tabular-nums;font-weight:700;
+    font-family:"Meiryo","メイリオ",-apple-system,sans-serif;
+  }
+  .arrow{color:var(--muted);font-size:18px;padding-top:18px;}
+
+  .hours-display{
+    text-align:center;margin-top:16px;padding:18px 0;
+    border-top:1px dashed var(--border);
+  }
+  .hours-display .num{
+    font-size:44px;font-weight:800;font-variant-numeric:tabular-nums;
+    color:var(--accent-ink);letter-spacing:-0.02em;
+    font-family:"Meiryo","メイリオ",-apple-system,sans-serif;
+  }
+  .hours-display .num span{font-size:20px;font-weight:600;margin-left:4px;}
+  .hours-display .hint{font-size:12px;color:var(--muted);margin-top:4px;}
+
+  details.more{margin-top:4px;}
+  details.more summary{
+    list-style:none;cursor:pointer;font-size:14px;color:var(--muted);
+    padding:6px 2px;
+  }
+  details.more summary::-webkit-details-marker{display:none;}
+  .field{margin-top:10px;}
+  .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;}
+  .field input, .field textarea{
+    width:100%;font-size:15px;padding:10px;border-radius:10px;
+    border:1px solid var(--border);background:#fafafa;font-family:inherit;
+  }
+
+  footer.bar{
+    position:fixed;bottom:0;left:0;right:0;
+    background:var(--surface);border-top:1px solid var(--border);
+    padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+    max-width:640px;margin:0 auto;
+  }
+  button.primary{
+    width:100%;padding:16px;font-size:17px;font-weight:700;
+    background:var(--accent);color:var(--accent-ink);border:none;border-radius:12px;
+    cursor:pointer;
+  }
+  button.primary:disabled{background:#E7E4DC;color:var(--muted);cursor:not-allowed;}
+  button.primary:active:not(:disabled){transform:scale(0.98);}
+
+  /* name grid */
+  .name-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:20px 16px;}
+  .name-btn{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:26px 10px;text-align:center;font-size:18px;font-weight:700;cursor:pointer;
+  }
+  .name-btn:active{background:#f0ede4;}
+
+  .toast{
+    position:fixed;top:16px;left:50%;transform:translateX(-50%);
+    background:var(--success);color:#fff;padding:10px 18px;border-radius:24px;
+    font-size:14px;font-weight:600;z-index:100;opacity:0;transition:opacity .2s;
+    pointer-events:none;max-width:90vw;text-align:center;
+  }
+  .toast.error{background:var(--danger);}
+  .toast.show{opacity:1;}
+
+  /* step flow */
+  .stepbar{display:flex;gap:6px;padding:10px 16px 0;}
+  .stepbar .dot{flex:1;height:4px;border-radius:2px;background:var(--border);}
+  .stepbar .dot.active{background:var(--accent);}
+  .stepbar .dot.done{background:var(--ink);}
+  .backlink{padding:12px 16px 0;}
+  .backlink button{background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:4px 0;}
+  .steptitle{padding:10px 16px 2px;font-size:19px;font-weight:800;}
+  .prow{
+    padding:14px 12px;font-size:16px;cursor:pointer;background:var(--surface);
+    border-radius:10px;margin-bottom:8px;border:1px solid #000000;
+  }
+  .prow-special{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+  }
+  .special-tag{
+    background:var(--ink);color:#fff;font-size:11px;font-weight:700;
+    padding:3px 9px;border-radius:20px;flex:none;white-space:nowrap;
+  }
+  .prow:active{background:#f0ede4;}
+  .paddnew{
+    padding:14px;color:var(--accent-ink);font-weight:700;cursor:pointer;
+    border:1px dashed var(--accent);border-radius:10px;margin-bottom:10px;text-align:center;
+  }
+  .summary-card .row{display:flex;justify-content:space-between;padding:7px 0;font-size:14px;border-bottom:1px solid var(--border);gap:10px;}
+  .summary-card .row:last-child{border-bottom:none;}
+  .summary-card .row .k{color:var(--muted);flex:none;}
+
+  .worktype-grid{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:8px;
+  }
+  .wt-block{
+    background:#EDE9DE;border:1px solid var(--border);border-radius:16px;
+    padding:10px;margin-bottom:14px;
+  }
+  .wt-ungrouped-label{
+    font-size:12px;color:var(--muted);padding:2px 2px 8px;
+  }
+  .worktype-btn{
+    background:var(--surface);border:1px solid #000000;border-radius:10px;
+    padding:12px 4px;text-align:center;font-size:15px;font-weight:700;
+    cursor:pointer;line-height:1.3;min-height:72px;
+    display:flex;align-items:center;justify-content:center;
+    word-break:break-all;
+  }
+  .worktype-btn:active{background:#f0ede4;}
+  .worktype-btn{flex-direction:column;}
+  .wt-tr{display:block;font-size:11px;font-weight:500;color:var(--muted);margin-top:4px;line-height:1.25;word-break:normal;}
+  .whobtn{background:none;border:none;color:#fff;padding:0;cursor:pointer;display:flex;align-items:baseline;gap:4px;font:inherit;}
+  .whobtn b{font-size:17px;letter-spacing:.02em;line-height:1;}
+  .whobtn span{font-size:11px;color:rgba(255,255,255,0.75);text-decoration:underline;}
+  .langbtn{background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:13px;border-radius:14px;padding:5px 10px;cursor:pointer;flex:none;}
+  .rulebox{font-size:13px;line-height:1.55;background:#FFF4D6;border:1px solid #F5A623;border-radius:10px;padding:10px 12px;margin-top:10px;}
+
+  /* admin */
+  .admin-tabs{display:flex;gap:8px;padding:10px 16px 0;}
+  .admin-tabs button{
+    flex:1;padding:10px;border-radius:10px;border:1px solid var(--border);
+    background:var(--surface);font-size:13px;cursor:pointer;
+  }
+  .admin-tabs button.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .proj-row{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:12px 4px;border-bottom:1px solid var(--border);font-size:14px;
+  }
+  .nofile-tag{
+    display:inline-block;margin-left:6px;font-size:11px;font-weight:700;color:var(--danger);
+    border:1px solid var(--danger);border-radius:10px;padding:1px 7px;vertical-align:middle;
+    text-decoration:none;
+  }
+  .proj-row .name.inactive{color:var(--muted);text-decoration:line-through;}
+  .switch{
+    width:42px;height:24px;border-radius:12px;background:#ddd;position:relative;cursor:pointer;flex:none;
+  }
+  .switch.on{background:var(--success);}
+  .switch .knob{
+    position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;
+    background:#fff;transition:left .15s;
+  }
+  .switch.on .knob{left:20px;}
+  .del-proj{
+    background:none;border:1px solid #000000;border-radius:6px;color:var(--danger);
+    font-size:15px;font-weight:900;width:26px;height:26px;cursor:pointer;flex:none;
+    line-height:1;
+  }
+  table.data{width:100%;border-collapse:collapse;font-size:15px;}
+  table.data th,table.data td{border:1px solid #000000;padding:14px 8px;text-align:center;white-space:nowrap;}
+  table.data thead{background:#f0ede4;}
+  .uph-table tbody td:nth-child(1),
+  .uph-table tbody td:nth-child(2){font-weight:700;}
+  .tablewrap{overflow-x:auto;}
+
+  /* modal */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:80;
+    display:flex;align-items:center;justify-content:center;padding:24px;
+  }
+  .modal-box{
+    background:var(--surface);border-radius:16px;padding:22px;max-width:340px;width:100%;
+  }
+  .modal-msg{font-size:15px;line-height:1.6;margin-bottom:18px;}
+  .modal-actions{display:flex;gap:10px;}
+  .modal-btn{
+    flex:1;padding:12px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;border:1px solid #000000;
+  }
+  .modal-btn.cancel{background:var(--surface);color:var(--ink);}
+  .modal-btn.danger{background:var(--danger);color:#fff;}
+  .modal-btn.ok{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ★テスト版（v19）★ 作業内容の記号を1作業1記号にまとめ、入力の順番を「名前 → 作業内容 → ロット（または事業区分）→ 時刻 → 作業数」に変えた。
+// ★注意★ 作業内容の「記号＋名前」は、コード.gs の BUSINESS_SYMBOL_TABLE と必ず一致させること。
+// 記号は過去の記録と結びついているので、新しい作業には未使用の記号を使い、廃止した記号は使い回さない。
+// （画面での並び順はこの一覧の順番で決まるので、記号の順番とは関係なく自由に並べてよい）
+// 基準UPHはコード.gs側（スプレッドシートの「設定」シート）から読み込んで使う。
+//  cats … その作業を使える事業区分
+//  lot  … true＝ロットを選ぶ／false＝複数のロットにまたがる作業（ロットの代わりに事業区分を選ぶ。1つしかなければ選ばない）
+//  quota … true＝作業数の入力が必須
+//  box  … ダンボールのサイズと箱数の入力が必須になる事業区分
+const WORKS = [
+  // ロットを選ぶ作業
+  { wt: "B 案件管理作成",   cats: ["業務委託","EC"], lot: true },
+  { wt: "C 荷受",           cats: ["業務委託","EC"], lot: true, quota: true },
+  { wt: "P AC荷受",         cats: ["業務委託","EC"], lot: true },
+  { wt: "D エアー",         cats: ["業務委託","EC"], lot: true, quota: true },
+  { wt: "E 検査",           cats: ["業務委託","EC"], lot: true, quota: true },
+  { wt: "F 修理",           cats: ["業務委託"],      lot: true, quota: true },
+  { wt: "G 作業結果入力",   cats: ["業務委託"],      lot: true },
+  { wt: "H 外磨き",         cats: ["業務委託","EC"], lot: true, quota: true },
+  { wt: "Q 内磨き",         cats: ["業務委託","EC"], lot: true, quota: true },
+  { wt: "I グレーディング", cats: ["業務委託"],      lot: true },
+  { wt: "J パーツ抜き",     cats: ["業務委託"],      lot: true, quota: true },
+  { wt: "N メモリ増設・減設", cats: ["業務委託"],    lot: true, quota: true },
+  { wt: "U シール剥がし",   cats: ["業務委託"],      lot: true },
+  { wt: "R AC磨き",         cats: ["EC"],            lot: true, quota: true },
+  { wt: "S OSインストール", cats: ["EC"],            lot: true, quota: true },
+  { wt: "T OS検査",         cats: ["EC"],            lot: true, quota: true },
+  // ロットを選ばない作業（複数のロットにまたがる）
+  { wt: "X ピッキング",     cats: ["業務委託","EC"], lot: false, quota: true },
+  { wt: "K 荷造り",         cats: ["業務委託"],      lot: false, box: ["業務委託"] },
+  { wt: "Y 梱包",           cats: ["業務委託","EC"], lot: false, box: ["業務委託"] },
+  { wt: "M ダンボール作り", cats: ["業務委託"],      lot: false, quota: true },
+  { wt: "Z ロケーション管理", cats: ["業務委託","EC"], lot: false },
+  { wt: "O 棚卸し",         cats: ["業務委託","EC"], lot: false },
+  { wt: "Ω パーツ管理",     cats: ["業務委託"],      lot: false },
+  { wt: "Π パーツ出荷準備", cats: ["業務委託"],      lot: false },
+  { wt: "V 通販サイトの作成", cats: ["EC"],          lot: false },
+  { wt: "W 専門学校販売に関する打合せ", cats: ["EC"], lot: false },
+  // 共通業務（事業区分もロットも選ばない）
+  { wt: "ε 荷積み・荷降ろし", cats: ["共通業務"],    lot: false },
+  { wt: "α 打合せ",         cats: ["共通業務"],      lot: false },
+  { wt: "β その他",         cats: ["共通業務"],      lot: false },
+  { wt: "γ 清掃",           cats: ["共通業務"],      lot: false }
+];
+const WORK_OF = {};
+WORKS.forEach(w => { WORK_OF[w.wt] = w; });
+function workOf(worktype){ return WORK_OF[worktype] || null; }
+
+// 作業内容の選択画面のまとまり
+const WORK_GROUPS = [
+  { key: 'wgLot',    filter: w => w.lot },
+  { key: 'wgMulti',  filter: w => !w.lot && w.cats[0] !== '共通業務' },
+  { key: 'wgCommon', filter: w => w.cats[0] === '共通業務' }
+];
+
+// ロットを選ばない作業を記録する固定の案件（コード.gs の ALWAYS_KEEP_PROJECTS と同じ）
+const FIXED_PROJECTS = { '業務委託': '【260101】業務委託', 'EC': '【260101】EC', '共通業務': '【260101】共通業務' };
+function isFixedProject(name){ return Object.keys(FIXED_PROJECTS).some(k => FIXED_PROJECTS[k] === name); }
+
+// 管理画面の箱数の小計に含める作業（過去の記録も含む）
+const BOX_WORKTYPES = ['A 荷降ろし', 'δ 荷降ろし', 'ε 荷積み', 'ε 荷積み・荷降ろし', 'K 荷造り', 'Y 梱包'];
+
+const NAMES = ["ラハマン","ダロ","ルスタリ","レヴィ","テスト"];
+
+// 案件名の末尾で事業区分を判定する（v19でEOをやめた。以前のEOのロットは業務委託として扱う）
+function getSpecialLabel(name){
+  // 【】の直後から判定する（「【260701】JEMTEC」のような仕入先をECと間違えないため）。番号付き（EC2など）も同じ区分
+  if(/】共通業務$/.test(name)) return "その他";
+  if(/】EC\d*$/.test(name)) return "EC";
+  return null;
+}
+function categoryOf(name){
+  const l = getSpecialLabel(name);
+  return l === 'その他' ? '共通業務' : (l === 'EC' ? 'EC' : '業務委託');
+}
+// この記録で、ダンボールのサイズと箱数の入力が必須か
+function needsBox(worktype, project){
+  const w = workOf(worktype);
+  return !!(w && w.box && w.box.indexOf(categoryOf(project)) !== -1);
+}
+// 並び順のカテゴリ: 業務委託が一番上、以下 EC → 共通業務(その他) の順。同じカテゴリ内では日付(案件番号)の新しい順。
+function getSortCategoryRank(name){
+  const label = getSpecialLabel(name);
+  if(label === 'その他') return 3;
+  if(label === 'EC') return 2;
+  return 0;
+}
+function compareProjects(a,b){
+  const ra = getSortCategoryRank(a), rb = getSortCategoryRank(b);
+  if(ra !== rb) return ra - rb;
+  return extractProjectNum(b) - extractProjectNum(a);
+}
+
+// ===============================================================
+// ===== 表示する言語（日本語／English／Bahasa Indonesia） =====
+// ===============================================================
+// ・画面右上の 🌐 ボタンで切り替える。選んだ言語は、その人の名前ごとにこの端末に記憶される。
+// ・作業内容のボタンは「日本語＋翻訳」を並べて表示する（作業内容の定義（Word）の英語版・インドネシア語版と同じ訳）。
+// ・保存される作業内容・案件名はいつも日本語なので、スプレッドシートの集計には影響しない。
+const LANGS = ['ja', 'en', 'id'];
+const LANG_LABEL = { ja: '日本語', en: 'English', id: 'Indonesia' };
+
+// 作業内容の訳（日本語の作業名 → 英語・インドネシア語）
+const WORK_TR = {
+  "案件管理作成": { en: "Case management", id: "Manajemen kasus" },
+  "荷受": { en: "Receiving", id: "Penerimaan barang" },
+  "AC荷受": { en: "AC adapter receiving", id: "Penerimaan adaptor AC" },
+  "エアー": { en: "Air blowing", id: "Penyemprotan udara" },
+  "検査": { en: "Inspection", id: "Pemeriksaan" },
+  "修理": { en: "Repair", id: "Perbaikan" },
+  "作業結果入力": { en: "Result entry", id: "Input hasil kerja" },
+  "外磨き": { en: "Exterior cleaning", id: "Pembersihan luar" },
+  "グレーディング": { en: "Grading", id: "Penilaian grade" },
+  "パーツ抜き": { en: "Parts removal", id: "Pelepasan komponen" },
+  "荷造り": { en: "Packing for shipment", id: "Pengemasan untuk pengiriman" },
+  "ダンボール作り": { en: "Box assembly", id: "Perakitan kardus" },
+  "メモリ増設・減設": { en: "Memory upgrade / downgrade", id: "Tambah/kurangi memori" },
+  "棚卸し": { en: "Stocktaking", id: "Stock opname" },
+  "内磨き": { en: "Interior cleaning", id: "Pembersihan dalam" },
+  "AC磨き": { en: "AC adapter cleaning", id: "Pembersihan adaptor AC" },
+  "OSインストール": { en: "OS installation", id: "Instalasi OS" },
+  "OS検査": { en: "OS check", id: "Pemeriksaan OS" },
+  "ロケーション管理": { en: "Location management", id: "Manajemen lokasi" },
+  "ピッキング": { en: "Picking", id: "Picking" },
+  "梱包": { en: "Packing", id: "Pengemasan" },
+  "通販サイトの作成": { en: "Online store work", id: "Pekerjaan toko online" },
+  "専門学校販売に関する打合せ": { en: "Vocational school sales meeting", id: "Rapat penjualan sekolah kejuruan" },
+  "シール剥がし": { en: "Sticker removal", id: "Pelepasan stiker" },
+  "パーツ管理": { en: "Parts management", id: "Manajemen komponen" },
+  "パーツ出荷準備": { en: "Parts shipping preparation", id: "Persiapan kirim komponen" },
+  "荷積み・荷降ろし": { en: "Loading / unloading", id: "Muat/bongkar barang" },
+  "打合せ": { en: "Meeting", id: "Rapat" },
+  "その他": { en: "Other", id: "Lainnya" },
+  "清掃": { en: "Cleaning", id: "Kebersihan" }
+};
+function workTr(worktype){
+  const name = wtName(worktype);
+  const tr = WORK_TR[name];
+  return (state.lang !== 'ja' && tr) ? tr[state.lang] : '';
+}
+// 作業名を「日本語＋訳（小さい文字）」の形にする
+function workLabelHtml(worktype){
+  const tr = workTr(worktype);
+  return esc(wtName(worktype)) + (tr ? `<span class="wt-tr">${esc(tr)}</span>` : '');
+}
+
+const I18N = {
+  ja: {
+    loading: '読み込み中…', appTitle: '作業時間入力（テスト版）', selectName: '名前を選択',
+    uphTitle: d => d ? `${d}の案件・作業内容別 UPH` : '案件・作業内容別 UPH',
+    thProject: '案件名', thWork: '作業内容', noRecords: 'まだ記録がありません',
+    backToName: '‹ 名前選択に戻る', selectProject: 'ロットを選択', addProject: '＋ 一覧にないロットを追加',
+    tagCommon: '共通業務',
+    wtTitle: '作業内容を選択',
+    wgLot: 'ロットごとの作業', wgMulti: 'いくつものロットにまたがる作業', wgCommon: '共通業務',
+    noLots: 'この作業に使えるロットがありません。下の「＋ 一覧にないロットを追加」から追加してください',
+    lotNotFit: n => `「${n}」はこの作業には使えないロットです。一覧から選んでください`,
+    selectBiz: 'どの仕事の作業ですか？', bizHint: 'この作業は、ロットを選ばずに記録します',
+    biz: { '業務委託': '業務委託', 'EC': 'EC（通販）' },
+    backToLot: '‹ ロットに戻る', backToBiz: '‹ 仕事の選択に戻る',
+    backToList: '‹ ロットの一覧に戻る', npTitle: '一覧にないロットを追加',
+    npIntro: '案件ファイル（例：【260924】DR.xlsm）をドライブの「案件管理」フォルダに保存すると、日付が変わったとき（毎日0時）に自動で一覧に出ます。<br>その日のうちに使いたいときは、下のボタンを押してください。',
+    npRefresh: '案件管理フォルダを確認する', npManual: '▸ 案件ファイルがまだ無いとき（手入力）',
+    npPin: '📌 固定して表示する（古い案件でも、自動で一覧から外さない）', npOldWarn: n => `「${n}」は古い案件なので、📌を付けないと、追加してもすぐに一覧から外れます。📌を付けて追加しますか？`, npPinYes: '📌を付けて追加', pinOn: '固定を外す', pinOff: '固定する', pinTag: '📌固定',
+    npDate: '入荷日（今日の日付ではなく、荷物が入荷した日）', npTapSource: '仕入先をタップ', npOther: '上記以外の仕入先', add: '追加',
+    backToWork: '‹ 作業内容に戻る', timeTitle: '開始・終了時刻', start: '開始時刻', end: '終了時刻', hoursUnit: '時間',
+    hoursAuto: '作業時間合計（自動計算）', hoursHint: '開始・終了時刻を入力すると自動計算されます', next: '次へ',
+    backToTime: '‹ 時刻に戻る',
+    sumYHours: '昨日までの累計作業時間', sumYCount: '昨日までの累計作業数', sumUph: 'UPH（作業数/時間）',
+    boxTitle: 'ダンボールのサイズと箱数（必須）', boxSize: 'ダンボールのサイズ',
+    selectPlease: '選択してください', size90: '90サイズ', size115: '115サイズ', boxCount: 'ダンボールの数',
+    boxNote: 'サイズが2種類あるときは、サイズごとに分けて記録してください（時間は分けて入れる）',
+    record: '記録する', saving: '保存中…',
+    countTitle: (memo, quota) => (memo ? '作業数・備考' : '作業数') + (quota ? '（必須）' : '（任意）'),
+    req: '必須', opt: '任意',
+    cumLabel: r => `累計作業数（このロットで今までに終わった台数の合計・${r}）`,
+    dailyLabel: r => `本日の作業数（今日の分・${r}）`,
+    rule: 'ほかの人がこのロットの数字をすでに入力していたら、「本日の作業数」に0を入れるか、同じ累計を入れてください。2人とも同じ「本日の作業数」を入れると、二重に数えられます。',
+    todayUnit: '本日の作業数', negWarn: '前回の累計より小さい値です。入力を確認してください。',
+    autoCalc: (cc, pc) => `累計${cc} − 前回累計${pc} で自動計算`, prevInfo: pc => `前回の累計：${pc}（この案件・作業の記録）`,
+    memo: '備考（任意）', saved: '記録しました', nextWork: '次の作業へ',
+    saveFail: '保存できませんでした。\n電波の届く場所で、もう一度「記録する」を押してください。\n（入力した内容はそのまま残っています）',
+    loadFail: 'データの読み込みに失敗しました。通信状況を確認してください',
+    devNewTitle: 'この端末を使えるようにする', devNewText: 'この端末は、まだ作業時間の記録に使えません。端末の呼び名（例：ラハマンのスマホ、検査台のタブレット）を入れて「申請する」を押し、管理者に許可してもらってください。',
+    devLabel: '端末の呼び名', devLabelPh: '例：ラハマンのスマホ', devRequest: '申請する', devNeedLabel: '端末の呼び名を入れてください',
+    devPendingTitle: '許可を待っています', devPendingText: '管理者が「作業時間」スプレッドシートの「端末の許可」シートで、この端末の「許可」にチェックを入れると使えるようになります。チェックが入ったら、下のボタンを押してください。',
+    devRecheck: '許可されたか確認する', devStillPending: 'まだ許可されていません', devIdLabel: 'この端末のID',
+    npNeedDate: '先に入荷日を選んでください',
+    npConfirm: (n, d, today) => `「${n}」を追加します。\n入荷日は ${d}${today ? '（今日）' : ''} で間違いないですか？`,
+    npConfirmBtn: '追加する', npAddFail: '案件の追加に失敗しました。もう一度お試しください', npAdded: n => `「${n}」を追加しました`,
+    checking: '確認中…', npCheckFail: '案件管理フォルダを確認できませんでした', npAddedN: k => `${k}件の案件を追加しました`,
+    npNone: '新しい案件ファイルはありませんでした', netFail: '通信に失敗しました。もう一度お試しください', cancel: 'キャンセル', changeName: '（変更）'
+  },
+  en: {
+    loading: 'Loading…', appTitle: 'Work Time Entry (TEST)', selectName: 'Select your name',
+    uphTitle: d => d ? `UPH by case and task (${d})` : 'UPH by case and task',
+    thProject: 'Case', thWork: 'Task', noRecords: 'No records yet',
+    backToName: '‹ Back to names', selectProject: 'Select a lot', addProject: '＋ Add a lot not in the list',
+    tagCommon: 'Common work',
+    wtTitle: 'Select a task',
+    wgLot: 'Work for one lot', wgMulti: 'Work across several lots', wgCommon: 'Common work',
+    noLots: 'No lot can be used for this task. Add one with "＋ Add a lot not in the list" below.',
+    lotNotFit: n => `"${n}" cannot be used for this task. Select a lot from the list.`,
+    selectBiz: 'Which work is this for?', bizHint: 'This task is recorded without choosing a lot.',
+    biz: { '業務委託': 'Outsourcing work (業務委託)', 'EC': 'Online store (EC)' },
+    backToLot: '‹ Back to lots', backToBiz: '‹ Back to work selection',
+    backToList: '‹ Back to lot list', npTitle: 'Add a lot not in the list',
+    npIntro: 'When a case file (e.g. 【260924】DR.xlsm) is saved in the 案件管理 folder on Drive, it appears in the list automatically when the date changes (every day at 0:00).<br>To use it on the same day, press the button below.',
+    npRefresh: 'Check the 案件管理 folder', npManual: '▸ If there is no case file yet (enter manually)',
+    npPin: '📌 Pin (keep this case in the list even if it is old)', npOldWarn: n => `"${n}" is an old case. Without 📌 it disappears from the list right after adding. Add it with 📌?`, npPinYes: 'Add with 📌', pinOn: 'Unpin', pinOff: 'Pin', pinTag: '📌Pinned',
+    npDate: 'Arrival date (the day the goods arrived, not today)', npTapSource: 'Tap the supplier', npOther: 'Other supplier', add: 'Add',
+    backToWork: '‹ Back to tasks', timeTitle: 'Start and end time', start: 'Start', end: 'End', hoursUnit: 'hours',
+    hoursAuto: 'Total work time (calculated automatically)', hoursHint: 'Enter the start and end time to calculate', next: 'Next',
+    backToTime: '‹ Back to time',
+    sumYHours: 'Total hours until yesterday', sumYCount: 'Total quantity until yesterday', sumUph: 'UPH (quantity / hour)',
+    boxTitle: 'Box size and number of boxes (required)', boxSize: 'Box size',
+    selectPlease: 'Select', size90: '90 size', size115: '115 size', boxCount: 'Number of boxes',
+    boxNote: 'If you used two box sizes, save one record for each size (split the time).',
+    record: 'Save', saving: 'Saving…',
+    countTitle: (memo, quota) => (memo ? 'Work quantity / notes' : 'Work quantity') + (quota ? ' (required)' : ' (optional)'),
+    req: 'required', opt: 'optional',
+    cumLabel: r => `Total so far (累計作業数) — all units finished in this lot, by everyone · ${r}`,
+    dailyLabel: r => `Today's quantity (本日の作業数) · ${r}`,
+    rule: 'If someone else already entered the number for this lot, enter 0 in Today\'s quantity, or enter the same total. If two people enter the same Today\'s quantity, it is counted twice.',
+    todayUnit: 'today', negWarn: 'This is smaller than the previous total. Please check.',
+    autoCalc: (cc, pc) => `Calculated: total ${cc} − previous total ${pc}`, prevInfo: pc => `Previous total: ${pc} (this case and task)`,
+    memo: 'Notes (備考, optional)', saved: 'Saved', nextWork: 'Next task',
+    saveFail: 'Could not save.\nMove to a place with a signal and press "Save" again.\n(Your input is still there.)',
+    loadFail: 'Could not load data. Please check the connection.',
+    devNewTitle: 'Register this device', devNewText: 'This device cannot record work time yet. Enter a name for this device (e.g. Rahman phone, inspection tablet), press "Request", and ask the manager to approve it.',
+    devLabel: 'Device name', devLabelPh: 'e.g. Rahman phone', devRequest: 'Request', devNeedLabel: 'Enter a device name',
+    devPendingTitle: 'Waiting for approval', devPendingText: 'The device can be used after the manager checks "許可" for this device on the 端末の許可 sheet of the 作業時間 spreadsheet. After that, press the button below.',
+    devRecheck: 'Check approval', devStillPending: 'Not approved yet', devIdLabel: 'Device ID',
+    npNeedDate: 'Select the arrival date first',
+    npConfirm: (n, d, today) => `Add "${n}".\nIs the arrival date ${d}${today ? ' (today)' : ''} correct?`,
+    npConfirmBtn: 'Add', npAddFail: 'Could not add the case. Please try again.', npAdded: n => `Added "${n}"`,
+    checking: 'Checking…', npCheckFail: 'Could not check the 案件管理 folder', npAddedN: k => `Added ${k} case(s)`,
+    npNone: 'No new case files', netFail: 'Connection failed. Please try again.', cancel: 'Cancel', changeName: '(change)'
+  },
+  id: {
+    loading: 'Memuat…', appTitle: 'Input Waktu Kerja (TES)', selectName: 'Pilih nama Anda',
+    uphTitle: d => d ? `UPH per kasus dan pekerjaan (${d})` : 'UPH per kasus dan pekerjaan',
+    thProject: 'Kasus', thWork: 'Pekerjaan', noRecords: 'Belum ada catatan',
+    backToName: '‹ Kembali ke nama', selectProject: 'Pilih lot', addProject: '＋ Tambah lot yang tidak ada di daftar',
+    tagCommon: 'Pekerjaan umum',
+    wtTitle: 'Pilih pekerjaan',
+    wgLot: 'Pekerjaan untuk satu lot', wgMulti: 'Pekerjaan untuk beberapa lot', wgCommon: 'Pekerjaan umum',
+    noLots: 'Tidak ada lot untuk pekerjaan ini. Tambahkan dengan "＋ Tambah lot yang tidak ada di daftar" di bawah.',
+    lotNotFit: n => `"${n}" tidak bisa dipakai untuk pekerjaan ini. Pilih lot dari daftar.`,
+    selectBiz: 'Pekerjaan ini untuk apa?', bizHint: 'Pekerjaan ini dicatat tanpa memilih lot.',
+    biz: { '業務委託': 'Pekerjaan alih daya (業務委託)', 'EC': 'Toko online (EC)' },
+    backToLot: '‹ Kembali ke lot', backToBiz: '‹ Kembali ke pilihan pekerjaan',
+    backToList: '‹ Kembali ke daftar lot', npTitle: 'Tambah lot yang tidak ada di daftar',
+    npIntro: 'Jika file kasus (contoh: 【260924】DR.xlsm) disimpan di folder 案件管理 di Drive, kasus akan muncul di daftar secara otomatis saat tanggal berganti (setiap hari pukul 0:00).<br>Untuk memakainya di hari yang sama, tekan tombol di bawah.',
+    npRefresh: 'Periksa folder 案件管理', npManual: '▸ Jika belum ada file kasus (isi manual)',
+    npPin: '📌 Sematkan (kasus lama tetap ada di daftar)', npOldWarn: n => `"${n}" adalah kasus lama. Tanpa 📌 akan hilang dari daftar setelah ditambahkan. Tambahkan dengan 📌?`, npPinYes: 'Tambah dengan 📌', pinOn: 'Lepas', pinOff: 'Sematkan', pinTag: '📌Disematkan',
+    npDate: 'Tanggal masuk barang (bukan hari ini)', npTapSource: 'Ketuk pemasok', npOther: 'Pemasok lainnya', add: 'Tambah',
+    backToWork: '‹ Kembali ke pekerjaan', timeTitle: 'Waktu mulai dan selesai', start: 'Mulai', end: 'Selesai', hoursUnit: 'jam',
+    hoursAuto: 'Total waktu kerja (dihitung otomatis)', hoursHint: 'Isi waktu mulai dan selesai untuk menghitung', next: 'Lanjut',
+    backToTime: '‹ Kembali ke waktu',
+    sumYHours: 'Total jam sampai kemarin', sumYCount: 'Total jumlah sampai kemarin', sumUph: 'UPH (jumlah / jam)',
+    boxTitle: 'Ukuran dan jumlah kardus (wajib)', boxSize: 'Ukuran kardus',
+    selectPlease: 'Pilih', size90: 'Ukuran 90', size115: 'Ukuran 115', boxCount: 'Jumlah kardus',
+    boxNote: 'Jika memakai dua ukuran kardus, simpan satu catatan untuk tiap ukuran (waktunya dibagi).',
+    record: 'Simpan', saving: 'Menyimpan…',
+    countTitle: (memo, quota) => (memo ? 'Jumlah kerja / catatan' : 'Jumlah kerja') + (quota ? ' (wajib)' : ' (opsional)'),
+    req: 'wajib', opt: 'opsional',
+    cumLabel: r => `Total sampai sekarang (累計作業数) — semua unit yang selesai di lot ini, oleh semua orang · ${r}`,
+    dailyLabel: r => `Jumlah hari ini (本日の作業数) · ${r}`,
+    rule: 'Jika orang lain sudah mengisi angka untuk lot ini, isi 0 pada Jumlah hari ini, atau isi total yang sama. Jika dua orang mengisi Jumlah hari ini yang sama, jumlahnya terhitung dua kali.',
+    todayUnit: 'hari ini', negWarn: 'Nilai ini lebih kecil dari total sebelumnya. Mohon periksa.',
+    autoCalc: (cc, pc) => `Dihitung: total ${cc} − total sebelumnya ${pc}`, prevInfo: pc => `Total sebelumnya: ${pc} (kasus dan pekerjaan ini)`,
+    memo: 'Catatan (備考, opsional)', saved: 'Tersimpan', nextWork: 'Pekerjaan berikutnya',
+    saveFail: 'Gagal menyimpan.\nPindah ke tempat dengan sinyal dan tekan "Simpan" lagi.\n(Data yang diisi masih ada.)',
+    loadFail: 'Gagal memuat data. Periksa koneksi.',
+    devNewTitle: 'Daftarkan perangkat ini', devNewText: 'Perangkat ini belum bisa mencatat waktu kerja. Isi nama perangkat (contoh: HP Rahman, tablet pemeriksaan), tekan "Ajukan", lalu minta manajer menyetujuinya.',
+    devLabel: 'Nama perangkat', devLabelPh: 'contoh: HP Rahman', devRequest: 'Ajukan', devNeedLabel: 'Isi nama perangkat',
+    devPendingTitle: 'Menunggu persetujuan', devPendingText: 'Perangkat bisa dipakai setelah manajer mencentang "許可" untuk perangkat ini di sheet 端末の許可 pada spreadsheet 作業時間. Setelah itu, tekan tombol di bawah.',
+    devRecheck: 'Cek persetujuan', devStillPending: 'Belum disetujui', devIdLabel: 'ID perangkat',
+    npNeedDate: 'Pilih tanggal masuk barang terlebih dahulu',
+    npConfirm: (n, d, today) => `Tambahkan "${n}".\nApakah tanggal masuk barang ${d}${today ? ' (hari ini)' : ''} sudah benar?`,
+    npConfirmBtn: 'Tambah', npAddFail: 'Gagal menambah kasus. Silakan coba lagi.', npAdded: n => `"${n}" ditambahkan`,
+    checking: 'Memeriksa…', npCheckFail: 'Tidak bisa memeriksa folder 案件管理', npAddedN: k => `${k} kasus ditambahkan`,
+    npNone: 'Tidak ada file kasus baru', netFail: 'Koneksi gagal. Silakan coba lagi.', cancel: 'Batal', changeName: '(ganti)'
+  }
+};
+function t(key, ...args){
+  const dict = I18N[state.lang] || I18N.ja;
+  const v = (key in dict) ? dict[key] : I18N.ja[key];
+  return typeof v === 'function' ? v(...args) : v;
+}
+
+// 言語の記憶（この端末に、名前ごとに保存。保存できない環境では、その場だけ切り替わる）
+function loadLangFor(name){
+  try{ return localStorage.getItem('lang:' + (name || '_')) || null; }catch(e){ return null; }
+}
+function saveLangFor(name, lang){
+  try{ localStorage.setItem('lang:' + (name || '_'), lang); }catch(e){}
+}
+function langButtonHtml(){
+  return `<button class="langbtn" id="langBtn">🌐 ${LANG_LABEL[state.lang]}</button>`;
+}
+function bindLangButton(){
+  const b = document.getElementById('langBtn');
+  if(b) b.onclick = ()=>{
+    state.lang = LANGS[(LANGS.indexOf(state.lang) + 1) % LANGS.length];
+    saveLangFor(state.currentName, state.lang);
+    if(!state.currentName) saveLangFor(null, state.lang);
+    render();
+  };
+}
+
+let state = {
+  screen: 'loading',
+  deviceStatus: null,     // 端末の許可の状態（'new' / 'pending'）
+  lang: loadLangFor(null) || 'ja',   // 表示する言語
+  currentName: null,
+  worktype: null,
+  project: null,
+  start: '',
+  end: '',
+  count: '',
+  countMode: 'cum',       // 'cum'=累計を入力 / 'daily'=本日分を入力
+  memo: '',
+  boxSize: '',
+  countCtx: null,         // 作業数画面の前回累計など（早見表の写しから画面側で計算）
+  quick: {},              // 早見表の写し（名前選択画面を開いたときにまとめて受け取る）
+  lastEnds: {},           // 各自の今日の最後の終了時刻（開始時刻の初期値）
+  pendingEntry: null,     // 送信中の記録のid（再送時の二重登録防止）
+  projects: [],
+  benchmarks: {},
+  overview: { date: null, rows: [] },
+  adminTab: 'projects',
+  adminEntries: null,
+  adminLoading: false,
+  adminError: false,
+  lastResult: null,
+  isSubmitting: false
+};
+
+// 画面に表示する文字の安全化。
+// 案件名などに < > " & が含まれていても、HTMLとして解釈されず文字のまま表示されるようにする。
+function esc(v){
+  return String(v === null || v === undefined ? '' : v)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// ===============================================================
+// サーバー（Apps Script）とのやり取り
+// ・画面は GitHub Pages、データの保存は作業時間の Apps Script（API.gs の doPost）
+// ・呼び出しは「端末の許可」シートで許可した端末からだけ受け付ける
+// ===============================================================
+// ★テスト版★ テスト用に公開した Apps Script のウェブアプリのURL（/exec で終わるもの）を入れる。本番のURLは入れない
+const API_URL = 'ここにテスト用ウェブアプリのURLを入れる';
+const LS_DEVICE = 'sagyo_device_id';
+const LS_HOME = 'sagyo_test_home_cache';   // 前回の案件一覧などを覚えておき、開いたらすぐ表示する（テスト版は本番と別の名前で覚える）
+
+function deviceId(){
+  try{
+    let id = localStorage.getItem(LS_DEVICE);
+    if(!id){ id = 'S' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10); localStorage.setItem(LS_DEVICE, id); }
+    return id;
+  }catch(e){ return ''; }
+}
+
+class DeviceError extends Error {}
+async function apiCall(fn, args){
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },   // この形なら、ブラウザの事前確認（CORS）が要らない
+    body: JSON.stringify({ fn: fn, args: args || [], device: deviceId() })
+  });
+  if(!res.ok) throw new Error('HTTP ' + res.status);
+  const j = await res.json();
+  if(!j.ok){
+    const msg = String(j.error || 'error');
+    if(msg.indexOf('DEVICE:') === 0){ const e = new DeviceError(msg); e.status = msg.slice(7); throw e; }
+    throw new Error(msg);
+  }
+  return j.result;
+}
+// 以前の google.script.run と同じ呼び方で使えるようにする。端末が許可されていなければ、許可の画面を出す
+async function gsRun(fnName, ...args){
+  try{
+    return await apiCall(fnName, args);
+  }catch(e){
+    if(e instanceof DeviceError){ showDeviceScreen(e.status); }
+    throw e;
+  }
+}
+
+// ===== 端末の許可の画面 =====
+function showDeviceScreen(status){
+  state.deviceStatus = status;
+  state.screen = 'device';
+  render();
+}
+async function requestDevice(){
+  const input = document.getElementById('deviceLabel');
+  const label = input ? input.value.trim() : '';
+  if(!label){ showToast(t('devNeedLabel'), 'error'); return; }
+  try{
+    const r = await apiCall('sRequestDevice', [label]);
+    state.deviceStatus = r.status;
+    if(r.status === 'ok'){ loadHome(true); return; }
+    render();
+  }catch(e){ showToast(t('netFail'), 'error'); }
+}
+async function recheckDevice(){
+  try{
+    const r = await apiCall('sInit', []);
+    if(r.status === 'ok'){ loadHome(true); return; }
+    state.deviceStatus = r.status;
+    render();
+    showToast(t('devStillPending'));
+  }catch(e){ showToast(t('netFail'), 'error'); }
+}
+function renderDevice(app){
+  const pending = state.deviceStatus === 'pending';
+  app.innerHTML = `
+    <header class="top">
+      <div class="who"><b>${t('appTitle')}</b></div>
+      <div style="display:flex;align-items:center;gap:4px;">${langButtonHtml()}</div>
+    </header>
+    <main>
+      <div class="card">
+        <div style="font-size:18px;font-weight:800;margin-bottom:10px;">${pending ? t('devPendingTitle') : t('devNewTitle')}</div>
+        <div style="font-size:14px;line-height:1.7;margin-bottom:12px;">${pending ? t('devPendingText') : t('devNewText')}</div>
+        ${pending ? `<button class="primary" id="devRecheck">${t('devRecheck')}</button>` : `
+          <div class="field" style="margin-top:0;">
+            <label>${t('devLabel')}</label>
+            <input type="text" id="deviceLabel" placeholder="${esc(t('devLabelPh'))}">
+          </div>
+          <div style="margin-top:12px;"><button class="primary" id="devRequest">${t('devRequest')}</button></div>`}
+        <div style="font-size:12px;color:var(--muted);margin-top:12px;">${t('devIdLabel')}: ${esc(deviceId())}</div>
+      </div>
+    </main>`;
+  bindLangButton();
+  const b1 = document.getElementById('devRequest'); if(b1) b1.onclick = requestDevice;
+  const b2 = document.getElementById('devRecheck'); if(b2) b2.onclick = recheckDevice;
+}
+
+// ===== 前回の案件一覧などを覚えておく =====
+function readHomeCache(){
+  try{ const c = JSON.parse(localStorage.getItem(LS_HOME) || 'null'); return c && c.data ? c : null; }catch(e){ return null; }
+}
+function writeHomeCache(data){
+  try{ localStorage.setItem(LS_HOME, JSON.stringify({ day: todayStr(), data: data })); }catch(e){}
+}
+function applyHome(data, sameDay){
+  state.projects = data.projects || [];
+  state.benchmarks = data.benchmarks || {};
+  state.overview = data.overview || { date: null, rows: [] };
+  state.quick = data.quick || {};
+  state.lastEnds = sameDay === false ? {} : (data.lastEnds || {});   // 前の日に覚えた「今日の最後の終了時刻」は使わない
+}
+
+// 名前選択画面へ。表示のたびにスプレッドシートから最新の案件一覧・UPHを取得する
+// ===== この端末で使う人の名前を覚える =====
+// 一度名前を選ぶと、この端末が覚え、次にアプリを開いたときは名前選択を飛ばして案件の選択から始まる。
+// 画面上部の「名前（変更）」を押すか、「‹ 名前選択に戻る」を押すと、選び直せる。
+function getRememberedName(){
+  try{ const n = localStorage.getItem('name:remembered'); return (n && NAMES.includes(n)) ? n : null; }catch(e){ return null; }
+}
+function rememberName(n){ try{ localStorage.setItem('name:remembered', n); }catch(e){} }
+function forgetName(){ try{ localStorage.removeItem('name:remembered'); }catch(e){} }
+
+// auto=true（アプリを開いたとき）は、覚えている名前があれば名前選択を飛ばす
+// ★GitHub版★ 前回覚えた案件一覧があれば、すぐに画面を出し、裏で最新の内容を受け取って入れ替える
+async function loadHome(auto){
+  state.currentName = null;
+  const cached = readHomeCache();
+  const fetching = gsRun('apiGetHome', todayStr()).then(function(data){
+    applyHome(data);
+    writeHomeCache(data);
+    return true;
+  });
+  if(cached){
+    applyHome(cached.data, cached.day === todayStr());
+    fetching.then(function(){
+      // まだ名前・案件の選択画面なら、最新の内容で描き直す（入力の途中の画面は、そのまま）
+      if(state.screen === 'name' || state.screen === 'worktype' || state.screen === 'lot' || state.screen === 'biz') render();
+    }).catch(function(e){ if(!(e instanceof DeviceError)) showToast(t('loadFail'), 'error'); });
+  } else {
+    state.screen = 'loading';
+    render();
+    try{ await fetching; }
+    catch(e){
+      if(e instanceof DeviceError) return;
+      showToast(t('loadFail'), 'error');
+    }
+  }
+  if(state.screen === 'device') return;
+  const remembered = auto ? getRememberedName() : null;
+  if(remembered){
+    state.currentName = remembered;
+    state.lang = loadLangFor(remembered) || state.lang;
+    startEntryFlow();
+    return;
+  }
+  state.screen = 'name';
+  render();
+}
+
+// 名前を選んだとき・「次の作業へ」を押したとき
+// ★変更★ サーバーに問い合わせず、手元の情報だけですぐ次の画面へ進む（アプリを軽くするため）
+function startEntryFlow(){
+  state.worktype = null;
+  state.project = null;
+  state.start = state.lastEnds[state.currentName] || '09:00';
+  state.end = '';
+  state.count = '';
+  state.countMode = 'cum';
+  state.memo = '';
+  state.boxSize = '';
+  state.countCtx = null;
+  state.pendingEntry = null;
+  state.screen = 'worktype';
+  render();
+}
+
+// 作業内容を選んだとき。ロットを選ぶ作業はロットの一覧へ、ロットを選ばない作業は事業区分の選択へ
+// （使える事業区分が1つしかない作業と共通業務は、選ばずにそのまま時刻の画面へ）
+function chooseWork(worktype){
+  const w = workOf(worktype);
+  if(!w) return;
+  state.worktype = worktype;
+  state.project = null;
+  if(w.lot){
+    state.screen = 'lot';
+  } else if(w.cats.length > 1){
+    state.screen = 'biz';
+  } else {
+    state.project = FIXED_PROJECTS[w.cats[0]];
+    state.screen = 'time';
+  }
+  render();
+}
+// 時刻の画面の「戻る」で戻る先
+function screenBeforeTime(){
+  const w = workOf(state.worktype);
+  if(!w) return 'worktype';
+  if(w.lot) return 'lot';
+  if(w.cats.length > 1) return 'biz';
+  return 'worktype';
+}
+// 選んだ作業に使えるロット（固定の案件は出さない。以前のEOのロットは業務委託のロットとして出す）
+function lotsForWork(worktype){
+  const w = workOf(worktype);
+  if(!w) return [];
+  return state.projects
+    .filter(p => p.active && !isFixedProject(p.name) && w.cats.indexOf(categoryOf(p.name)) !== -1)
+    .map(p => p.name)
+    .sort((a,b)=> compareProjects(a,b));
+}
+
+// 早見表の写しから、作業数画面に出す数字を計算する（サーバーの quickStats と同じ計算）
+function quickStatsClient(row, today){
+  if(!row) return { prevCum: 0, yHours: 0, yCount: 0, yUph: null };
+  const totalHours = Number(row[0]) || 0;
+  const lastCum = row[1] === null || row[1] === '' ? 0 : Number(row[1]);
+  const lastDate = String(row[2] || '');
+  const prevDayCum = row[3] === null || row[3] === '' ? 0 : Number(row[3]);
+  const hoursBefore = Number(row[4]) || 0;
+  let yHours, yCount;
+  if(lastDate < today){ yHours = totalHours; yCount = lastCum; }
+  else { yHours = hoursBefore; yCount = prevDayCum; }
+  yHours = Math.round(yHours * 100) / 100;
+  return { prevCum: lastCum, yHours: yHours, yCount: yCount, yUph: yHours > 0 ? Math.round(yCount / yHours * 100) / 100 : null };
+}
+
+// 時刻画面の「次へ」。サーバーに問い合わせず、すぐ作業数画面を開く
+// （表示する前回累計は目安。保存するときにサーバー側で最新の値を使って確定する）
+function goToDetails(){
+  state.countCtx = quickStatsClient(state.quick[state.project + '|' + state.worktype], todayStr());
+  state.screen = 'details';
+  render();
+}
+
+function extractProjectNum(name){
+  const m = name.match(/【(\d+)】/);
+  return m ? parseInt(m[1], 10) : -Infinity;
+}
+
+function dateToCode(dateStr){
+  const [y,m,d] = dateStr.split('-');
+  return y.slice(2) + m + d;
+}
+
+// 手入力で案件を追加（案件ファイルがまだ「案件管理」フォルダに無いときの予備の手段）
+// ★変更★ 日付の初期値を空欄にし、選ばないと追加できないようにした。追加前に確認も出す。
+function addProjectManual(sourceCode){
+  const dateInput = document.getElementById('newProjDate');
+  const dateVal = dateInput ? dateInput.value : '';
+  if(!dateVal){
+    showToast(t('npNeedDate'), 'error');
+    if(dateInput) dateInput.focus();
+    return;
+  }
+  const name = `【${dateToCode(dateVal)}】${sourceCode}`;
+  const isToday = dateVal === todayStr();
+  const pinEl = document.getElementById('newProjPin');
+  let pin = !!(pinEl && pinEl.checked);
+  // 古い案件を📌なしで追加すると、すぐに一覧から外れるので知らせる
+  if(!pin && isOldLot(name)){
+    showConfirmModal(t('npOldWarn', name), t('npPinYes'), ()=>{ if(pinEl) pinEl.checked = true; addProjectManual(sourceCode); }, 'ok');
+    return;
+  }
+  showConfirmModal(
+    t('npConfirm', name, formatDateJp(dateVal), isToday) + (pin ? '\n' + t('pinTag') : ''),
+    t('npConfirmBtn'),
+    async ()=>{
+      try{
+        state.projects = await gsRun('apiAddProject', name, pin);
+      }catch(e){
+        showToast(t('npAddFail'), 'error');
+        return;
+      }
+      selectProjectAfterAdd(name);
+      showToast(t('npAdded', name));
+    },
+    'ok'
+  );
+}
+
+// 追加しようとしている案件が、今の一覧の新しい3つより古いか（共通業務・固定の案件は数えない）
+function isOldLot(name){
+  const label = getSpecialLabel(name);
+  if(label === 'その他') return false;
+  const same = state.projects.filter(p => !p.pinned && getSpecialLabel(p.name) === label && p.name !== name);
+  if(same.length < 3) return false;
+  const nums = same.map(p => extractProjectNum(p.name)).sort((a, b) => b - a);
+  return extractProjectNum(name) < nums[2];
+}
+
+// 「案件管理フォルダを確認する」ボタン。ドライブを今すぐ確認して、新しい案件があれば一覧に追加する
+async function refreshInbound(){
+  const btn = document.getElementById('refreshInboundBtn');
+  if(btn){ btn.disabled = true; btn.textContent = t('checking'); }
+  try{
+    const res = await gsRun('apiRefreshInbound');
+    state.projects = res.projects || state.projects;
+    if(!res.ok){
+      showToast(t('npCheckFail'), 'error');
+    } else if(res.added.length){
+      showToast(t('npAddedN', res.added.length));
+      state.screen = 'lot';
+    } else {
+      showToast(t('npNone'));
+    }
+  }catch(e){
+    showToast(t('netFail'), 'error');
+  }
+  render();
+}
+
+// 追加したロットが、選んでいる作業に使えるロットなら、そのまま選んで時刻の画面へ進む
+function selectProjectAfterAdd(name){
+  const w = workOf(state.worktype);
+  if(w && w.cats.indexOf(categoryOf(name)) !== -1){
+    state.project = name;
+    state.screen = 'time';
+  } else {
+    state.screen = 'lot';
+    showToast(t('lotNotFit', name), 'error');
+  }
+  render();
+}
+
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function formatDateJp(dateStr){
+  if(!dateStr) return '';
+  const [y,m,d] = dateStr.split('-');
+  return `${Number(m)}/${Number(d)}`;
+}
+
+// 休憩時間（13:00〜13:45、15:30〜15:45）を自動控除する計算処理
+function computeHours(start, end) {
+  if (!start || !end) return null;
+
+  const [sh, sm] = start.split(':').map(Number);
+  const [eh, em] = end.split(':').map(Number);
+
+  let startMin = sh * 60 + sm;
+  let endMin = eh * 60 + em;
+
+  if (endMin < startMin) {
+    endMin += 24 * 60;
+  }
+
+  let totalMinutes = endMin - startMin;
+
+  const breaks = [
+    { start: 13 * 60,      end: 13 * 60 + 45 }, // 13:00 - 13:45
+    { start: 15 * 60 + 30, end: 15 * 60 + 45 }  // 15:30 - 15:45
+  ];
+
+  breaks.forEach(b => {
+    const overlapStart = Math.max(startMin, b.start);
+    const overlapEnd = Math.min(endMin, b.end);
+
+    if (overlapStart < overlapEnd) {
+      totalMinutes -= (overlapEnd - overlapStart);
+    }
+  });
+
+  const hours = totalMinutes / 60;
+  return Math.floor(hours * 100) / 100;
+}
+
+function showToast(msg, type){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.toggle('error', type === 'error');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), type === 'error' ? 3000 : 1600);
+}
+
+// 作業数の入力が必須の作業か（WORKS の quota）
+function isQuotaWork(worktype){ const w = workOf(worktype); return !!(w && w.quota); }
+
+// 基準UPHは「設定」シートの値（記号＝作業内容の先頭1文字で引く）
+function getBenchmarkUph(worktype){
+  const v = state.benchmarks[String(worktype).charAt(0)];
+  return (v === undefined || v === null || v === '') ? null : Number(v);
+}
+// 作業内容から先頭の記号を外した表示用の名前（例：「E 検査」→「検査」）
+// ※記号は集計の仕組みで使うため、保存するデータには残している
+function wtName(worktype){ return String(worktype || '').replace(/^\S+\s+/, ''); }
+
+function getUphColor(worktype, uph){
+  if(uph === null) return null;
+  const bench = getBenchmarkUph(worktype);
+  if(bench === null) return null;
+  if(uph === bench) return '#000000';
+  if(uph > bench) return 'var(--success)';
+  return 'var(--danger)';
+}
+function formatUphCell(worktype, uph){
+  if(uph === null) return '--';
+  const color = getUphColor(worktype, uph);
+  if(color === null) return String(uph);
+  return `<span style="font-weight:700;color:${color};">${uph}</span>`;
+}
+
+function canSubmitDetails(){
+  if(needsBox(state.worktype, state.project)){
+    // 荷造り・梱包（業務委託）は、サイズと箱数の両方が必須
+    return state.boxSize !== '' && state.count !== '' && Number(state.count) > 0;
+  }
+  return !(isQuotaWork(state.worktype) && state.count === '');
+}
+
+function buildEntry(){
+  const entry = {
+    id: state.pendingEntry.id,
+    createdAt: state.pendingEntry.createdAt,
+    date: todayStr(),
+    name: state.currentName,
+    worktype: state.worktype,
+    project: state.project,
+    start: state.start,
+    end: state.end,
+    hours: computeHours(state.start, state.end),
+    count: '',
+    cumulativeCount: '',
+    boxSize: '',
+    memo: state.memo,
+    countMode: 'none'
+  };
+  if(needsBox(state.worktype, state.project)){
+    entry.boxSize = state.boxSize;
+    entry.count = state.count === '' ? '' : Number(state.count);
+    entry.countMode = 'box';
+  } else if(state.count !== ''){
+    // ここで送る値はあくまで目安。最終的な本日分・累計はサーバー側で保存直前に計算し直される
+    const prev = state.countCtx ? state.countCtx.prevCum : 0;
+    const cum = Number(state.count);
+    entry.cumulativeCount = cum;
+    entry.count = cum - prev;
+    entry.countMode = state.countMode;
+  }
+  return entry;
+}
+
+function setSubmitBusy(busy){
+  const b = document.getElementById('submitBtn');
+  if(!b) return;
+  if(busy){
+    b.disabled = true;
+    b.textContent = t('saving');
+  } else {
+    b.textContent = t('record');
+    b.disabled = !canSubmitDetails();
+  }
+}
+
+async function submitEntry(){
+  if(state.isSubmitting) return; // 二重送信ガード
+  state.isSubmitting = true;
+  setSubmitBusy(true);
+  try{
+    // 再送しても同じidを使う → 実は1回目が保存されていた場合でも二重登録にならない
+    if(!state.pendingEntry){
+      state.pendingEntry = {
+        id: Date.now()+'-'+Math.random().toString(36).slice(2,7),
+        createdAt: new Date().toISOString()
+      };
+    }
+    const res = await gsRun('apiAddEntry', buildEntry());
+    state.pendingEntry = null;
+    // 次の作業のために手元の情報を最新にしておく（「次の作業へ」でサーバーに問い合わせなくて済む）
+    if(res.quickKey) state.quick[res.quickKey] = res.quick;
+    if(res.entry && res.entry.end) state.lastEnds[state.currentName] = res.entry.end;
+    if(res.projects) state.projects = res.projects;
+    state.lastResult = { project: res.entry.project, worktype: res.entry.worktype, uph: res.uph };
+    state.screen = 'result';
+    showToast(t('saved'));
+    render();
+  }catch(e){
+    // ★追加★ 保存に失敗したときは、入力内容をそのまま残して再送できるようにする
+    setSubmitBusy(false);
+    showAlertModal(t('saveFail'));
+  } finally {
+    state.isSubmitting = false;
+  }
+}
+
+function entriesToCSV(entries){
+  const header = ['日付','名前','作業内容','案件名','開始時刻','終了時刻','作業時間(h)','作業数','累計(参考)','箱サイズ','備考'];
+  const lines = [header.join(',')];
+  entries.forEach(en=>{
+    lines.push([en.date,en.name,wtName(en.worktype),en.project,en.start,en.end,en.hours,en.count,en.cumulativeCount,en.boxSize,en.memo].map(fmtCSVCell).join(','));
+  });
+  return lines.join('\n');
+}
+function fmtCSVCell(v){
+  v = (v===null||v===undefined) ? '' : String(v);
+  if(v.includes(',')||v.includes('"')||v.includes('\n')){
+    v = '"'+v.replace(/"/g,'""')+'"';
+  }
+  return v;
+}
+
+function headerHtml(){
+  return `
+    <header class="top">
+      ${renderWhoHeader()}
+      <div style="display:flex;align-items:center;gap:4px;">${langButtonHtml()}<button class="gear" id="openAdmin">⚙</button></div>
+    </header>
+  `;
+}
+function bindHeader(){
+  bindLangButton();
+  const nb = document.getElementById('changeNameBtn');
+  if(nb) nb.onclick = ()=>{ forgetName(); loadHome(); };   // 名前を選び直す
+  const btn = document.getElementById('openAdmin');
+  if(btn) btn.onclick = ()=>{
+    state.adminEntries = null;
+    state.adminError = false;
+    state.screen = 'admin';
+    render();
+  };
+}
+
+function render(){
+  const app = document.getElementById('app');
+  if(state.screen === 'device'){
+    renderDevice(app);
+    return;
+  }
+  if(state.screen === 'loading'){
+    app.innerHTML = `<div style="padding:40px;text-align:center;color:var(--muted);">${t('loading')}</div>`;
+    return;
+  }
+  if(state.screen === 'name'){
+    const lastDate = state.overview.date;
+    const uphRows = state.overview.rows.slice()
+      .sort((a,b)=> compareProjects(a.project, b.project) || a.worktype.localeCompare(b.worktype));
+    app.innerHTML = `
+      <header class="top">
+        <div class="who"><b>${t('appTitle')}</b></div>
+        <div style="display:flex;align-items:center;gap:4px;">${langButtonHtml()}<button class="gear" id="openAdmin">⚙</button></div>
+      </header>
+      <div class="steptitle">${t('selectName')}</div>
+      <div class="name-grid">
+        ${NAMES.map(n=>`<div class="name-btn" data-name="${esc(n)}">${esc(n)}</div>`).join('')}
+      </div>
+      <main style="padding-top:24px;">
+        <div class="wt-ungrouped-label">${t('uphTitle', lastDate ? formatDateJp(lastDate) : '')}</div>
+        <div class="card tablewrap">
+          <table class="data uph-table">
+            <thead><tr><th>${t('thProject')}</th><th>${t('thWork')}</th><th>UPH</th></tr></thead>
+            <tbody>
+              ${uphRows.length ? uphRows.map(r=>`
+                <tr>
+                  <td>${esc(r.project)}</td><td>${workLabelHtml(r.worktype)}</td><td>${formatUphCell(r.worktype, r.uph)}</td>
+                </tr>
+              `).join('') : `<tr><td colspan="3" style="text-align:center;color:var(--muted);">${t('noRecords')}</td></tr>`}
+            </tbody>
+          </table>
+        </div>
+      </main>
+    `;
+    bindHeader();
+    app.querySelectorAll('.name-btn').forEach(el=>{
+      el.onclick = ()=>{
+        state.currentName = el.dataset.name;
+        state.lang = loadLangFor(state.currentName) || state.lang;   // その人が前に選んだ言語で表示する
+        rememberName(state.currentName);                             // この端末で使う人として覚える
+        startEntryFlow();
+      };
+    });
+    return;
+  }
+  // ① 作業内容の選択（名前の次）
+  if(state.screen === 'worktype'){
+    app.innerHTML = `
+      ${headerHtml()}
+      ${renderStepBar(1)}
+      <div class="backlink"><button id="backBtn">${t('backToName')}</button></div>
+      <div class="steptitle">${t('wtTitle')}</div>
+      <main>
+        ${WORK_GROUPS.map(g=>`
+          <div class="wt-ungrouped-label">${t(g.key)}</div>
+          <div class="wt-block">
+            <div class="worktype-grid">
+              ${WORKS.filter(g.filter).map(w=>`<div class="worktype-btn" data-val="${esc(w.wt)}">${workLabelHtml(w.wt)}</div>`).join('')}
+            </div>
+          </div>
+        `).join('')}
+      </main>
+    `;
+    bindHeader();
+    document.getElementById('backBtn').onclick = ()=>{ forgetName(); loadHome(); };
+    app.querySelectorAll('.worktype-btn').forEach(btn=>{
+      btn.onclick = ()=>{ chooseWork(btn.dataset.val); };
+    });
+    return;
+  }
+  // ② ロットの選択（ロットを選ぶ作業のとき）。選んだ作業に使えるロットだけを出す
+  if(state.screen === 'lot'){
+    const lots = lotsForWork(state.worktype);
+    app.innerHTML = `
+      ${headerHtml()}
+      ${renderStepBar(2)}
+      <div class="backlink"><button id="backBtn">${t('backToWork')}</button></div>
+      <div class="steptitle">${t('selectProject')}</div>
+      <main>
+        ${lots.length ? `<div class="plist">
+          ${lots.map(it=>{
+            const label = getSpecialLabel(it);
+            const special = label !== null;
+            return `<div class="prow ${special?'prow-special':''}" data-val="${esc(it)}">
+              <span>${esc(it)}</span>${special?`<span class="special-tag">${esc(label)}</span>`:''}
+            </div>`;
+          }).join('')}
+        </div>` : `<div class="card" style="font-size:14px;line-height:1.6;color:var(--muted);">${esc(t('noLots'))}</div>`}
+        <div class="paddnew" id="goNewProject">${t('addProject')}</div>
+      </main>
+    `;
+    bindHeader();
+    document.getElementById('backBtn').onclick = ()=>{ state.project = null; state.screen = 'worktype'; render(); };
+    document.getElementById('goNewProject').onclick = ()=>{ state.screen='newproject'; render(); };
+    app.querySelectorAll('.prow').forEach(r=>{
+      r.onclick = ()=>{
+        state.project = r.dataset.val;
+        state.screen = 'time';
+        render();
+      };
+    });
+    return;
+  }
+  // ② 事業区分の選択（ロットを選ばない作業で、業務委託・ECのどちらにもある作業のとき）
+  if(state.screen === 'biz'){
+    const w = workOf(state.worktype);
+    const cats = w ? w.cats : [];
+    app.innerHTML = `
+      ${headerHtml()}
+      ${renderStepBar(2)}
+      <div class="backlink"><button id="backBtn">${t('backToWork')}</button></div>
+      <div class="steptitle">${t('selectBiz')}</div>
+      <main>
+        <div style="font-size:14px;color:var(--muted);margin:0 2px 10px;">${esc(t('bizHint'))}</div>
+        <div class="worktype-grid" style="grid-template-columns:1fr;">
+          ${cats.map(c=>`<div class="worktype-btn" data-cat="${esc(c)}" style="min-height:84px;font-size:22px;">${esc(t('biz')[c] || c)}</div>`).join('')}
+        </div>
+      </main>
+    `;
+    bindHeader();
+    document.getElementById('backBtn').onclick = ()=>{ state.project = null; state.screen = 'worktype'; render(); };
+    app.querySelectorAll('[data-cat]').forEach(btn=>{
+      btn.onclick = ()=>{
+        state.project = FIXED_PROJECTS[btn.dataset.cat];
+        state.screen = 'time';
+        render();
+      };
+    });
+    return;
+  }
+  if(state.screen === 'newproject'){
+    app.innerHTML = `
+      ${headerHtml()}
+      ${renderStepBar(2)}
+      <div class="backlink"><button id="backBtn">${t('backToList')}</button></div>
+      <div class="steptitle">${t('npTitle')}</div>
+      <main>
+        <div class="card">
+          <div style="font-size:14px;line-height:1.6;margin-bottom:12px;">
+            ${t('npIntro')}
+          </div>
+          <button class="primary" id="refreshInboundBtn">${t('npRefresh')}</button>
+        </div>
+        <details class="more">
+          <summary>${t('npManual')}</summary>
+          <div class="card" style="margin-top:8px;">
+            <div class="field" style="margin-top:0;">
+              <label>${t('npDate')}</label>
+              <input type="date" id="newProjDate" value="">
+            </div>
+            <label style="display:flex;align-items:center;gap:10px;margin-top:12px;font-size:15px;font-weight:700;">
+              <input type="checkbox" id="newProjPin" style="width:24px;height:24px;"> ${t('npPin')}
+            </label>
+          </div>
+          <div class="wt-ungrouped-label">${t('npTapSource')}</div>
+          <div class="worktype-grid" id="sourceGrid" style="grid-template-columns:repeat(2,1fr);margin-bottom:12px;">
+            ${["DR","SS","KC","SBF","EC"].map(code=>`<div class="worktype-btn" data-code="${code}" style="min-height:72px;font-size:20px;">${code}</div>`).join('')}
+          </div>
+          <div class="field">
+            <label>${t('npOther')}</label>
+            <div style="display:flex;gap:8px;">
+              <input type="text" id="customSourceInput" style="flex:1;">
+              <button class="primary" style="width:auto;padding:10px 16px;" id="customSourceBtn">${t('add')}</button>
+            </div>
+          </div>
+        </details>
+      </main>
+    `;
+    bindHeader();
+    document.getElementById('backBtn').onclick = ()=>{ state.screen='lot'; render(); };
+    document.getElementById('refreshInboundBtn').onclick = ()=>{ refreshInbound(); };
+    document.querySelectorAll('#sourceGrid .worktype-btn').forEach(btn=>{
+      btn.onclick = ()=> addProjectManual(btn.dataset.code);
+    });
+    document.getElementById('customSourceBtn').onclick = ()=>{
+      const v = document.getElementById('customSourceInput').value.trim();
+      if(!v) return;
+      addProjectManual(v);
+    };
+    return;
+  }
+  if(state.screen === 'time'){
+    const hours = computeHours(state.start, state.end);
+    app.innerHTML = `
+      ${headerHtml()}
+      ${renderStepBar(3)}
+      <div class="backlink"><button id="backBtn">${t({ lot: 'backToLot', biz: 'backToBiz' }[screenBeforeTime()] || 'backToWork')}</button></div>
+      <div class="steptitle">${t('timeTitle')}</div>
+      <main>
+        <div class="card">
+          <div class="time-row">
+            <div class="time-box">
+              <label>${t('start')}</label>
+              <input type="time" id="startTime" value="${esc(state.start)}">
+            </div>
+            <div class="arrow">→</div>
+            <div class="time-box">
+              <label>${t('end')}</label>
+              <input type="time" id="endTime" value="${esc(state.end)}">
+            </div>
+          </div>
+          <div class="hours-display">
+            <div class="num">${hours!==null ? hours : '--'}<span>${t('hoursUnit')}</span></div>
+            <div class="hint">${hours!==null ? t('hoursAuto') : t('hoursHint')}</div>
+          </div>
+        </div>
+      </main>
+      <footer class="bar">
+        <button class="primary" id="nextBtn" ${(!state.start||!state.end)?'disabled':''}>${t('next')}</button>
+      </footer>
+    `;
+    bindHeader();
+    // ロットの一覧・事業区分の選択・作業内容の選択のうち、ここへ来る前の画面に戻る
+    document.getElementById('backBtn').onclick = ()=>{
+      state.screen = screenBeforeTime();
+      if(state.screen === 'worktype') state.project = null;
+      render();
+    };
+    document.getElementById('startTime').onchange = (e)=>{ state.start = e.target.value; render(); };
+    document.getElementById('endTime').onchange = (e)=>{ state.end = e.target.value; render(); };
+    const nextBtn = document.getElementById('nextBtn');
+    if(nextBtn) nextBtn.onclick = ()=>{ goToDetails(); };
+    return;
+  }
+  if(state.screen === 'details'){
+    const ctx = state.countCtx || { prevCum: 0, yHours: 0, yCount: 0, yUph: null };
+    const summaryCard = `
+      <div class="card summary-card">
+        <div class="row"><span class="k">${t('sumYHours')}</span><span>${ctx.yHours} ${t('hoursUnit')}</span></div>
+        <div class="row"><span class="k">${t('sumYCount')}</span><span>${ctx.yCount}</span></div>
+        <div class="row"><span class="k">${t('sumUph')}</span><span>${ctx.yUph!==null ? ctx.yUph : '--'}</span></div>
+      </div>
+    `;
+
+    // 荷造り・梱包（業務委託）は、ダンボールのサイズと箱数を入れる（どちらも必須）
+    if(needsBox(state.worktype, state.project)){
+      app.innerHTML = `
+        ${headerHtml()}
+        ${renderStepBar(4)}
+        <div class="backlink"><button id="backBtn">${t('backToTime')}</button></div>
+        <div class="steptitle">${t('boxTitle')}</div>
+        <main>
+          ${summaryCard}
+          <div class="card">
+            <div class="field">
+              <label>${t('boxSize')}</label>
+              <select id="boxSizeSelect" style="width:100%;font-size:16px;padding:10px;border-radius:10px;border:1px solid var(--border);background:#fafafa;">
+                <option value="" ${state.boxSize===''?'selected':''}>${t('selectPlease')}</option>
+                <option value="90サイズ" ${state.boxSize==='90サイズ'?'selected':''}>${t('size90')}</option>
+                <option value="115サイズ" ${state.boxSize==='115サイズ'?'selected':''}>${t('size115')}</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>${t('boxCount')}</label>
+              <input type="number" inputmode="numeric" id="boxCountInput" value="${esc(state.count)}">
+            </div>
+            <div style="font-size:13px;color:var(--muted);margin-top:10px;line-height:1.6;">${esc(t('boxNote'))}</div>
+          </div>
+        </main>
+        <footer class="bar">
+          <button class="primary" id="submitBtn" ${canSubmitDetails() ? '' : 'disabled'}>${t('record')}</button>
+        </footer>
+      `;
+      bindHeader();
+      document.getElementById('backBtn').onclick = ()=>{ state.screen='time'; render(); };
+      const updateBtn = ()=>{
+        const submitBtn = document.getElementById('submitBtn');
+        if(submitBtn && !state.isSubmitting) submitBtn.disabled = !canSubmitDetails();
+      };
+      document.getElementById('boxSizeSelect').onchange = (e)=>{ state.boxSize = e.target.value; updateBtn(); };
+      document.getElementById('boxCountInput').oninput = (e)=>{ state.count = e.target.value; updateBtn(); };
+      document.getElementById('submitBtn').onclick = ()=>{ submitEntry(); };
+      return;
+    }
+
+    const prevCum = ctx.prevCum;
+    const curCum = state.count === '' ? null : Number(state.count);
+    const dailyCount = curCum !== null ? (curCum - prevCum) : null;
+    const isQuota = isQuotaWork(state.worktype);
+    const showMemo = getSpecialLabel(state.project) === 'その他';
+    app.innerHTML = `
+      ${headerHtml()}
+      ${renderStepBar(4)}
+      <div class="backlink"><button id="backBtn">${t('backToTime')}</button></div>
+      <div class="steptitle">${t('countTitle', showMemo, isQuota)}</div>
+      <main>
+        ${summaryCard}
+        <div class="card">
+          <div class="field">
+            <label>${t('cumLabel', isQuota ? t('req') : t('opt'))}</label>
+            <input type="number" inputmode="numeric" id="countInput" value="${esc(state.count)}">
+          </div>
+          <div class="field">
+            <label>${t('dailyLabel', isQuota ? t('req') : t('opt'))}</label>
+            <input type="number" inputmode="numeric" id="dailyInput" value="${dailyCount!==null ? dailyCount : ''}">
+          </div>
+          <div class="hours-display" style="margin-top:10px;padding:14px 0;">
+            <div class="num" id="dailyCountNum" style="font-size:28px;"></div>
+            <div class="hint" id="dailyCountHint"></div>
+          </div>
+          <div class="rulebox">${esc(t('rule'))}</div>
+          ${showMemo ? `
+          <div class="field">
+            <label>${t('memo')}</label>
+            <textarea id="memoInput" rows="2">${esc(state.memo)}</textarea>
+          </div>
+          ` : ''}
+        </div>
+      </main>
+      <footer class="bar">
+        <button class="primary" id="submitBtn" ${canSubmitDetails() ? '' : 'disabled'}>${t('record')}</button>
+      </footer>
+    `;
+    bindHeader();
+    document.getElementById('backBtn').onclick = ()=>{ state.screen='time'; render(); };
+
+    function updateCountDisplays(){
+      const cc = state.count === '' ? null : Number(state.count);
+      const dc = cc !== null ? (cc - prevCum) : null;
+      const numEl = document.getElementById('dailyCountNum');
+      const hintEl = document.getElementById('dailyCountHint');
+      numEl.innerHTML = `${dc!==null ? dc : '--'}<span>${t('todayUnit')}</span>`;
+      numEl.style.color = (dc!==null && dc<0) ? 'var(--danger)' : '';
+      hintEl.textContent = dc!==null
+        ? (dc<0 ? t('negWarn') : t('autoCalc', cc, prevCum))
+        : t('prevInfo', prevCum);
+      const submitBtn = document.getElementById('submitBtn');
+      if(submitBtn && !state.isSubmitting) submitBtn.disabled = !canSubmitDetails();
+      return dc;
+    }
+    updateCountDisplays();
+
+    document.getElementById('countInput').oninput = (e)=>{
+      state.count = e.target.value;
+      state.countMode = 'cum';
+      const dc = updateCountDisplays();
+      const dailyEl = document.getElementById('dailyInput');
+      const dailyVal = dc !== null ? String(dc) : '';
+      if(dailyEl.value !== dailyVal) dailyEl.value = dailyVal;
+    };
+    document.getElementById('dailyInput').oninput = (e)=>{
+      const typed = e.target.value;
+      const newCum = typed === '' ? '' : String(prevCum + Number(typed));
+      state.count = newCum;
+      state.countMode = 'daily';
+      const countEl = document.getElementById('countInput');
+      if(countEl.value !== newCum) countEl.value = newCum;
+      updateCountDisplays();
+    };
+    const memoInputEl = document.getElementById('memoInput');
+    if(memoInputEl) memoInputEl.oninput = (e)=>{ state.memo = e.target.value; };
+    document.getElementById('submitBtn').onclick = ()=>{ submitEntry(); };
+    return;
+  }
+  if(state.screen === 'result'){
+    const r = state.lastResult;
+    app.innerHTML = `
+      ${headerHtml()}
+      <div class="steptitle">${t('saved')}</div>
+      <main>
+        <div class="card" style="text-align:center;padding:32px 16px;">
+          <div style="font-size:24px;font-weight:800;margin-bottom:8px;">${esc(r.project)}</div>
+          <div style="font-size:24px;font-weight:800;margin-bottom:22px;">${workLabelHtml(r.worktype)}</div>
+          <div style="font-size:14px;color:var(--muted);margin-bottom:6px;">UPH</div>
+          ${renderUphComparison(r.worktype, r.uph)}
+        </div>
+      </main>
+      <footer class="bar">
+        <button class="primary" id="nextBtn">${t('nextWork')}</button>
+      </footer>
+    `;
+    bindHeader();
+    document.getElementById('nextBtn').onclick = ()=>{ startEntryFlow(); };
+    return;
+  }
+  if(state.screen === 'admin'){
+    renderAdmin(app);
+    return;
+  }
+}
+
+function renderWhoHeader(){
+  const chips = [];
+  if(state.project) chips.push(state.project);
+  if(state.worktype) chips.push(wtName(state.worktype));
+  if(state.start && state.end){
+    const h = computeHours(state.start, state.end);
+    chips.push(`${h!==null ? h : '--'}h（${state.start}〜${state.end}）`);
+  }
+  return `
+    <div class="who">
+      <button class="whobtn" id="changeNameBtn"><b>${esc(state.currentName)}</b><span>${t('changeName')}</span></button>
+      ${chips.length ? `<div class="chip-row">${chips.map(c=>`<span class="chip">${esc(c)}</span>`).join('')}</div>` : ''}
+    </div>
+  `;
+}
+
+function renderUphComparison(worktype, uph){
+  if(uph === null) return `<div style="font-size:56px;font-weight:800;color:var(--ink);">--</div>`;
+  const bench = getBenchmarkUph(worktype);
+  if(bench === null){
+    return `<div style="font-size:56px;font-weight:800;color:var(--ink);">${uph}</div>`;
+  }
+  const uphSpan = (c)=>`<span style="font-size:56px;font-weight:800;color:${c};">${uph}</span>`;
+  const benchSpan = `<span style="font-size:20px;font-weight:700;color:var(--muted);">${bench}</span>`;
+  const sign = (s)=>`<span style="font-size:26px;font-weight:700;color:var(--muted);margin:0 8px;">${s}</span>`;
+  if(uph < bench){
+    return `<div>${benchSpan}${sign('&gt;')}${uphSpan('var(--danger)')}</div>`;
+  } else if(uph > bench){
+    return `<div>${uphSpan('var(--success)')}${sign('&gt;')}${benchSpan}</div>`;
+  } else {
+    return `<div>${uphSpan('#000000')}${sign('=')}${benchSpan}</div>`;
+  }
+}
+
+function renderStepBar(step){
+  let dots = '';
+  for(let i=1;i<=4;i++){
+    let cls = 'dot';
+    if(i < step) cls += ' done';
+    if(i === step) cls += ' active';
+    dots += `<div class="${cls}"></div>`;
+  }
+  return `<div class="stepbar">${dots}</div>`;
+}
+
+// 管理画面「入力データ」タブ用。開いたときだけスプレッドシートから全件を読み込む
+async function loadAdminEntries(){
+  if(state.adminLoading) return;
+  state.adminLoading = true;
+  state.adminError = false;
+  try{
+    state.adminEntries = await gsRun('apiGetAllEntries');
+  }catch(e){
+    state.adminError = true;
+  }
+  state.adminLoading = false;
+  if(state.screen === 'admin' && state.adminTab === 'data') render();
+}
+
+// 案件マスタの操作（1件ずつスプレッドシートに反映し、最新の一覧を受け取る）
+async function runProjectOp(fnName, args, successMsg){
+  try{
+    state.projects = await gsRun(fnName, ...args);
+    if(successMsg) showToast(successMsg);
+  }catch(e){
+    // 失敗の理由も出す（例：「呼び出せない処理です: apiSetProjectPinned」→ Apps Scriptが古い版のまま）
+    if(!(e instanceof DeviceError)) showAlertModal('保存に失敗しました。\n' + String((e && e.message) || e));
+  }
+  render();
+}
+
+function renderAdmin(app){
+  app.innerHTML = `
+    <header class="top">
+      <div class="who"><b>管理画面</b></div>
+      <button class="gear" id="closeAdmin">✕</button>
+    </header>
+    <div class="admin-tabs">
+      <button id="tabProjects" class="${state.adminTab==='projects'?'active':''}">案件マスタ</button>
+      <button id="tabData" class="${state.adminTab==='data'?'active':''}">入力データ</button>
+    </div>
+    <main id="adminBody"></main>
+  `;
+  document.getElementById('closeAdmin').onclick = ()=>{
+    if(state.currentName){ startEntryFlow(); }
+    else { loadHome(); }
+  };
+  document.getElementById('tabProjects').onclick = ()=>{ state.adminTab='projects'; render(); };
+  document.getElementById('tabData').onclick = ()=>{
+    state.adminTab = 'data';
+    state.adminEntries = null;
+    state.adminError = false;
+    render();
+  };
+
+  const body = document.getElementById('adminBody');
+  if(state.adminTab === 'projects'){
+    body.innerHTML = `
+      <div class="card">
+        <div class="field">
+          <label>新しい案件名を追加</label>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="newProjInput" style="flex:1;">
+            <button class="primary" style="width:auto;padding:10px 16px;" id="addProjBtn">追加</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        ${state.projects.slice().sort((a,b)=> compareProjects(a.name,b.name)).map(p=>`
+          <div class="proj-row">
+            <span class="name ${p.active?'':'inactive'}">${esc(p.name)}${(p.hasFile===false && getSpecialLabel(p.name)===null) ? '<span class="nofile-tag">案件ファイルなし</span>' : ''}</span>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <button class="del-proj" data-pin="${esc(p.name)}" title="${esc(p.pinned ? t('pinOn') : t('pinOff'))}" style="color:inherit;${p.pinned ? 'background:#FFF4D6;border-color:#F5A623;' : 'opacity:.35;'}">📌</button>
+              <div class="switch ${p.active?'on':''}" data-name="${esc(p.name)}"><div class="knob"></div></div>
+              <button class="del-proj" data-name="${esc(p.name)}" title="削除">✕</button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+    body.querySelectorAll('.switch').forEach(sw=>{
+      sw.onclick = ()=>{
+        const name = sw.dataset.name;
+        const proj = state.projects.find(p=>p.name===name);
+        if(!proj) return;
+        runProjectOp('apiSetProjectActive', [name, !proj.active]);
+      };
+    });
+    body.querySelectorAll('[data-pin]').forEach(btn=>{
+      btn.onclick = ()=>{
+        const name = btn.dataset.pin;
+        const proj = state.projects.find(p=>p.name===name);
+        if(!proj) return;
+        runProjectOp('apiSetProjectPinned', [name, !proj.pinned]);
+      };
+    });
+    body.querySelectorAll('.del-proj:not([data-pin])').forEach(btn=>{
+      btn.onclick = ()=>{
+        const name = btn.dataset.name;
+        runProjectOp('apiDeleteProject', [name], `「${name}」を削除しました`);
+      };
+    });
+    document.getElementById('addProjBtn').onclick = ()=>{
+      const name = document.getElementById('newProjInput').value.trim();
+      if(!name) return;
+      // 古い案件は、📌（固定）を付けて追加する（付けないと、追加してもすぐに一覧から外れるため）
+      const pin = isOldLot(name);
+      runProjectOp('apiAddProject', [name, pin], pin ? '案件名を追加しました（古い案件なので📌固定にしました）' : '案件名を追加しました');
+    };
+    return;
+  }
+
+  // ===== 入力データタブ =====
+  if(state.adminError){
+    body.innerHTML = `
+      <div class="card" style="text-align:center;">
+        <div style="color:var(--danger);margin-bottom:12px;">データを読み込めませんでした。通信状況を確認してください。</div>
+        <button class="primary" id="retryAdmin">もう一度読み込む</button>
+      </div>
+    `;
+    document.getElementById('retryAdmin').onclick = ()=>{ state.adminError = false; render(); };
+    return;
+  }
+  if(state.adminEntries === null){
+    body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);">読み込み中…</div>';
+    loadAdminEntries();
+    return;
+  }
+
+  const entries = state.adminEntries;
+  const csv = entriesToCSV(entries);
+  const box90 = entries
+    .filter(en=> BOX_WORKTYPES.includes(en.worktype) && en.boxSize==='90サイズ')
+    .reduce((sum,en)=> sum + (Number(en.count)||0), 0);
+  const box115 = entries
+    .filter(en=> BOX_WORKTYPES.includes(en.worktype) && en.boxSize==='115サイズ')
+    .reduce((sum,en)=> sum + (Number(en.count)||0), 0);
+  const blankIfEmpty = v => (v===''||v===undefined||v===null) ? '' : v;
+  body.innerHTML = `
+    <div class="card">
+      <button class="primary" id="copyCsvBtn">CSVをコピー（${entries.length}件）</button>
+      <div style="margin-top:10px;">
+        <button class="primary" id="deleteAllBtn" style="background:#E7E4DC;color:var(--muted);">全データを削除</button>
+      </div>
+    </div>
+    <div class="card summary-card">
+      <div class="row"><span class="k">90サイズ 小計（箱）</span><span>${box90}</span></div>
+      <div class="row"><span class="k">115サイズ 小計（箱）</span><span>${box115}</span></div>
+    </div>
+    <div class="card tablewrap">
+      <table class="data">
+        <thead><tr><th>日付</th><th>名前</th><th>作業内容</th><th>案件名</th><th>開始</th><th>終了</th><th>時間</th><th>数</th><th>累計</th><th>箱サイズ</th><th>備考</th></tr></thead>
+        <tbody>
+          ${entries.slice().reverse().map(en=>`
+            <tr>
+              <td>${esc(en.date)}</td><td>${esc(en.name)}</td><td>${esc(wtName(en.worktype))}</td><td>${esc(en.project)}</td>
+              <td>${esc(en.start)}</td><td>${esc(en.end)}</td><td>${esc(en.hours)}</td><td>${esc(blankIfEmpty(en.count))}</td><td>${esc(blankIfEmpty(en.cumulativeCount))}</td><td>${esc(en.boxSize)}</td><td>${esc(en.memo)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+  document.getElementById('copyCsvBtn').onclick = async ()=>{
+    try{
+      await navigator.clipboard.writeText(csv);
+      showToast('CSVをコピーしました');
+    }catch(e){
+      const ta = document.createElement('textarea');
+      ta.value = csv;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      showToast('CSVをコピーしました');
+    }
+  };
+  document.getElementById('deleteAllBtn').onclick = ()=>{
+    showConfirmModal(`全${entries.length}件のデータを削除しますか？\nこの操作は元に戻せません。`, '削除する', async ()=>{
+      const count = entries.length;
+      try{
+        await gsRun('apiDeleteAllEntries');
+        state.adminEntries = [];
+        state.quick = {};
+        state.lastEnds = {};
+        showToast(`${count}件を削除しました`);
+      }catch(e){
+        showToast('削除に失敗しました。もう一度お試しください', 'error');
+      }
+      render();
+    });
+  };
+}
+
+function showConfirmModal(message, confirmLabel, onConfirm, style){
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-box">
+      <div class="modal-msg">${esc(message).replace(/\n/g,'<br>')}</div>
+      <div class="modal-actions">
+        <button class="modal-btn cancel" id="modalCancel">${t('cancel')}</button>
+        <button class="modal-btn ${style==='ok' ? 'ok' : 'danger'}" id="modalConfirm">${esc(confirmLabel)}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#modalCancel').onclick = ()=> document.body.removeChild(overlay);
+  overlay.querySelector('#modalConfirm').onclick = ()=>{
+    document.body.removeChild(overlay);
+    onConfirm();
+  };
+}
+
+// 保存失敗などを確実に伝えるための、OKボタンだけのお知らせ
+function showAlertModal(message){
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-box">
+      <div class="modal-msg">${esc(message).replace(/\n/g,'<br>')}</div>
+      <div class="modal-actions">
+        <button class="modal-btn ok" id="modalOk">OK</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#modalOk').onclick = ()=> document.body.removeChild(overlay);
+}
+
+loadHome(true);
+</script>
+</body>
+</html>
