@@ -495,7 +495,11 @@ const T = {
   acQBoxes:  { ja: '{n}箱', en: '{n} boxes', id: '{n} kotak' },
   acQSince:  { ja: '（{d} から）', en: '(since {d})', id: '(sejak {d})' },
   acQNone:   { ja: 'シールが必要な箱はありません', en: 'No boxes need labels', id: 'Tidak ada kotak yang perlu label' },
-  acQNoPer:  { ja: '1箱の個数が決まっていない種類（決めると、満杯の箱が印刷待ちに入ります）', en: 'Types without a number per box (set it to add full boxes)', id: 'Jenis tanpa jumlah per kotak (isi agar kotak penuh masuk antrean)' },
+  acQOneBox: { ja: '1つの箱に {n}個（1箱の個数はまだ決まっていません）', en: 'One box of {n} (number per box not set yet)', id: 'Satu kotak isi {n} (jumlah per kotak belum diatur)' },
+  acPlaceOne:{ ja: '1つの箱にまとめて保管（シール済み {l}箱）。入りきらなくなったら、1箱の個数を決めてください', en: 'Kept in one box ({l} labeled). Set the number per box when it no longer fits', id: 'Disimpan dalam satu kotak ({l} berlabel). Atur jumlah per kotak bila tidak muat' },
+  acMvOne:   { ja: 'このロットのAC {a}個 を、{p} の同じ種類の箱（{b}個）に入れて、シールのマスに {c} と書き直してください（空になった箱のシールは捨てる）。1つの箱に入りきらないときは、1箱の個数を決めてください', en: 'Put the {a} ACs into the same type\'s box on {p} ({b}) and rewrite its label to {c}. If it no longer fits in one box, set the number per box', id: 'Masukkan {a} AC ke kotak jenis yang sama di {p} ({b}), tulis ulang labelnya {c}. Jika tidak muat, atur jumlah per kotak' },
+  acMvOne0:  { ja: 'この箱は、そのまま {p} へ移してください（シールもそのまま）', en: 'Move this box to {p} as it is (keep the label)', id: 'Pindahkan kotak ini ke {p} apa adanya (label tetap)' },
+  acQNoPer:  { ja: '1箱の個数が決まっていない種類（1つの箱に入りきらなくなったら、ここで決めてください）', en: 'Types without a number per box (set it to add full boxes)', id: 'Jenis tanpa jumlah per kotak (isi agar kotak penuh masuk antrean)' },
   acPlaceBox:{ ja: '1箱 {p}個：満杯 {f}箱 ＋ 端数 {r}個（シール済み {l}箱）', en: '{p} per box: {f} full + {r} partial ({l} labeled)', id: '{p} per kotak: {f} penuh + {r} sisa ({l} berlabel)' },
   acPlaceNoPer:{ ja: '1箱の個数が決まっていません', en: 'Number per box not set', id: 'Jumlah per kotak belum diatur' },
   acMvRest:  { ja: '端数 {a}個 を、{p} の端数の箱（{b}個）に入れてください → {c}個（シールのマスに {c} と書き直す。空になった箱のシールは捨てる）', en: 'Put the {a} partial into {p}\'s partial box ({b}) → {c} (rewrite the number on the label; throw away the empty box\'s label)', id: 'Masukkan sisa {a} ke kotak sisa {p} ({b}) → {c} (tulis ulang angka di label; buang label kotak kosong)' },
@@ -2307,7 +2311,7 @@ async function openAcPlace(id) {
 }
 function acStockListHtml(list) {
   if (!list.length) return `<p class="note">${esc(t('acStockNone'))}</p>`;
-  return `<ul class="spec">${list.map(x => `<li><div class="sh" style="cursor:default"><span class="sl">${esc(acTypeText(x))}<br><span class="note" style="font-weight:400">${esc(x.per ? t('acPlaceBox', { p: x.per, f: x.full, l: x.labeled, r: x.rest }) : (x.per === 0 ? t('acPlaceNoPer') : ''))}</span></span><span class="sv" style="font-size:22px">${esc(x.n)}${esc(t('acUnit'))}</span></div></li>`).join('')}</ul>`;
+  return `<ul class="spec">${list.map(x => `<li><div class="sh" style="cursor:default"><span class="sl">${esc(acTypeText(x))}<br><span class="note" style="font-weight:400">${esc(x.per ? t('acPlaceBox', { p: x.per, f: x.full, l: x.labeled, r: x.rest }) : (x.per === 0 ? t('acPlaceOne', { l: x.labeled }) : ''))}</span></span><span class="sv" style="font-size:22px">${esc(x.n)}${esc(t('acUnit'))}</span></div></li>`).join('')}</ul>`;
 }
 function renderAcPlace() {
   const r = state.acPlace;
@@ -2345,7 +2349,8 @@ function renderAcMove() {
   const r = state.acMove, n = r.items.reduce((s, x) => s + x.n, 0);
   $app.innerHTML = `<div class="card"><p class="big">${esc(r.label)}</p><p class="note">${esc(t('acMoveNote'))}</p></div>
     ${r.items.length ? r.items.map(x => `<div class="card" style="margin-bottom:8px"><p class="big" style="margin:0">${esc(acTypeText(x))}　${esc(x.n)}${esc(t('acUnit'))}　→ ${esc(x.to)}</p>
-        ${x.per ? `${x.lotFull ? `<p class="note">${esc(t('acMvBoxes', { f: x.lotFull, p: x.to }))}</p>` : ''}${x.lotRest ? `<p style="font-weight:700">${esc(acMoveRestText(x))}</p>` : ''}` : `<p class="note">${esc(t('acPlaceNoPer'))}</p>`}</div>`).join('')
+        ${x.per ? `${x.lotFull ? `<p class="note">${esc(t('acMvBoxes', { f: x.lotFull, p: x.to }))}</p>` : ''}${x.lotRest ? `<p style="font-weight:700">${esc(acMoveRestText(x))}</p>` : ''}`
+          : `<p style="font-weight:700">${esc(x.palN ? t('acMvOne', { a: x.n, p: x.to, b: x.palN, c: x.n + x.palN }) : t('acMvOne0', { p: x.to }))}</p>`}</div>`).join('')
       : `<p class="note">${esc(t('acMoveNone'))}</p>`}
     ${r.noPallet.length ? `<div class="card"><p class="warn">${esc(t('acNoPallet'))}</p><p class="note">${r.noPallet.map(x => esc(acTypeText(x) + '　' + x.n + t('acUnit'))).join('<br>')}</p></div>` : ''}
     <div class="actions"><button class="primary" id="amGo" type="button" ${r.items.length ? '' : 'disabled'}>${esc(t('acMoveGo', { n: n }))}</button></div>
@@ -3227,7 +3232,7 @@ function renderAcQueue() {
     ${q.pending ? `<div class="card"><p class="note">${esc(t('acClPendingNote', { n: q.pending.n }))}</p>
       <div class="actions"><button class="primary" id="aqDone" type="button">${esc(t('acClDoneBtn'))}</button></div></div>` : ''}
     ${q.items.length ? `<h2>${esc(t('acQList'))}</h2>${q.items.map((x, i) => `<div class="card" style="margin-bottom:8px"><p class="big" style="margin:0">${esc(acTypeText(x))}　${esc(t('acQBoxes', { n: x.pend }))}</p>
-        <p class="note">${esc(x.label)}　${esc(t('acQState2', { p: x.per, f: x.full, r: x.rest, l: x.labeled, b: x.boxes }))}${x.since ? '　' + esc(t('acQSince', { d: x.since })) : ''}</p>
+        <p class="note">${esc(x.label)}　${esc(x.per ? t('acQState2', { p: x.per, f: x.full, r: x.rest, l: x.labeled, b: x.boxes }) : t('acQOneBox', { n: x.rest }))}${x.since ? '　' + esc(t('acQSince', { d: x.since })) : ''}</p>
         <p class="note">${esc(t('acQLabels', { l: x.labels.map(v => v + t('acUnit')).join('・') }))}</p>
         ${acQReady(x) ? '' : `<p class="warn">${esc(t('acBulkNoPhoto'))}</p><div class="actions"><button class="secondary" type="button" data-aqph="${i}">${esc(t('acbShoot'))} / ${esc(t('acbPickPhoto'))}</button></div>`}</div>`).join('')}`
       : `<p class="note">${esc(t('acQNone'))}</p>`}
