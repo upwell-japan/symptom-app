@@ -437,12 +437,12 @@ const T = {
   acbNewN:   { ja: '初めての種類です。1箱の個数を入れてください（次からこの数が入ります）', en: 'New type. Enter the number per box (it will be saved)', id: 'Jenis baru. Masukkan jumlah per kotak (akan disimpan)' },
   acbCopies: { ja: '印刷する枚数（箱の数）', en: 'Number of labels (boxes)', id: 'Jumlah label (kotak)' },
   acbSheets: { ja: '枚', en: 'labels', id: 'label' },
-  acbStart:  { ja: '開始位置（1〜24。左上が1、右へ2、3…）', en: 'Start position (1–24, top-left is 1)', id: 'Posisi mulai (1–24, kiri atas 1)' },
+  acbStart:  { ja: '開始位置（1〜12。左上が1、右へ2、次の段が3…）', en: 'Start position (1–12, top-left is 1)', id: 'Posisi mulai (1–12, kiri atas 1)' },
   acbPrint:  { ja: '🖨 シールを印刷する', en: '🖨 Print labels', id: '🖨 Cetak label' },
   acbChoose: { ja: 'メーカー・AC口型・Wを選んでください', en: 'Choose maker, connector and W', id: 'Pilih merek, konektor dan W' },
   acbNeedN:  { ja: '1箱の個数を入れてください', en: 'Enter the number per box', id: 'Masukkan jumlah per kotak' },
   acbNeedCopies:{ ja: '印刷する枚数を入れてください（240枚まで）', en: 'Enter the number of labels (up to 240)', id: 'Masukkan jumlah label (maks 240)' },
-  acbNeedStart:{ ja: '開始位置は1〜24で入れてください', en: 'Start position must be 1–24', id: 'Posisi mulai harus 1–24' },
+  acbNeedStart:{ ja: '開始位置は1〜12で入れてください', en: 'Start position must be 1–12', id: 'Posisi mulai harus 1–12' },
   acbChangeAsk:{ ja: '1箱の個数を {a}個 から {b}個 に変えます。次からも {b}個 になります。よろしいですか？', en: 'Change the number per box from {a} to {b}? It will be used next time too.', id: 'Ubah jumlah per kotak dari {a} ke {b}? Akan dipakai seterusnya.' },
   acbNewT:   { ja: '{t} は、まだ登録されていません', en: '{t} is not registered yet', id: '{t} belum terdaftar' },
   acbNewAsk: { ja: '同じメーカーで、すでに写真のあるACです。手元のACの差し込む口の形が、この中のどれかと同じではないか見比べてください（呼び方が違うだけで、同じ形のことがあります。Wは違っていてもかまいません）', en: 'These ACs of the same maker already have photos. Check that your AC is not one of them (the name may just differ)', id: 'AC merek yang sama ini sudah punya foto. Pastikan AC Anda bukan salah satunya (mungkin hanya beda nama)' },
@@ -464,7 +464,7 @@ const T = {
   acmClLabels:{ ja: '🏷 棚卸ししたACのシールを発行する', en: '🏷 Labels for counted ACs', id: '🏷 Label untuk AC yang dihitung' },
   acClTitle: { ja: '棚卸ししたACのシール', en: 'Labels for counted ACs', id: 'Label AC yang dihitung' },
   acClBar:   { ja: '今回 {n}枚（シート {s}枚・最後のシートは {c}枚中 {u}枚。あと {r}枚で使い切れます）', en: '{n} labels ({s} sheets; last sheet {u}/{c}, {r} left)', id: '{n} label ({s} lembar; lembar terakhir {u}/{c}, sisa {r})' },
-  acClStart: { ja: '開始位置（1〜24）', en: 'Start position (1–24)', id: 'Posisi mulai (1–24)' },
+  acClStart: { ja: '開始位置（1〜12。左上が1、右へ2、次の段が3…）', en: 'Start position (1–12)', id: 'Posisi mulai (1–12)' },
   acClNote:  { ja: 'パレットにあるACの種類ごとに、今回印刷する枚数を入れてください。印刷済みの続きから出ます。', en: 'Enter how many labels to print for each type. Printing continues after the labels already printed.', id: 'Isi jumlah label tiap jenis. Pencetakan melanjutkan setelah yang sudah dicetak.' },
   acClStock: { ja: '在庫 {n}個（{p}）', en: 'Stock {n} ({p})', id: 'Stok {n} ({p})' },
   acClCount: { ja: 'シール {a}枚（印刷済み {d}枚・残り {l}枚）', en: '{a} labels ({d} printed, {l} left)', id: '{a} label ({d} dicetak, sisa {l})' },
@@ -2697,9 +2697,11 @@ function renderPickAcTake() {
 //   メーカー名・AC口型・Wを選ぶ → 1箱の個数（前に決めた数が入る）→ 枚数・開始位置 → 印刷
 //   用紙の寸法は、シール発行のページ（seals.html）で合わせた値を使う
 // ===============================================================
-const ACB_COLS = 4, ACB_ROWS = 6, ACB_PER = 24, ACB_SIZE = 40;
-const ACB_POS_DEFAULT = { mx: 17.5, my: 16, gx: 5, gy: 5 };
-function acbPos() { try { return Object.assign({}, ACB_POS_DEFAULT, JSON.parse(localStorage.getItem('label_pos_v1') || '{}')); } catch (e) { return Object.assign({}, ACB_POS_DEFAULT); } }
+// ACの箱のシールの用紙：A-one のラベル（ZT31175。83.8×42.3mm・2列×6段・12面）
+const ACB_COLS = 2, ACB_ROWS = 6, ACB_PER = 12, ACB_W = 83.8, ACB_H = 42.3;
+const ACB_POS_DEFAULT = { mx: 19.3, my: 21.5, gx: 3.8, gy: 0 };
+const ACB_CELLS = 5;   // シールの下の、数を書き直すマスの数
+function acbPos() { try { return Object.assign({}, ACB_POS_DEFAULT, JSON.parse(localStorage.getItem('ac_label_pos_v2') || '{}')); } catch (e) { return Object.assign({}, ACB_POS_DEFAULT); } }
 async function openAcBox() {
   try {
     const r = await call('kAcBoxLoad', [state.deviceId], 'loading');
@@ -2802,17 +2804,18 @@ function renderAcBox() {
   const pb = document.getElementById('acbPrint'); if (pb) pb.onclick = printAcBox;
   document.getElementById('acbBack').onclick = goBack;
 }
-// 箱のシール（40×40mm）：上にメーカー名・口型・W・個数、下に数を書き直す4つのマス
+// 箱のシール（83.8×42.3mm）：左上にメーカー名、その下に口型とW、右に個数、下に数を書き直す5つのマス
 function acbLabelHtml(b, n) {
-  const mk = String(b.maker || ''), fs = mk.length > 9 ? 9 : mk.length > 7 ? 10.5 : 12;
-  const cw = String(b.conn || '') + '　' + String(b.w || '') + 'W', fs2 = cw.length > 10 ? 9.5 : 12;
+  const mk = String(b.maker || ''), fsMk = mk.length > 9 ? 13 : 16;
+  const cw = String(b.conn || '') + '　' + String(b.w || '') + 'W', fsCw = cw.length > 9 ? 15 : 18;
   return `<div style="position:relative;width:100%;height:100%;font-family:'Meiryo','Noto Sans JP',sans-serif;color:#000">
-    <div style="position:absolute;left:0;right:0;top:2.5mm;text-align:center;line-height:1.08">
-      <div style="font-size:${fs}pt;font-weight:700">${esc(mk)}</div>
-      <div style="font-size:${fs2}pt;font-weight:700">${esc(cw)}</div>
-      <div style="font-size:20pt;font-weight:700;margin-top:0.5mm">${esc(n)}個</div></div>
-    <div style="position:absolute;left:3mm;right:3mm;bottom:3mm;height:11mm;border:0.4mm solid #000;display:flex;box-sizing:border-box">
-      <div style="flex:1;border-right:0.4mm solid #000"></div><div style="flex:1;border-right:0.4mm solid #000"></div><div style="flex:1;border-right:0.4mm solid #000"></div><div style="flex:1"></div></div></div>`;
+    <div style="position:absolute;left:5mm;top:3.5mm;right:5mm;height:22mm;display:flex;align-items:center">
+      <div style="flex:1;min-width:0;line-height:1.15">
+        <div style="font-size:${fsMk}pt;font-weight:700;white-space:nowrap;overflow:hidden">${esc(mk)}</div>
+        <div style="font-size:${fsCw}pt;font-weight:700;white-space:nowrap;overflow:hidden">${esc(cw)}</div></div>
+      <div style="font-size:30pt;font-weight:700;white-space:nowrap;padding-left:2mm">${esc(n)}<span style="font-size:16pt">個</span></div></div>
+    <div style="position:absolute;left:5mm;right:5mm;bottom:3.5mm;height:12mm;border:0.4mm solid #000;display:flex">
+      ${Array.from({ length: ACB_CELLS }, (_, i) => `<div style="flex:1;${i < ACB_CELLS - 1 ? 'border-right:0.4mm solid #000' : ''}"></div>`).join('')}</div></div>`;
 }
 // ACの写真を撮って保存する（小さい写真は画面用、元の写真はドライブへ）
 ['acPhotoIn', 'acPhotoPick'].forEach(id => document.getElementById(id).addEventListener('change', acPhotoChosen));
@@ -3043,7 +3046,7 @@ function acPrintLabels(labels, start) {
     slots.slice(s, s + ACB_PER).forEach((u, k) => {
       if (!u) return;
       const col = k % ACB_COLS, row = Math.floor(k / ACB_COLS);
-      html += `<div style="position:absolute;width:${ACB_SIZE}mm;height:${ACB_SIZE}mm;left:${p.mx + col * (ACB_SIZE + p.gx)}mm;top:${p.my + row * (ACB_SIZE + p.gy)}mm;overflow:hidden">${acbLabelHtml(u.b, u.n)}</div>`;
+      html += `<div style="position:absolute;width:${ACB_W}mm;height:${ACB_H}mm;left:${p.mx + col * (ACB_W + p.gx)}mm;top:${p.my + row * (ACB_H + p.gy)}mm;overflow:hidden">${acbLabelHtml(u.b, u.n)}</div>`;
     });
     html += '</div>';
   }
