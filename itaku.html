@@ -457,10 +457,10 @@ const T = {
   acPickAddW:{ ja: '＋ ほかのWを足す', en: '+ Add another W', id: '+ Tambah W lain' },
   acCtPer:   { ja: '個入り ×', en: 'per box ×', id: 'per kotak ×' },
   acCtBoxes: { ja: '箱', en: 'boxes', id: 'kotak' },
-  acCtRest:  { ja: '＋ 端数（マスキングテープの箱）', en: '+ partial (masking-tape box)', id: '+ sisa (kotak masking tape)' },
+  acCtRest:  { ja: '＋ 端数の箱', en: '+ partial box', id: '+ kotak sisa' },
   acCtTotal: { ja: '合計：', en: 'Total: ', id: 'Total: ' },
   acCtDel:   { ja: 'この種類を消す', en: 'Remove this type', id: 'Hapus jenis ini' },
-  acCtBad:   { ja: '{t}：1箱の個数・箱の数・端数・シールを貼ってある箱を、正しく入れてください（箱があるときは1箱の個数が必要です。シールを貼ってある箱は、箱の数までです）', en: '{t}: enter the number per box, boxes and the partial box correctly', id: '{t}: isi jumlah per kotak, jumlah kotak, dan sisa dengan benar' },
+  acCtBad:   { ja: '{t}：1箱の個数・箱の数・端数・シールを貼ってある箱を、正しく入れてください（箱があるときは1箱の個数が必要です。シールを貼ってある箱は、端数の箱も合わせた箱の数までです）', en: '{t}: enter the number per box, boxes and the partial box correctly', id: '{t}: isi jumlah per kotak, jumlah kotak, dan sisa dengan benar' },
   acmClLabels:{ ja: '🏷 棚卸ししたACのシールを発行する', en: '🏷 Labels for counted ACs', id: '🏷 Label untuk AC yang dihitung' },
   acClTitle: { ja: '棚卸ししたACのシール', en: 'Labels for counted ACs', id: 'Label AC yang dihitung' },
   acClBar:   { ja: '今回 {n}枚（シート {s}枚・最後のシートは {c}枚中 {u}枚。あと {r}枚で使い切れます）', en: '{n} labels ({s} sheets; last sheet {u}/{c}, {r} left)', id: '{n} label ({s} lembar; lembar terakhir {u}/{c}, sisa {r})' },
@@ -477,25 +477,32 @@ const T = {
   acClDoneAsk:{ ja: '{n}枚のシールを「印刷済み」にします。よろしいですか？', en: 'Did all {n} labels print correctly? (OK = mark as printed)', id: 'Apakah {n} label tercetak dengan baik? (OK = tandai sudah dicetak)' },
   acClLogged:{ ja: '{n}枚を印刷済みにしました', en: 'Marked {n} labels as printed', id: '{n} label ditandai sudah dicetak' },
   acmQueue:  { ja: '🏷 シールの印刷待ち', en: '🏷 Labels waiting to print', id: '🏷 Label menunggu cetak' },
-  acQTitle:  { ja: 'シールの印刷待ち（満杯の箱だけ）', en: 'Labels waiting (full boxes only)', id: 'Label menunggu (kotak penuh saja)' },
+  acQTitle:  { ja: 'シールの印刷待ち', en: 'Labels waiting to print', id: 'Label menunggu cetak' },
+  acQTotal2: { ja: '印刷待ち {n}枚', en: '{n} waiting', id: '{n} menunggu' },
+  acQRoom:   { ja: 'このシートの残り：{r}枚（開始位置から最後まで）', en: 'Left on this sheet: {r}', id: 'Sisa di lembar ini: {r}' },
+  acQCount:  { ja: '印刷する枚数', en: 'Labels to print', id: 'Jumlah label' },
+  acQFill:   { ja: 'シートの残りに合わせる', en: 'Fit to sheet', id: 'Sesuaikan lembar' },
+  acQPrint2: { ja: '🖨 古いものから順に印刷する', en: '🖨 Print, oldest first', id: '🖨 Cetak, terlama dulu' },
+  acQNote2:  { ja: '満杯の箱にも端数の箱にもシールを貼ります。箱の中の数が変わったら、シールの下のマスに新しい数を書いてください（前の数には線を引く）。開始位置は、前に使ったシールの続きが最初から入っています。', en: 'Label both full and partial boxes. When a box count changes, write the new number in the boxes at the bottom of the label. The start position continues from the last print.', id: 'Beri label kotak penuh dan sisa. Jika jumlah berubah, tulis angka baru di kotak bawah label. Posisi mulai melanjutkan cetakan terakhir.' },
+  acQState2: { ja: '1箱 {p}個：満杯 {f}箱 ＋ 端数 {r}個（シール済み {l}箱／全部で {b}箱）', en: '{p} per box: {f} full + {r} partial (labeled {l} of {b})', id: '{p} per kotak: {f} penuh + {r} sisa (berlabel {l} dari {b})' },
+  acQLabels: { ja: '印刷するシール：{l}', en: 'Labels: {l}', id: 'Label: {l}' },
   acQTotal:  { ja: '印刷待ち {n}枚（{s}枚で1シート）', en: '{n} waiting ({s} per sheet)', id: '{n} menunggu ({s} per lembar)' },
   acQSheets: { ja: 'シート（最大 {m}シート）', en: 'sheets (max {m})', id: 'lembar (maks {m})' },
   acQPrint:  { ja: '🖨 古いものから {n}枚 を印刷する', en: '🖨 Print the oldest {n}', id: '🖨 Cetak {n} terlama' },
   acQWait:   { ja: 'あと {r}枚 たまると、1シート分を印刷できます（24枚未満では印刷しません）', en: '{r} more needed for one sheet (no printing under 24)', id: 'Perlu {r} lagi untuk satu lembar (tidak dicetak di bawah 24)' },
-  acQNote:   { ja: 'シールは満杯の箱にだけ貼ります。端数はマスキングテープに書いてください。', en: 'Labels are for full boxes only. Write the partial box on masking tape.', id: 'Label hanya untuk kotak penuh. Tulis kotak sisa di masking tape.' },
+  acQNote:   { ja: '満杯の箱にも端数の箱にもシールを貼ります。', en: 'Label both full and partial boxes.', id: 'Beri label kotak penuh dan sisa.' },
   acQList:   { ja: 'シールが必要な箱（古い順）', en: 'Boxes needing labels (oldest first)', id: 'Kotak yang perlu label (terlama dulu)' },
   acQBoxes:  { ja: '{n}箱', en: '{n} boxes', id: '{n} kotak' },
-  acQState:  { ja: '1箱 {p}個：満杯 {f}箱（シール済み {l}箱）＋ 端数 {r}個（マスキングテープ）', en: '{p} per box: {f} full ({l} labeled) + {r} partial (masking tape)', id: '{p} per kotak: {f} penuh ({l} berlabel) + {r} sisa (masking tape)' },
   acQSince:  { ja: '（{d} から）', en: '(since {d})', id: '(sejak {d})' },
   acQNone:   { ja: 'シールが必要な箱はありません', en: 'No boxes need labels', id: 'Tidak ada kotak yang perlu label' },
   acQNoPer:  { ja: '1箱の個数が決まっていない種類（決めると、満杯の箱が印刷待ちに入ります）', en: 'Types without a number per box (set it to add full boxes)', id: 'Jenis tanpa jumlah per kotak (isi agar kotak penuh masuk antrean)' },
-  acPlaceBox:{ ja: '1箱 {p}個：満杯 {f}箱（シール済み {l}箱）＋ 端数 {r}個（マスキングテープ）', en: '{p} per box: {f} full ({l} labeled) + {r} partial (masking tape)', id: '{p} per kotak: {f} penuh ({l} berlabel) + {r} sisa (masking tape)' },
+  acPlaceBox:{ ja: '1箱 {p}個：満杯 {f}箱 ＋ 端数 {r}個（シール済み {l}箱）', en: '{p} per box: {f} full + {r} partial ({l} labeled)', id: '{p} per kotak: {f} penuh + {r} sisa ({l} berlabel)' },
   acPlaceNoPer:{ ja: '1箱の個数が決まっていません', en: 'Number per box not set', id: 'Jumlah per kotak belum diatur' },
-  acMvRest:  { ja: '端数 {a}個 を、{p} の端数の箱（{b}個）に入れてください → {c}個（マスキングテープを書き直す）', en: 'Put the {a} partial into {p}\'s partial box ({b}) → {c} (rewrite the masking tape)', id: 'Masukkan sisa {a} ke kotak sisa {p} ({b}) → {c} (tulis ulang masking tape)' },
-  acMvFull:  { ja: '端数 {a}個 を、{p} の端数の箱（{b}個）に入れてください → 1箱 {per}個 が満杯になります（シールの印刷待ちに入ります）。残りの {c}個 は、新しい端数の箱（マスキングテープ）にしてください', en: 'Put the {a} partial into {p}\'s partial box ({b}) → one full box of {per} (added to labels waiting). Make the remaining {c} a new partial box (masking tape)', id: 'Masukkan sisa {a} ke kotak sisa {p} ({b}) → satu kotak penuh {per} (masuk antrean label). Sisa {c} jadi kotak sisa baru (masking tape)' },
-  acMvFull0: { ja: '端数 {a}個 を、{p} の端数の箱（{b}個）に入れてください → ちょうど1箱 {per}個 が満杯になります（シールの印刷待ちに入ります）', en: 'Put the {a} partial into {p}\'s partial box ({b}) → exactly one full box of {per} (added to labels waiting)', id: 'Masukkan sisa {a} ke kotak sisa {p} ({b}) → tepat satu kotak penuh {per} (masuk antrean label)' },
+  acMvRest:  { ja: '端数 {a}個 を、{p} の端数の箱（{b}個）に入れてください → {c}個（シールのマスに {c} と書き直す。空になった箱のシールは捨てる）', en: 'Put the {a} partial into {p}\'s partial box ({b}) → {c} (rewrite the number on the label; throw away the empty box\'s label)', id: 'Masukkan sisa {a} ke kotak sisa {p} ({b}) → {c} (tulis ulang angka di label; buang label kotak kosong)' },
+  acMvFull:  { ja: '端数 {a}個 を、{p} の端数の箱（{b}個）に入れてください → 1箱 {per}個 が満杯になります（シールのマスに {per} と書き直す）。入りきらない {c}個 は、ロットの端数の箱のまま、シールのマスに {c} と書き直してください', en: 'Put the {a} partial into {p}\'s partial box ({b}) → one full box of {per} (rewrite the label). Keep the remaining {c} in the lot box and rewrite its label to {c}', id: 'Masukkan sisa {a} ke kotak sisa {p} ({b}) → satu kotak penuh {per} (tulis ulang label). Sisa {c} tetap di kotak lot, tulis ulang labelnya {c}' },
+  acMvFull0: { ja: '端数 {a}個 を、{p} の端数の箱（{b}個）に入れてください → ちょうど1箱 {per}個 が満杯になります（シールのマスに {per} と書き直す。空になった箱のシールは捨てる）', en: 'Put the {a} partial into {p}\'s partial box ({b}) → exactly one full box of {per} (added to labels waiting)', id: 'Masukkan sisa {a} ke kotak sisa {p} ({b}) → tepat satu kotak penuh {per} (masuk antrean label)' },
   acMvBoxes: { ja: '満杯の箱 {f}箱 は、そのまま {p} へ', en: '{f} full boxes go to {p} as they are', id: '{f} kotak penuh langsung ke {p}' },
-  acCtLabeled:{ ja: 'そのうち、もうシールを貼ってある箱', en: 'Of these, boxes already labeled', id: 'Dari ini, kotak yang sudah berlabel' },
+  acCtLabeled:{ ja: 'そのうち、もうシールを貼ってある箱（端数の箱も数える）', en: 'Of these, boxes already labeled', id: 'Dari ini, kotak yang sudah berlabel' },
   acCtTitle: { ja: '棚卸し（ACの種類ごと）', en: 'Count (by AC type)', id: 'Stok opname (per jenis AC)' },
   acCtNote:  { ja: 'ACはすべてパレットに移してから数えます。「数えたACを足す」で種類を選び、「1箱の個数 × 箱の数 ＋ 端数の箱」で入れてください。数えた数がそのメーカーのパレットの数になり、ほかの場所（ロットなど）の記録は0になります。', en: 'Count after moving all ACs to pallets. Add each type and enter the count. It becomes the maker pallet\'s stock; other places are set to 0.', id: 'Hitung setelah semua AC dipindah ke palet. Tambah tiap jenis dan isi jumlahnya. Menjadi stok palet merek; tempat lain jadi 0.' },
   acCtAdd:   { ja: '＋ 数えたACを足す', en: '+ Add a counted AC', id: '+ Tambah AC yang dihitung' },
@@ -2771,13 +2778,17 @@ function renderAcBox() {
   const pb = document.getElementById('acbPrint'); if (pb) pb.onclick = printAcBox;
   document.getElementById('acbBack').onclick = goBack;
 }
+// 箱のシール（40×40mm）：上にメーカー名・口型・W・個数、下に数を書き直す4つのマス
 function acbLabelHtml(b, n) {
-  const mk = String(b.maker || ''), fs = mk.length > 9 ? 9 : mk.length > 6 ? 11 : 13;
-  return `<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;line-height:1.1;font-family:'Meiryo','Noto Sans JP',sans-serif;color:#000">
-    <div style="font-size:${fs}pt;font-weight:700">${esc(mk)}</div>
-    <div style="font-size:13pt;font-weight:700;margin-top:1mm">${esc(b.conn)}</div>
-    <div style="font-size:16pt;font-weight:700">${esc(b.w)}W</div>
-    <div style="font-size:24pt;font-weight:700;margin-top:1mm;border-top:0.4mm solid #000;padding-top:1mm;width:30mm">${esc(n)}個</div></div>`;
+  const mk = String(b.maker || ''), fs = mk.length > 9 ? 9 : mk.length > 7 ? 10.5 : 12;
+  const cw = String(b.conn || '') + '　' + String(b.w || '') + 'W', fs2 = cw.length > 10 ? 9.5 : 12;
+  return `<div style="position:relative;width:100%;height:100%;font-family:'Meiryo','Noto Sans JP',sans-serif;color:#000">
+    <div style="position:absolute;left:0;right:0;top:2.5mm;text-align:center;line-height:1.08">
+      <div style="font-size:${fs}pt;font-weight:700">${esc(mk)}</div>
+      <div style="font-size:${fs2}pt;font-weight:700">${esc(cw)}</div>
+      <div style="font-size:20pt;font-weight:700;margin-top:0.5mm">${esc(n)}個</div></div>
+    <div style="position:absolute;left:3mm;right:3mm;bottom:3mm;height:11mm;border:0.4mm solid #000;display:flex;box-sizing:border-box">
+      <div style="flex:1;border-right:0.4mm solid #000"></div><div style="flex:1;border-right:0.4mm solid #000"></div><div style="flex:1;border-right:0.4mm solid #000"></div><div style="flex:1"></div></div></div>`;
 }
 // ACの写真を撮って保存する（小さい写真は画面用、元の写真はドライブへ）
 ['acPhotoIn', 'acPhotoPick'].forEach(id => document.getElementById(id).addEventListener('change', acPhotoChosen));
@@ -3079,7 +3090,7 @@ function renderAcCountType() {
   const sv = document.getElementById('actSave');
   if (sv) sv.onclick = async () => {
     const num = v => String(v == null ? '' : v).trim() === '' ? 0 : Number(v);
-    const bad = a.items.find(x => [x.per, x.boxes, x.rest, x.lab].some(v => String(v).trim() !== '' && !/^\d+$/.test(String(v).trim())) || (num(x.boxes) > 0 && !(num(x.per) > 0)) || num(x.lab) > num(x.boxes));
+    const bad = a.items.find(x => [x.per, x.boxes, x.rest, x.lab].some(v => String(v).trim() !== '' && !/^\d+$/.test(String(v).trim())) || (num(x.boxes) > 0 && !(num(x.per) > 0)) || num(x.lab) > num(x.boxes) + (num(x.rest) > 0 ? 1 : 0));
     if (bad) return alert(t('acCtBad', { t: acTypeText(bad) }));
     const noPl = a.items.filter(x => x.info && !x.info.pallet);
     if (noPl.length) return alert(t('acCtNoPallet', { m: noPl.map(x => x.maker).join('、') }));
@@ -3190,25 +3201,34 @@ async function openAcQueue() {
   try {
     const r = await call('kAcLabelQueue', [state.deviceId], 'loading');
     const prev = state.acQ || {};
-    state.acQ = { items: r.items || [], noPer: (r.noPer || []).map(x => Object.assign({}, x, { v: '' })), size: r.sheet || 24, sheets: prev.sheets || 1, pending: null };
+    state.acQ = { items: r.items || [], noPer: (r.noPer || []).map(x => Object.assign({}, x, { v: '' })), start: null, count: null, pending: null };
     state.screen = 'acQueue'; render(); window.scrollTo(0, 0);
   } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); acMenu(); }
 }
 function acQReady(x) { return x.photo || acNoPhoto(x.conn); }   // 写真で見比べ済みの種類だけ印刷できる
+// 使い残したシートの続き：次に使うシールの位置（スマホごとに覚える）
+const ACQ_POS_KEY = 'ac_label_next_v1';
+function acQNextPos() { try { const v = parseInt(localStorage.getItem(ACQ_POS_KEY), 10); return v >= 1 && v <= ACB_PER ? v : 1; } catch (e) { return 1; } }
+function acQSavePos(start, n) { try { localStorage.setItem(ACQ_POS_KEY, String((start - 1 + n) % ACB_PER + 1)); } catch (e) {} }
 function renderAcQueue() {
   const q = state.acQ, ready = q.items.filter(acQReady);
-  const total = ready.reduce((s, x) => s + x.pend, 0), maxSheets = Math.floor(total / q.size);
-  const sheets = Math.max(1, Math.min(maxSheets || 1, Math.floor(Number(q.sheets) || 1)));
+  const total = ready.reduce((s, x) => s + x.pend, 0);
+  if (q.start == null) q.start = String(acQNextPos());
+  const start = Math.min(ACB_PER, Math.max(1, Math.floor(Number(q.start) || 1))), room = ACB_PER - start + 1;
+  if (q.count == null) q.count = String(Math.min(total, room));
   $app.innerHTML = `<div class="card"><p class="big">${esc(t('acQTitle'))}</p>
-      <p class="note"><b style="font-size:22px">${esc(t('acQTotal', { n: total, s: q.size }))}</b></p>
-      ${maxSheets ? `<div class="boxrow"><input type="number" inputmode="numeric" min="1" max="${maxSheets}" id="aqSheets" value="${sheets}"><span>${esc(t('acQSheets', { m: maxSheets }))}</span></div>
-        <div class="actions"><button class="primary" id="aqPrint" type="button">${esc(t('acQPrint', { n: sheets * q.size }))}</button></div>`
-        : `<p class="note">${esc(t('acQWait', { r: q.size - total }))}</p>`}
-      <p class="note">${esc(t('acQNote'))}</p></div>
+      <p class="note"><b style="font-size:22px">${esc(t('acQTotal2', { n: total }))}</b></p>
+      ${total ? `<div class="boxrow"><span>${esc(t('acClStart'))}</span><input type="number" inputmode="numeric" min="1" max="${ACB_PER}" id="aqStart" value="${esc(q.start)}"></div>
+        <p class="note" id="aqRoom">${esc(t('acQRoom', { r: room }))}</p>
+        <div class="boxrow"><span>${esc(t('acQCount'))}</span><input type="number" inputmode="numeric" min="1" max="${total}" id="aqCount" value="${esc(q.count)}"><span>${esc(t('acbSheets'))}</span>
+          <button class="secondary" type="button" id="aqFill" style="width:auto;padding:0 14px">${esc(t('acQFill'))}</button></div>
+        <div class="actions"><button class="primary" id="aqPrint" type="button">${esc(t('acQPrint2'))}</button></div>` : ''}
+      <p class="note">${esc(t('acQNote2'))}</p></div>
     ${q.pending ? `<div class="card"><p class="note">${esc(t('acClPendingNote', { n: q.pending.n }))}</p>
       <div class="actions"><button class="primary" id="aqDone" type="button">${esc(t('acClDoneBtn'))}</button></div></div>` : ''}
     ${q.items.length ? `<h2>${esc(t('acQList'))}</h2>${q.items.map((x, i) => `<div class="card" style="margin-bottom:8px"><p class="big" style="margin:0">${esc(acTypeText(x))}　${esc(t('acQBoxes', { n: x.pend }))}</p>
-        <p class="note">${esc(x.label)}　${esc(t('acQState', { p: x.per, f: x.full, l: x.labeled, r: x.rest }))}${x.since ? '　' + esc(t('acQSince', { d: x.since })) : ''}</p>
+        <p class="note">${esc(x.label)}　${esc(t('acQState2', { p: x.per, f: x.full, r: x.rest, l: x.labeled, b: x.boxes }))}${x.since ? '　' + esc(t('acQSince', { d: x.since })) : ''}</p>
+        <p class="note">${esc(t('acQLabels', { l: x.labels.map(v => v + t('acUnit')).join('・') }))}</p>
         ${acQReady(x) ? '' : `<p class="warn">${esc(t('acBulkNoPhoto'))}</p><div class="actions"><button class="secondary" type="button" data-aqph="${i}">${esc(t('acbShoot'))} / ${esc(t('acbPickPhoto'))}</button></div>`}</div>`).join('')}`
       : `<p class="note">${esc(t('acQNone'))}</p>`}
     ${q.noPer.length ? `<h2>${esc(t('acQNoPer'))}</h2>${q.noPer.map((x, i) => `<div class="card" style="margin-bottom:8px"><p class="big" style="margin:0">${esc(acTypeText(x))}</p>
@@ -3217,8 +3237,10 @@ function renderAcQueue() {
         <button class="secondary" type="button" data-aqps="${i}" style="width:auto;padding:0 14px">${esc(t('specOk'))}</button></div></div>`).join('')}` : ''}
     <div id="printArea" class="printarea"></div>
     <button class="link" id="aqBack" type="button">${esc(t('back'))}</button>`;
-  const sh = document.getElementById('aqSheets'); if (sh) sh.oninput = e => { q.sheets = e.target.value; const b = document.getElementById('aqPrint'); if (b) b.textContent = t('acQPrint', { n: Math.max(1, Math.min(maxSheets, Math.floor(Number(e.target.value) || 1))) * q.size }); };
-  const pb = document.getElementById('aqPrint'); if (pb) pb.onclick = () => printAcQueue(Math.max(1, Math.min(maxSheets, Math.floor(Number(q.sheets) || 1))));
+  const st = document.getElementById('aqStart'); if (st) st.onchange = e => { q.start = e.target.value; render(); };
+  const ct = document.getElementById('aqCount'); if (ct) ct.oninput = e => { q.count = e.target.value; };
+  const fl = document.getElementById('aqFill'); if (fl) fl.onclick = () => { q.count = String(Math.min(total, room)); render(); };
+  const pb = document.getElementById('aqPrint'); if (pb) pb.onclick = () => printAcQueue(start, Math.max(1, Math.min(total, Math.floor(Number(q.count) || 0))));
   const dn = document.getElementById('aqDone'); if (dn) dn.onclick = acQMarkDone;
   $app.querySelectorAll('[data-aqph]').forEach(b => b.onclick = () => { const x = q.items[+b.dataset.aqph]; acCheckType(x, () => openAcQueue(), { allowSwitch: false }); });
   $app.querySelectorAll('[data-aqpr]').forEach(inp => inp.oninput = () => { q.noPer[+inp.dataset.aqpr].v = inp.value; });
@@ -3230,22 +3252,22 @@ function renderAcQueue() {
   });
   document.getElementById('aqBack').onclick = goBack;
 }
-// 古いものから順に、指定したシート数ぶん（24枚 × シート数）のシールを選んで印刷する
-function printAcQueue(sheets) {
+// 古いものから順に、指定した枚数のシールを選んで、開始位置から印刷する
+function printAcQueue(start, count) {
   const q = state.acQ;
-  let need = sheets * q.size;
+  let need = count;
   const labels = [], used = [];
   q.items.filter(acQReady).forEach(x => {
     if (need <= 0) return;
-    const n = Math.min(need, x.pend);
-    for (let i = 0; i < n; i++) labels.push({ b: x, n: x.per });
-    used.push({ place: x.place, maker: x.maker, conn: x.conn, w: x.w, count: n });
-    need -= n;
+    const take = x.labels.slice(0, need);
+    take.forEach(v => labels.push({ b: x, n: v }));
+    used.push({ place: x.place, maker: x.maker, conn: x.conn, w: x.w, count: take.length });
+    need -= take.length;
   });
   if (!labels.length) return alert(t('acClNone'));
-  q.pending = { n: labels.length, items: used };
+  q.pending = { n: labels.length, items: used, start: start };
   render();
-  acPrintLabels(labels, 1);
+  acPrintLabels(labels, start);
 }
 async function acQMarkDone() {
   const q = state.acQ, p = q && q.pending;
@@ -3253,8 +3275,9 @@ async function acQMarkDone() {
   if (!confirm(t('acClDoneAsk', { n: p.n }))) return;
   try {
     await call('kAcLabelMark', [state.deviceId, p.items], 'saving');
+    acQSavePos(p.start, p.n);   // 次は、使ったシールの続きの位置から
     toast(t('acClLogged', { n: p.n }));
-    q.pending = null;
+    state.acQ = null;
     openAcQueue();
   } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
 }

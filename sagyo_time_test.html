@@ -285,8 +285,9 @@ function workOf(worktype){ return WORK_OF[worktype] || null; }
 // 作業内容の選択画面のまとまり
 const WORK_GROUPS = [
   { key: 'wgLot',    filter: w => w.lot },
-  { key: 'wgMulti',  filter: w => !w.lot && w.cats[0] !== '共通業務' },
-  { key: 'wgCommon', filter: w => w.cats[0] === '共通業務' }
+  // 荷積み・荷降ろしも複数のロットにまたがる作業なので、ここに並べる（記録は今までどおり【260101】共通業務）
+  { key: 'wgMulti',  filter: w => !w.lot && (w.cats[0] !== '共通業務' || w.wt === 'ε 荷積み・荷降ろし') },
+  { key: 'wgCommon', filter: w => w.cats[0] === '共通業務' && w.wt !== 'ε 荷積み・荷降ろし' }
 ];
 
 // ロットを選ばない作業を記録する固定の案件（コード.gs の ALWAYS_KEEP_PROJECTS と同じ）
@@ -388,7 +389,7 @@ const I18N = {
     backToName: '‹ 名前選択に戻る', selectProject: 'ロットを選択', addProject: '＋ 一覧にないロットを追加',
     tagCommon: '共通業務',
     wtTitle: '作業内容を選択',
-    wgLot: 'ロットごとの作業', wgMulti: 'いくつものロットにまたがる作業', wgCommon: '共通業務',
+    wgLot: 'ロットごとの作業', wgMulti: '複数のロットにまたがる作業', wgCommon: '共通業務',
     noLots: 'この作業に使えるロットがありません。下の「＋ 一覧にないロットを追加」から追加してください',
     lotNotFit: n => `「${n}」はこの作業には使えないロットです。一覧から選んでください`,
     selectBiz: 'どの仕事の作業ですか？', bizHint: 'この作業は、ロットを選ばずに記録します',
@@ -434,7 +435,7 @@ const I18N = {
     backToName: '‹ Back to names', selectProject: 'Select a lot', addProject: '＋ Add a lot not in the list',
     tagCommon: 'Common work',
     wtTitle: 'Select a task',
-    wgLot: 'Work for one lot', wgMulti: 'Work across several lots', wgCommon: 'Common work',
+    wgLot: 'Work for one lot', wgMulti: 'Work across multiple lots', wgCommon: 'Common work',
     noLots: 'No lot can be used for this task. Add one with "＋ Add a lot not in the list" below.',
     lotNotFit: n => `"${n}" cannot be used for this task. Select a lot from the list.`,
     selectBiz: 'Which work is this for?', bizHint: 'This task is recorded without choosing a lot.',
@@ -957,7 +958,12 @@ function showToast(msg, type){
   setTimeout(()=>t.classList.remove('show'), type === 'error' ? 3000 : 1600);
 }
 
-// 作業数の入力が必須の作業か（WORKS の quota）
+// ★v19★ 作業数はアプリで入力しない（ロットの入荷台数・NG数・修理台数から、集計のときに自動で決める）。
+// 時刻のあとに画面があるのは、荷造り・梱包（業務委託）の箱数と、共通業務の備考だけ
+function needsDetails(){
+  return needsBox(state.worktype, state.project) || getSpecialLabel(state.project) === 'その他';
+}
+// 作業数の入力が必須の作業か（WORKS の quota。v19では使っていない）
 function isQuotaWork(worktype){ const w = workOf(worktype); return !!(w && w.quota); }
 
 // 基準UPHは「設定」シートの値（記号＝作業内容の先頭1文字で引く）
@@ -989,7 +995,7 @@ function canSubmitDetails(){
     // 荷造り・梱包（業務委託）は、サイズと箱数の両方が必須
     return state.boxSize !== '' && state.count !== '' && Number(state.count) > 0;
   }
-  return !(isQuotaWork(state.worktype) && state.count === '');
+  return true;   // 作業数の入力はなくなった
 }
 
 function buildEntry(){
@@ -1013,8 +1019,8 @@ function buildEntry(){
     entry.boxSize = state.boxSize;
     entry.count = state.count === '' ? '' : Number(state.count);
     entry.countMode = 'box';
-  } else if(state.count !== ''){
-    // ここで送る値はあくまで目安。最終的な本日分・累計はサーバー側で保存直前に計算し直される
+  } else if(false){
+    // v19：作業数は入力しない（以前の作業数の計算。使っていない）
     const prev = state.countCtx ? state.countCtx.prevCum : 0;
     const cum = Number(state.count);
     entry.cumulativeCount = cum;
@@ -1054,7 +1060,7 @@ async function submitEntry(){
     if(res.quickKey) state.quick[res.quickKey] = res.quick;
     if(res.entry && res.entry.end) state.lastEnds[state.currentName] = res.entry.end;
     if(res.projects) state.projects = res.projects;
-    state.lastResult = { project: res.entry.project, worktype: res.entry.worktype, uph: res.uph };
+    state.lastResult = { project: res.entry.project, worktype: res.entry.worktype, hours: res.entry.hours, start: res.entry.start, end: res.entry.end };
     state.screen = 'result';
     showToast(t('saved'));
     render();
@@ -1127,21 +1133,6 @@ function render(){
       <div class="name-grid">
         ${NAMES.map(n=>`<div class="name-btn" data-name="${esc(n)}">${esc(n)}</div>`).join('')}
       </div>
-      <main style="padding-top:24px;">
-        <div class="wt-ungrouped-label">${t('uphTitle', lastDate ? formatDateJp(lastDate) : '')}</div>
-        <div class="card tablewrap">
-          <table class="data uph-table">
-            <thead><tr><th>${t('thProject')}</th><th>${t('thWork')}</th><th>UPH</th></tr></thead>
-            <tbody>
-              ${uphRows.length ? uphRows.map(r=>`
-                <tr>
-                  <td>${esc(r.project)}</td><td>${workLabelHtml(r.worktype)}</td><td>${formatUphCell(r.worktype, r.uph)}</td>
-                </tr>
-              `).join('') : `<tr><td colspan="3" style="text-align:center;color:var(--muted);">${t('noRecords')}</td></tr>`}
-            </tbody>
-          </table>
-        </div>
-      </main>
     `;
     bindHeader();
     app.querySelectorAll('.name-btn').forEach(el=>{
@@ -1317,7 +1308,7 @@ function render(){
         </div>
       </main>
       <footer class="bar">
-        <button class="primary" id="nextBtn" ${(!state.start||!state.end)?'disabled':''}>${t('next')}</button>
+        <button class="primary" id="${needsDetails() ? 'nextBtn' : 'submitBtn'}" ${(!state.start||!state.end)?'disabled':''}>${needsDetails() ? t('next') : t('record')}</button>
       </footer>
     `;
     bindHeader();
@@ -1331,6 +1322,8 @@ function render(){
     document.getElementById('endTime').onchange = (e)=>{ state.end = e.target.value; render(); };
     const nextBtn = document.getElementById('nextBtn');
     if(nextBtn) nextBtn.onclick = ()=>{ goToDetails(); };
+    const recBtn = document.getElementById('submitBtn');
+    if(recBtn) recBtn.onclick = ()=>{ submitEntry(); };   // 箱数・備考のいらない作業は、ここで記録する
     return;
   }
   if(state.screen === 'details'){
@@ -1351,7 +1344,6 @@ function render(){
         <div class="backlink"><button id="backBtn">${t('backToTime')}</button></div>
         <div class="steptitle">${t('boxTitle')}</div>
         <main>
-          ${summaryCard}
           <div class="card">
             <div class="field">
               <label>${t('boxSize')}</label>
@@ -1384,82 +1376,27 @@ function render(){
       return;
     }
 
-    const prevCum = ctx.prevCum;
-    const curCum = state.count === '' ? null : Number(state.count);
-    const dailyCount = curCum !== null ? (curCum - prevCum) : null;
-    const isQuota = isQuotaWork(state.worktype);
-    const showMemo = getSpecialLabel(state.project) === 'その他';
+    // 共通業務は、備考だけを入れる（作業数の入力はなくなった）
     app.innerHTML = `
       ${headerHtml()}
       ${renderStepBar(4)}
       <div class="backlink"><button id="backBtn">${t('backToTime')}</button></div>
-      <div class="steptitle">${t('countTitle', showMemo, isQuota)}</div>
+      <div class="steptitle">${t('memo')}</div>
       <main>
-        ${summaryCard}
         <div class="card">
-          <div class="field">
-            <label>${t('cumLabel', isQuota ? t('req') : t('opt'))}</label>
-            <input type="number" inputmode="numeric" id="countInput" value="${esc(state.count)}">
-          </div>
-          <div class="field">
-            <label>${t('dailyLabel', isQuota ? t('req') : t('opt'))}</label>
-            <input type="number" inputmode="numeric" id="dailyInput" value="${dailyCount!==null ? dailyCount : ''}">
-          </div>
-          <div class="hours-display" style="margin-top:10px;padding:14px 0;">
-            <div class="num" id="dailyCountNum" style="font-size:28px;"></div>
-            <div class="hint" id="dailyCountHint"></div>
-          </div>
-          <div class="rulebox">${esc(t('rule'))}</div>
-          ${showMemo ? `
-          <div class="field">
+          <div class="field" style="margin-top:0;">
             <label>${t('memo')}</label>
-            <textarea id="memoInput" rows="2">${esc(state.memo)}</textarea>
+            <textarea id="memoInput" rows="3">${esc(state.memo)}</textarea>
           </div>
-          ` : ''}
         </div>
       </main>
       <footer class="bar">
-        <button class="primary" id="submitBtn" ${canSubmitDetails() ? '' : 'disabled'}>${t('record')}</button>
+        <button class="primary" id="submitBtn">${t('record')}</button>
       </footer>
     `;
     bindHeader();
     document.getElementById('backBtn').onclick = ()=>{ state.screen='time'; render(); };
-
-    function updateCountDisplays(){
-      const cc = state.count === '' ? null : Number(state.count);
-      const dc = cc !== null ? (cc - prevCum) : null;
-      const numEl = document.getElementById('dailyCountNum');
-      const hintEl = document.getElementById('dailyCountHint');
-      numEl.innerHTML = `${dc!==null ? dc : '--'}<span>${t('todayUnit')}</span>`;
-      numEl.style.color = (dc!==null && dc<0) ? 'var(--danger)' : '';
-      hintEl.textContent = dc!==null
-        ? (dc<0 ? t('negWarn') : t('autoCalc', cc, prevCum))
-        : t('prevInfo', prevCum);
-      const submitBtn = document.getElementById('submitBtn');
-      if(submitBtn && !state.isSubmitting) submitBtn.disabled = !canSubmitDetails();
-      return dc;
-    }
-    updateCountDisplays();
-
-    document.getElementById('countInput').oninput = (e)=>{
-      state.count = e.target.value;
-      state.countMode = 'cum';
-      const dc = updateCountDisplays();
-      const dailyEl = document.getElementById('dailyInput');
-      const dailyVal = dc !== null ? String(dc) : '';
-      if(dailyEl.value !== dailyVal) dailyEl.value = dailyVal;
-    };
-    document.getElementById('dailyInput').oninput = (e)=>{
-      const typed = e.target.value;
-      const newCum = typed === '' ? '' : String(prevCum + Number(typed));
-      state.count = newCum;
-      state.countMode = 'daily';
-      const countEl = document.getElementById('countInput');
-      if(countEl.value !== newCum) countEl.value = newCum;
-      updateCountDisplays();
-    };
-    const memoInputEl = document.getElementById('memoInput');
-    if(memoInputEl) memoInputEl.oninput = (e)=>{ state.memo = e.target.value; };
+    document.getElementById('memoInput').oninput = (e)=>{ state.memo = e.target.value; };
     document.getElementById('submitBtn').onclick = ()=>{ submitEntry(); };
     return;
   }
@@ -1472,8 +1409,7 @@ function render(){
         <div class="card" style="text-align:center;padding:32px 16px;">
           <div style="font-size:24px;font-weight:800;margin-bottom:8px;">${esc(r.project)}</div>
           <div style="font-size:24px;font-weight:800;margin-bottom:22px;">${workLabelHtml(r.worktype)}</div>
-          <div style="font-size:14px;color:var(--muted);margin-bottom:6px;">UPH</div>
-          ${renderUphComparison(r.worktype, r.uph)}
+          <div style="font-size:20px;font-weight:700;color:var(--muted);">${esc(r.hours)} ${t('hoursUnit')}（${esc(r.start)}〜${esc(r.end)}）</div>
         </div>
       </main>
       <footer class="bar">
