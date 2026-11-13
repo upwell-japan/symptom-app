@@ -2019,6 +2019,23 @@ async function saveShipItem() {
 // ACの選択肢（今まで使っていたACアダプター管理表の「設定」シートから。「丸」は、型番マスターの書き方に合わせて「丸口」）
 const AC_MAKERS = ['DELL', 'FUJITSU', 'HP', 'LENOVO', 'MICROSOFT', 'NEC', 'PANASONIC', 'TOSHIBA', 'VAIO', 'SONY', 'EPSON'];
 const AC_CONNS = ['丸口', '細丸', '太丸', '四角口', '四角口(小)', 'タイプC', '専用接続'];
+// スペックの入力で選べるAC口型（メーカーごと。これ以外の口型は出ないものとして、入力を制限する）
+//   一覧に無いメーカーは AC_CONNS のどれか。DYNABOOK は TOSHIBA と同じ
+const AC_SPEC_CONNS = {
+  NEC: ['タイプC'],
+  FUJITSU: ['丸口', '細丸', 'タイプC'],
+  LENOVO: ['タイプC', '丸口', '四角口'],
+  TOSHIBA: ['丸口', '太丸'],
+  DYNABOOK: ['丸口', '太丸'],
+  VAIO: ['丸口', 'タイプC'],
+  HP: ['丸口', '細丸', '太丸', 'タイプC'],
+  DELL: ['丸口', '細丸', '太丸', 'タイプC'],
+  MICROSOFT: ['専用接続', 'タイプC'],
+  APPLE: ['タイプC'],
+  EPSON: ['丸口'],
+  PANASONIC: ['丸口']
+};
+function acSpecConns(maker) { return AC_SPEC_CONNS[String(maker || '').trim().toUpperCase()] || AC_CONNS; }
 // 形がすべて同じなので、写真で見比べなくてよい口型（「四角口(小)」は形が違うので、写真で見比べる）
 const AC_NO_PHOTO = ['タイプC', '四角口'];
 function acNoPhoto(conn) { return AC_NO_PHOTO.includes(String(conn || '').trim()); }
@@ -2038,7 +2055,7 @@ const SPEC_DEF = {
   'WIFI':         { opts: ['無線LAN', '無線LANなし'], en: 'Wi-Fi', id: 'Wi-Fi' },
   '10key':        { opts: ['10key', '10keyなし'], en: '10-key', id: '10-key' },
   'Webｶﾒﾗ':       { opts: ['Webカメラ', 'Webカメラなし'], en: 'Webcam', id: 'Webcam' },
-  'AC口型':       { opts: AC_CONNS, other: true, en: 'AC connector', id: 'Konektor AC' },
+  'AC口型':       { opts: AC_CONNS, other: false, en: 'AC connector', id: 'Konektor AC' },
   'W':            { opts: AC_WS, unit: 'W', other: true, en: 'Watt', id: 'Watt' }
 };
 function specLabel(item) {
@@ -2078,7 +2095,9 @@ function specIsNeed(item) {
   return v == null || String(v) === '' || String(v) === '要確認';
 }
 function specRowHtml(item) {
-  const sp = state.spec, d = SPEC_DEF[item] || { opts: [] };
+  const sp = state.spec, d0 = SPEC_DEF[item] || { opts: [] };
+  // AC口型は、その看板のメーカーで出る口型だけを選べるようにする
+  const d = item === 'AC口型' ? Object.assign({}, d0, { opts: acSpecConns(sp.excel['メーカー名']), other: false }) : d0;
   const cur = specCurrent(item);
   const edited = item in sp.edits;
   const cls = edited ? 'new' : ((cur === '' || cur === '要確認') ? 'need' : '');
