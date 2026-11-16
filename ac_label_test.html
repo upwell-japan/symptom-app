@@ -73,9 +73,9 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 // 見本のシール（12枚）
 const SAMPLES = [
-  ['DELL', '細丸', '65', 40], ['DELL', '細丸', '65', 15], ['FUJITSU', '丸口', '65', 20], ['FUJITSU', 'タイプC', '45', 30],
-  ['LENOVO', '四角口', '45', 30], ['LENOVO', 'タイプC', '65', 25], ['HP', '太丸', '90', 10], ['NEC', 'タイプC', '45', 40],
-  ['PANASONIC', '丸口', '65', 20], ['TOSHIBA', '丸口', '45', 18], ['MICROSOFT', '専用接続', '44', 8], ['VAIO', 'タイプC', '65', 12]
+  ['DELL', '細丸', '65', 40, 40], ['DELL', '細丸', '65', 15, 40], ['FUJITSU', '丸口', '65', 20, 20], ['FUJITSU', 'タイプC', '45', 30, 30],
+  ['LENOVO', '四角口', '45', 30, 30], ['LENOVO', 'タイプC', '65', 25, 25], ['HP', '太丸', '90', 10, 10], ['NEC', 'タイプC', '45', 40, 40],
+  ['PANASONIC', '丸口', '65', 7, 20], ['TOSHIBA', '丸口', '45', 18, 0], ['MICROSOFT', '専用接続', '44', 8, 0], ['VAIO', 'タイプC', '65', 12, 30]
 ];
 function loadPos() { try { return Object.assign({}, POS_DEFAULT, JSON.parse(localStorage.getItem(LS_POS) || '{}')); } catch (e) { return Object.assign({}, POS_DEFAULT); } }
 function setInputs(p) { ['mx', 'my', 'gx', 'gy'].forEach(k => $(k).value = p[k]); }
@@ -86,14 +86,14 @@ function readPos() {
   return p;
 }
 // シール1枚（83.8×42.3mm）：左上にメーカー名、その下に口型とW、右に個数、下に数を書き直す4つのマス
-function labelHtml(mk, conn, w, n) {
+function labelHtml(mk, conn, w, n, per) {
   const cells = parseInt($('cells').value, 10) || 5;
   const fsMk = mk.length > 9 ? 13 : 16;
   return `<div style="position:absolute;left:5mm;top:3.5mm;right:5mm;height:22mm;display:flex;align-items:center;font-family:'Meiryo','Noto Sans JP',sans-serif">
       <div style="flex:1;min-width:0;line-height:1.15">
         <div style="font-size:${fsMk}pt;font-weight:700;white-space:nowrap;overflow:hidden">${esc(mk)}</div>
         <div style="font-size:18pt;font-weight:700;white-space:nowrap">${esc(conn)}　${esc(w)}W</div></div>
-      <div style="font-size:30pt;font-weight:700;white-space:nowrap;padding-left:2mm">${esc(n)}<span style="font-size:16pt">個</span></div></div>
+      <div style="font-size:30pt;font-weight:700;white-space:nowrap;padding-left:2mm">${esc(n)}<span style="font-size:17pt">/${esc(per > 0 ? per : 'X')}個</span></div></div>
     <div style="position:absolute;left:5mm;right:5mm;bottom:3.5mm;height:12mm;border:0.4mm solid #000;display:flex">
       ${Array.from({ length: cells }, (_, i) => `<div style="flex:1;${i < cells - 1 ? 'border-right:0.4mm solid #000' : ''}"></div>`).join('')}</div>`;
 }
@@ -104,7 +104,7 @@ function sheetHtml(mode) {
     const col = k % COLS, row = Math.floor(k / COLS);
     const style = `left:${p.mx + col * (LW + p.gx)}mm;top:${p.my + row * (LH + p.gy)}mm;width:${LW}mm;height:${LH}mm`;
     if (mode === 'guide') html += `<div class="label guide" style="${style}"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20pt;color:#999">${k + 1}</div></div>`;
-    else { const s = SAMPLES[k]; html += `<div class="label" style="${style}">${labelHtml(s[0], s[1], s[2], s[3])}</div>`; }
+    else { const s = SAMPLES[k]; html += `<div class="label" style="${style}">${labelHtml(s[0], s[1], s[2], s[3], s[4])}</div>`; }
   }
   return html + '</div>';
 }
