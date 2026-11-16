@@ -478,6 +478,15 @@ const T = {
   acClLogged:{ ja: '{n}枚を印刷済みにしました', en: 'Marked {n} labels as printed', id: '{n} label ditandai sudah dicetak' },
   acmQueue:  { ja: '🏷 シールの印刷待ち', en: '🏷 Labels waiting to print', id: '🏷 Label menunggu cetak' },
   acQTitle:  { ja: 'シールの印刷待ち', en: 'Labels waiting to print', id: 'Label menunggu cetak' },
+  acQTotal3: { ja: '今回の印刷：発行し直す {r}枚 ＋ 印刷待ち {n}枚', en: 'This print: {r} reissued + {n} waiting', id: 'Cetak ini: {r} ulang + {n} menunggu' },
+  acRiTitle: { ja: '🔁 シールを発行し直す（任意）', en: '🔁 Reissue labels (optional)', id: '🔁 Cetak ulang label (opsional)' },
+  acRiNote:  { ja: '汚れた・はがれたシールなどを、選んで発行し直せます。発行し直すシールは、印刷待ちのシールより先に印刷します。', en: 'Pick labels to reissue (dirty, peeled off, etc.). They print before the waiting labels.', id: 'Pilih label yang dicetak ulang (kotor, lepas, dll.). Dicetak sebelum label yang menunggu.' },
+  acRiAdd:   { ja: '＋ 発行し直すシールを選ぶ', en: '+ Choose labels to reissue', id: '+ Pilih label cetak ulang' },
+  acRiPickNote:{ ja: '発行し直す箱の数を入れて「決める」を押してください。シールを貼った箱の数は変わりません。', en: 'Enter how many boxes to reissue, then tap “Set”. The labeled-box count does not change.', id: 'Isi jumlah kotak yang dicetak ulang lalu ketuk “Pakai”. Jumlah kotak berlabel tidak berubah.' },
+  acRiOf:    { ja: '箱（{n}箱のうち）', en: 'boxes (of {n})', id: 'kotak (dari {n})' },
+  acRiOk:    { ja: '決める', en: 'Set', id: 'Pakai' },
+  acRiAdded: { ja: '発行し直すシールを {n}枚 足しました', en: 'Added {n} labels to reissue', id: '{n} label ditambahkan untuk cetak ulang' },
+  acRiNoPhoto:{ ja: '{t} は写真がまだ無いので、足せませんでした（先に写真を撮ってください）', en: '{t} has no photo yet, so it was not added', id: '{t} belum punya foto, jadi tidak ditambahkan' },
   acQTotal2: { ja: '印刷待ち {n}枚', en: '{n} waiting', id: '{n} menunggu' },
   acQRoom:   { ja: 'このシートの残り：{r}枚（開始位置から最後まで）', en: 'Left on this sheet: {r}', id: 'Sisa di lembar ini: {r}' },
   acQCount:  { ja: '印刷する枚数', en: 'Labels to print', id: 'Jumlah label' },
@@ -1368,7 +1377,7 @@ function render() {
               board: renderBoard, unit: renderUnit, cat: renderCat, sym: renderSym, mark: renderMark,
               grade: renderGrade, repair: renderRepair, photo: renderSym, stock: renderStock, gradeMany: renderGradeMany, spec: renderSpec, acLots: renderAcLots, ac: renderAc, acPrint: renderAcPrint,
               acMenu: renderAcMenu, acPlace: renderAcPlace, acMove: renderAcMove, acCount: renderAcCount, acPallets: renderAcPallets,
-              acBox: renderAcBox, acCountType: renderAcCountType, acCtLabels: renderAcCtLabels, acQueue: renderAcQueue, acTc: renderAcTc, acBulk: renderAcBulk, pickAc: renderPickAc, pickAcQty: renderPickAcQty, pickAcAll: renderPickAcAll, pickAcTake: renderPickAcTake,
+              acBox: renderAcBox, acCountType: renderAcCountType, acCtLabels: renderAcCtLabels, acQueue: renderAcQueue, acReissue: renderAcReissue, acTc: renderAcTc, acBulk: renderAcBulk, pickAc: renderPickAc, pickAcQty: renderPickAcQty, pickAcAll: renderPickAcAll, pickAcTake: renderPickAcTake,
               shipList: renderShipList, ship: renderShip, shipItem: renderShipItem,
               batchCount: renderBatchCount, batch: renderBatch,
               gradeBoard: renderGradeBoard, slipList: renderSlipList, slipPrint: renderSlipPrint,
@@ -1424,6 +1433,7 @@ function goBack() {
   else if (S === 'acCountType') { state.acCt = null; state.screen = 'acMenu'; }
   else if (S === 'acCtLabels') { state.acCl = null; state.screen = 'acMenu'; }
   else if (S === 'acQueue') { state.acQ = null; state.screen = 'acMenu'; }
+  else if (S === 'acReissue') { state.screen = 'acQueue'; }
   else if (S === 'acTc') { const tc = state.acTc; state.acTc = null; state.screen = tc ? tc.back : 'acMenu'; }
   else if (S === 'acBulk') { state.acBulk = null; state.screen = 'acMenu'; }
   else if (S === 'acPlace' || S === 'acMove' || S === 'acCount' || S === 'acPallets') { state.acPlace = null; state.acMove = null; state.acCount = null; state.screen = 'acMenu'; }
@@ -3229,7 +3239,8 @@ async function openAcQueue() {
   try {
     const r = await call('kAcLabelQueue', [state.deviceId], 'loading');
     const prev = state.acQ || {};
-    state.acQ = { items: r.items || [], noPer: (r.noPer || []).map(x => Object.assign({}, x, { v: '' })), start: null, count: null, pending: null };
+    state.acQ = { items: r.items || [], noPer: (r.noPer || []).map(x => Object.assign({}, x, { v: '' })), all: r.all || [], start: null, count: null, pending: null,
+                  reissue: prev.reissue || [] };   // 発行し直すシール（[{ b, n }]。印刷待ちより先に印刷する）
     state.screen = 'acQueue'; render(); window.scrollTo(0, 0);
   } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); acMenu(); }
 }
@@ -3240,18 +3251,21 @@ function acQNextPos() { try { const v = parseInt(localStorage.getItem(ACQ_POS_KE
 function acQSavePos(start, n) { try { localStorage.setItem(ACQ_POS_KEY, String((start - 1 + n) % ACB_PER + 1)); } catch (e) {} }
 function renderAcQueue() {
   const q = state.acQ, ready = q.items.filter(acQReady);
-  const total = ready.reduce((s, x) => s + x.pend, 0);
+  const total = q.reissue.length + ready.reduce((s, x) => s + x.pend, 0);
   if (q.start == null) q.start = String(acQNextPos());
   const start = Math.min(ACB_PER, Math.max(1, Math.floor(Number(q.start) || 1))), room = ACB_PER - start + 1;
   if (q.count == null) q.count = String(Math.min(total, room));
   $app.innerHTML = `<div class="card"><p class="big">${esc(t('acQTitle'))}</p>
-      <p class="note"><b style="font-size:22px">${esc(t('acQTotal2', { n: total }))}</b></p>
+      <p class="note"><b style="font-size:22px">${esc(t('acQTotal3', { r: q.reissue.length, n: total - q.reissue.length }))}</b></p>
       ${total ? `<div class="boxrow"><span>${esc(t('acClStart'))}</span><input type="number" inputmode="numeric" min="1" max="${ACB_PER}" id="aqStart" value="${esc(q.start)}"></div>
         <p class="note" id="aqRoom">${esc(t('acQRoom', { r: room }))}</p>
         <div class="boxrow"><span>${esc(t('acQCount'))}</span><input type="number" inputmode="numeric" min="1" max="${total}" id="aqCount" value="${esc(q.count)}"><span>${esc(t('acbSheets'))}</span>
           <button class="secondary" type="button" id="aqFill" style="width:auto;padding:0 14px">${esc(t('acQFill'))}</button></div>
         <div class="actions"><button class="primary" id="aqPrint" type="button">${esc(t('acQPrint2'))}</button></div>` : ''}
       <p class="note">${esc(t('acQNote2'))}</p></div>
+    <div class="card"><p class="big">${esc(t('acRiTitle'))}</p><p class="note">${esc(t('acRiNote'))}</p>
+      ${q.reissue.length ? `<ul class="spec">${acRiGroups(q.reissue).map((g, i) => `<li><div class="sh" style="cursor:default"><span class="sl">${esc(acTypeText(g.b))}<br><span class="note" style="font-weight:400">${esc(g.b.label || '')}　${esc(g.n)}/${esc(g.b.per > 0 ? g.b.per : 'X')}${esc(t('acUnit'))}</span></span><span class="gn">${esc(t('acQBoxes', { n: g.count }))}</span><button class="secondary" type="button" data-rirm="${i}" style="width:auto;padding:0 12px">×</button></div></li>`).join('')}</ul>` : ''}
+      <div class="actions"><button class="secondary" id="aqRi" type="button">${esc(t('acRiAdd'))}</button></div></div>
     ${q.pending ? `<div class="card"><p class="note">${esc(t('acClPendingNote', { n: q.pending.n }))}</p>
       <div class="actions"><button class="primary" id="aqDone" type="button">${esc(t('acClDoneBtn'))}</button></div></div>` : ''}
     ${q.items.length ? `<h2>${esc(t('acQList'))}</h2>${q.items.map((x, i) => `<div class="card" style="margin-bottom:8px"><p class="big" style="margin:0">${esc(acTypeText(x))}　${esc(t('acQBoxes', { n: x.pend }))}</p>
@@ -3270,6 +3284,11 @@ function renderAcQueue() {
   const fl = document.getElementById('aqFill'); if (fl) fl.onclick = () => { q.count = String(Math.min(total, room)); render(); };
   const pb = document.getElementById('aqPrint'); if (pb) pb.onclick = () => printAcQueue(start, Math.max(1, Math.min(total, Math.floor(Number(q.count) || 0))));
   const dn = document.getElementById('aqDone'); if (dn) dn.onclick = acQMarkDone;
+  document.getElementById('aqRi').onclick = () => { q.riSel = {}; state.screen = 'acReissue'; render(); window.scrollTo(0, 0); };
+  $app.querySelectorAll('[data-rirm]').forEach(b => b.onclick = () => {   // 発行し直すシールを、種類・数ごとに外す
+    const g = acRiGroups(q.reissue)[+b.dataset.rirm];
+    q.reissue = q.reissue.filter(x => acRiKey(x) !== g.key); q.count = null; render();
+  });
   $app.querySelectorAll('[data-aqph]').forEach(b => b.onclick = () => { const x = q.items[+b.dataset.aqph]; acCheckType(x, () => openAcQueue(), { allowSwitch: false }); });
   $app.querySelectorAll('[data-aqpr]').forEach(inp => inp.oninput = () => { q.noPer[+inp.dataset.aqpr].v = inp.value; });
   $app.querySelectorAll('[data-aqps]').forEach(b => b.onclick = async () => {
@@ -3280,11 +3299,51 @@ function renderAcQueue() {
   });
   document.getElementById('aqBack').onclick = goBack;
 }
+// 発行し直すシールを、種類・数ごとにまとめて見せる
+function acRiKey(x) { return x.b.place + '|' + acKey(x.b.maker, x.b.conn, x.b.w) + '|' + x.n; }
+function acRiGroups(list) {
+  const g = {}, out = [];
+  list.forEach(x => { const k = acRiKey(x); if (!g[k]) { g[k] = { key: k, b: x.b, n: x.n, count: 0 }; out.push(g[k]); } g[k].count++; });
+  return out;
+}
+// 🏷 発行し直すシールを選ぶ（在庫のあるすべての種類から。満杯の箱・端数の箱ごとに枚数を入れる）
+function renderAcReissue() {
+  const q = state.acQ, sel = q.riSel = q.riSel || {};
+  $app.innerHTML = `<div class="card"><p class="big">${esc(t('acRiTitle'))}</p><p class="note">${esc(t('acRiPickNote'))}</p></div>
+    ${q.all.length ? q.all.map((x, i) => `<div class="card" style="margin-bottom:8px"><p class="big" style="margin:0">${esc(acTypeText(x))}</p>
+      <p class="note">${esc(x.label)}</p>
+      ${x.per && x.full ? `<div class="boxrow"><span>${esc(x.per)}/${esc(x.per)}${esc(t('acUnit'))}</span><input type="number" inputmode="numeric" min="0" max="${x.full}" data-rif="${i}" value="${esc(sel[i + 'f'] || '')}" placeholder="0"><span>${esc(t('acRiOf', { n: x.full }))}</span></div>` : ''}
+      ${x.rest ? `<div class="boxrow"><span>${esc(x.rest)}/${esc(x.per > 0 ? x.per : 'X')}${esc(t('acUnit'))}</span><input type="number" inputmode="numeric" min="0" max="1" data-rip="${i}" value="${esc(sel[i + 'p'] || '')}" placeholder="0"><span>${esc(t('acRiOf', { n: 1 }))}</span></div>` : ''}
+      ${acQReady(x) ? '' : `<p class="warn">${esc(t('acBulkNoPhoto'))}</p>`}</div>`).join('') : `<p class="note">${esc(t('acStockNone'))}</p>`}
+    <div class="actions"><button class="primary" id="riOk" type="button">${esc(t('acRiOk'))}</button></div>
+    <button class="link" id="riBack" type="button">${esc(t('back'))}</button>`;
+  $app.querySelectorAll('[data-rif]').forEach(inp => inp.oninput = () => { sel[inp.dataset.rif + 'f'] = inp.value; });
+  $app.querySelectorAll('[data-rip]').forEach(inp => inp.oninput = () => { sel[inp.dataset.rip + 'p'] = inp.value; });
+  document.getElementById('riOk').onclick = () => {
+    let added = 0, bad = '';
+    q.all.forEach((x, i) => {
+      const f = Math.floor(Number(sel[i + 'f']) || 0), pp = Math.floor(Number(sel[i + 'p']) || 0);
+      if (!(f || pp)) return;
+      if (!acQReady(x)) { bad = acTypeText(x); return; }
+      for (let k = 0; k < Math.min(f, x.full); k++) { q.reissue.push({ b: x, n: x.per }); added++; }
+      if (pp && x.rest) { q.reissue.push({ b: x, n: x.rest }); added++; }
+    });
+    if (bad) alert(t('acRiNoPhoto', { t: bad }));
+    if (added) toast(t('acRiAdded', { n: added }));
+    q.count = null; q.riSel = {}; state.screen = 'acQueue'; render(); window.scrollTo(0, 0);
+  };
+  document.getElementById('riBack').onclick = goBack;
+}
 // 古いものから順に、指定した枚数のシールを選んで、開始位置から印刷する
 function printAcQueue(start, count) {
   const q = state.acQ;
   let need = count;
   const labels = [], used = [];
+  // 1. 発行し直すシール（シールを貼った箱の数は変えない）
+  const ri = q.reissue.slice(0, need);
+  ri.forEach(x => labels.push({ b: x.b, n: x.n }));
+  need -= ri.length;
+  // 2. まだシールを発行していない箱（古いものから順）
   q.items.filter(acQReady).forEach(x => {
     if (need <= 0) return;
     const take = x.labels.slice(0, need);
@@ -3293,7 +3352,7 @@ function printAcQueue(start, count) {
     need -= take.length;
   });
   if (!labels.length) return alert(t('acClNone'));
-  q.pending = { n: labels.length, items: used, start: start };
+  q.pending = { n: labels.length, items: used, start: start, ri: ri.length };
   render();
   acPrintLabels(labels, start);
 }
@@ -3302,10 +3361,12 @@ async function acQMarkDone() {
   if (!p) return;
   if (!confirm(t('acClDoneAsk', { n: p.n }))) return;
   try {
-    await call('kAcLabelMark', [state.deviceId, p.items], 'saving');
+    if (p.items.some(x => x.count > 0)) await call('kAcLabelMark', [state.deviceId, p.items.filter(x => x.count > 0)], 'saving');
     acQSavePos(p.start, p.n);   // 次は、使ったシールの続きの位置から
     toast(t('acClLogged', { n: p.n }));
-    state.acQ = null;
+    state.acQ.reissue = state.acQ.reissue.slice(p.ri || 0);   // 印刷した「発行し直すシール」は一覧から外す
+    const keep = state.acQ.reissue;
+    state.acQ = { reissue: keep };
     openAcQueue();
   } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
 }
