@@ -1038,8 +1038,7 @@ function pickSymptom(h) {
   if (!m || effective().some(e => e.symptom === h)) return;
   if (m.photo && state.unit && state.unit.batch) { alert(t('batchNoPhoto')); return; }
   if (m.photo) {
-    const have = state.photoCounts[h] || 0;
-    if (have >= state.photoNeed) { addSymptom(h, ''); toast(t('photoSkipped', { s: h, n: have })); return; }
+    // 写真必須の症状は、同じ品名の写真がそろっていても、毎回撮る（撮影を省く仕組みはやめた）
     state.photoFor = h; openCamera(); return;   // 写真が必要なら、すぐカメラを開く
   }
   addSymptom(h, '');
@@ -2804,8 +2803,10 @@ function renderAcBox() {
   const pb = document.getElementById('acbPrint'); if (pb) pb.onclick = printAcBox;
   document.getElementById('acbBack').onclick = goBack;
 }
-// 箱のシール（83.8×42.3mm）：左上にメーカー名、その下に口型とW、右に個数、下に数を書き直す5つのマス
+// 箱のシール（83.8×42.3mm）：左上にメーカー名、その下に口型とW、右に「入っている数/満杯になる数」個、下に数を書き直す5つのマス
+//   満杯になる数（1箱の個数）が決まっていなければ「入っている数/X」個
 function acbLabelHtml(b, n) {
+  const per = Math.floor(Number(b.per || b.perBox || 0)) || 0;
   const mk = String(b.maker || ''), fsMk = mk.length > 9 ? 13 : 16;
   const cw = String(b.conn || '') + '　' + String(b.w || '') + 'W', fsCw = cw.length > 9 ? 15 : 18;
   return `<div style="position:relative;width:100%;height:100%;font-family:'Meiryo','Noto Sans JP',sans-serif;color:#000">
@@ -2813,7 +2814,7 @@ function acbLabelHtml(b, n) {
       <div style="flex:1;min-width:0;line-height:1.15">
         <div style="font-size:${fsMk}pt;font-weight:700;white-space:nowrap;overflow:hidden">${esc(mk)}</div>
         <div style="font-size:${fsCw}pt;font-weight:700;white-space:nowrap;overflow:hidden">${esc(cw)}</div></div>
-      <div style="font-size:30pt;font-weight:700;white-space:nowrap;padding-left:2mm">${esc(n)}<span style="font-size:16pt">個</span></div></div>
+      <div style="font-size:30pt;font-weight:700;white-space:nowrap;padding-left:2mm">${esc(n)}<span style="font-size:17pt">/${esc(per > 0 ? per : 'X')}個</span></div></div>
     <div style="position:absolute;left:5mm;right:5mm;bottom:3.5mm;height:12mm;border:0.4mm solid #000;display:flex">
       ${Array.from({ length: ACB_CELLS }, (_, i) => `<div style="flex:1;${i < ACB_CELLS - 1 ? 'border-right:0.4mm solid #000' : ''}"></div>`).join('')}</div></div>`;
 }
@@ -2869,7 +2870,7 @@ async function printAcBox() {
     if (!saved || saved.n !== n) { const r = await call('kAcBoxSave', [state.deviceId, b.maker, b.conn, b.w, n], 'saving'); b.boxes = r.boxes || b.boxes; }
   } catch (e) { return alert(t('errSave') + '\n' + (e.message || e)); }
   const labels = [];
-  for (let i = 0; i < copies; i++) labels.push({ b: b, n: n });
+  for (let i = 0; i < copies; i++) labels.push({ b: Object.assign({}, b, { per: n }), n: n });
   acPrintLabels(labels, start);
 }
 
@@ -3482,7 +3483,7 @@ function symListHtml(list, mode) {
     const tags = (e.kind === '部品取り' ? `<span class="tag">${esc(t('donorTag'))}</span>` : '') +
       (e.photo ? (isPending(e.photo) ? `<span class="tag">${esc(t('hasPhoto'))}…</span>` : `<a class="tag" href="${esc(e.photo)}" target="_blank" rel="noopener">${esc(t('hasPhoto'))}</a>`) : '') +
       (e.isNew ? `<span class="tag new">${esc(t('isNew'))}</span>` : '');
-    // 写真必須の症状で、写真がそろっていて撮らずに追加したものは、任意で撮れる
+    // 写真必須の症状で、写真が付いていないもの（前の仕組みで撮影を省いたものなど）は、ここから撮れる
     const opt = (mode === 'edit' && m && m.photo && !e.photo && state.adds.has(e.symptom) && !(state.unit && state.unit.batch))
       ? `<button class="tag" type="button" data-shoot="${esc(e.symptom)}" style="cursor:pointer;border:1px solid var(--ink);background:#fff;font:inherit;font-size:13px">${esc(t('photoOpt'))}</button>` : '';
     const tail = mode === 'edit' ? `${opt}<button class="x" type="button" data-rm="${esc(e.symptom)}" aria-label="×">×</button>`
