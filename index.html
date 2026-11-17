@@ -16,6 +16,8 @@ header{background:var(--ink);color:#fff;display:flex;align-items:center;gap:8px;
 .pill.no{font-size:16px;flex:none}
 .pill.name{min-width:0}
 .pill.sync{background:var(--amber);color:var(--ink);flex:none}
+.nav{flex:none;width:40px;height:40px;border-radius:999px;border:0;background:var(--pill);color:#fff;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
+.nav svg{width:22px;height:22px}
 .lang{margin-left:auto;flex:none;background:var(--pill);color:#fff;border:0;border-radius:999px;padding:7px 12px;font:inherit;font-size:14px;font-weight:700}
 main{padding:12px 14px 40px;max-width:760px;margin:0 auto}
 h2{font-size:18px;font-weight:700;margin:16px 0 10px}
@@ -110,6 +112,9 @@ const T = {
   hasPhoto:   { ja: '写真', en: 'Photo', id: 'Foto' },
   done:       { ja: '完了', en: 'Done', id: 'Selesai' },
   none:       { ja: '症状なし', en: 'No defects', id: 'Tidak ada cacat' },
+  back:       { ja: '戻る', en: 'Back', id: 'Kembali' },
+  home:       { ja: 'ホーム', en: 'Home', id: 'Beranda' },
+  leaveAsk:   { ja: '選んだ症状はまだ保存されていません。保存しないでホームに戻りますか？', en: 'The selected defects are not saved yet. Go home without saving?', id: 'Cacat yang dipilih belum disimpan. Kembali ke beranda tanpa menyimpan?' },
   backCat:    { ja: '‹ カテゴリに戻る', en: '‹ Back to categories', id: '‹ Kembali ke kategori' },
   photoReq:   { ja: 'この症状は写真が必要です。瑕疵がはっきり分かるように撮影してください。', en: 'This defect needs a photo. Take a photo that clearly shows the defect.', id: 'Cacat ini perlu foto. Ambil foto yang memperlihatkan cacat dengan jelas.' },
   photoOpt:   { ja: '同じ型番で写真が{n}枚そろっているので、撮影は任意です。', en: 'This model already has {n} photos of this defect, so a photo is optional.', id: 'Model ini sudah punya {n} foto untuk cacat ini, jadi foto tidak wajib.' },
@@ -314,11 +319,19 @@ function setUnit(info, nameFromQr, loaded) {
   state.adds = new Map(); state.removes = new Set(); state.cat = ''; state.lastNone = false;
   state.addMeta = new Map(); state.photoOther = false; state.otherCat = '';
   state.unitLoaded = loaded !== false; state.unitFailed = false;
-  // アドレスにも台の番号を残しておく（再読み込みしても同じ台が開く）
+  syncUrl();
+}
+
+// アドレスにも台の番号を残しておく（再読み込みしても同じ台が開く）
+function syncUrl() {
   try {
-    const q = new URLSearchParams({ no: state.no });
-    if (state.name) q.set('name', state.name);
-    history.replaceState(null, '', location.pathname + '?' + q.toString());
+    let q = '';
+    if (state.no) {
+      const p = new URLSearchParams({ no: state.no });
+      if (state.name) p.set('name', state.name);
+      q = '?' + p.toString();
+    }
+    history.replaceState(history.state, '', location.pathname + q);
   } catch (e) {}
 }
 
@@ -692,13 +705,66 @@ function renderHeader() {
     : `<span class="title">${esc(t('title'))}</span>`;
   const n = getOutbox().length;
   const pend = n ? `<span class="pill sync">${esc(t('pendingN', n))}</span>` : '';
-  hd.innerHTML = `${left}<button class="lang" id="langBtn" type="button">🌐 ${LANG_LABEL[state.lang]}</button>${pend}`;
+  const nav = NAV_SCREENS.has(state.screen)
+    ? `<button class="nav" id="backNav" type="button" aria-label="${esc(t('back'))}" title="${esc(t('back'))}">${ICON_BACK}</button>`
+    + `<button class="nav" id="homeNav" type="button" aria-label="${esc(t('home'))}" title="${esc(t('home'))}">${ICON_HOME}</button>`
+    : '';
+  hd.innerHTML = `${nav}${left}<button class="lang" id="langBtn" type="button">🌐 ${LANG_LABEL[state.lang]}</button>${pend}`;
   document.getElementById('langBtn').onclick = () => {
     state.lang = LANGS[(LANGS.indexOf(state.lang) + 1) % LANGS.length];
     try { localStorage.setItem(LS_LANG, state.lang); } catch (e) {}
     render();
   };
+  const bn = document.getElementById('backNav'); if (bn) bn.onclick = goBack;
+  const hn = document.getElementById('homeNav'); if (hn) hn.onclick = goHome;
+  ensureGuard();
 }
+
+// ---------------------------------------------------------------
+// 戻る・ホーム
+// ・画面の左上の「‹」と「家」のボタン、スマホの戻るボタンで使う
+// ---------------------------------------------------------------
+const NAV_SCREENS = new Set(['cat', 'sym', 'photo', 'other', 'result', 'camera', 'scan']);
+const ICON_BACK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+const ICON_HOME = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 9.5V20h5v-6h4v6h5V9.5"/></svg>';
+
+// ひとつ前の画面に戻る（選んだけれど「完了」していない症状は残す）
+function goBack() {
+  const S = state.screen;
+  if (S === 'camera') { stopCamera(); state.screen = 'photo'; }
+  else if (S === 'scan') { stopCamera(); state.screen = state.back; }
+  else if (S === 'photo') { clearDraft(); state.screen = state.photoOther ? 'other' : 'sym'; }
+  else if (S === 'other') { state.otherDraft = ''; state.screen = 'sym'; }
+  else if (S === 'sym' || S === 'result') { state.screen = 'cat'; }
+  else if (S === 'cat') { goHome(); return; }
+  else return;
+  render(); window.scrollTo(0, 0);
+}
+
+// 最初の画面（台を開く）に戻る。保存していない症状があれば確かめる
+function goHome() {
+  if (state.screen !== 'result' && (state.adds.size || state.removes.size) && !confirm(t('leaveAsk'))) return;
+  stopCamera(); clearDraft();
+  ++loadToken;   // 読み込み中の台の情報は使わない
+  state.no = ''; state.name = ''; state.current = []; state.photoCounts = {};
+  state.adds = new Map(); state.removes = new Set(); state.addMeta = new Map();
+  state.cat = ''; state.photoFor = ''; state.photoOther = false; state.otherCat = ''; state.otherDraft = '';
+  state.unitLoaded = true; state.unitFailed = false;
+  syncUrl();
+  state.screen = 'open'; render(); window.scrollTo(0, 0);
+}
+
+// スマホの戻るボタンでアプリが閉じないよう、履歴に1つ目印を入れておく
+function ensureGuard() {
+  if (!NAV_SCREENS.has(state.screen)) return;
+  try { if (!(history.state && history.state.symGuard)) history.pushState({ symGuard: 1 }, '', location.href); } catch (e) {}
+}
+window.addEventListener('popstate', () => {
+  if (!NAV_SCREENS.has(state.screen)) { syncUrl(); return; }   // 最初の画面では、もう一度押すと前のページへ
+  goBack();
+  syncUrl();
+  ensureGuard();
+});
 
 function render() {
   renderHeader();
@@ -804,11 +870,9 @@ function renderSym() {
   const eff = effectiveSet();
   const c = state.cats.find(x => x.cat === state.cat) || {};
   const items = state.master.filter(m => m.cat === state.cat);
-  $app.innerHTML = `<button class="back" id="backBtn" type="button">${esc(t('backCat'))}</button>
-    <h2>${esc(state.cat)}${trCat(c) ? ` <span class="note">${esc(trCat(c))}</span>` : ''}</h2>
+  $app.innerHTML = `<h2>${esc(state.cat)}${trCat(c) ? ` <span class="note">${esc(trCat(c))}</span>` : ''}</h2>
     <div class="group">${items.map(m => `<button class="btn${eff.has(m.h) ? ' on' : ''}" type="button" data-h="${esc(m.h)}">${esc(m.h)}${sub(trSym(m.h))}</button>`).join('')}
       <button class="btn other" type="button" id="otherBtn">${esc(t('other'))}</button></div>`;
-  document.getElementById('backBtn').onclick = () => { state.screen = 'cat'; render(); window.scrollTo(0, 0); };
   document.getElementById('otherBtn').onclick = () => { state.otherCat = state.cat; state.screen = 'other'; render(); window.scrollTo(0, 0); };
   $app.querySelectorAll('[data-h]').forEach(b => b.onclick = () => pickSymptom(b.dataset.h));
 }
@@ -832,8 +896,7 @@ function renderPhoto() {
 // その他（リストにない症状）の入力
 function renderOther() {
   const c = state.cats.find(x => x.cat === state.otherCat) || {};
-  $app.innerHTML = `<button class="back" id="backBtn" type="button">${esc(t('backCat'))}</button>
-    <div class="card"><p class="big">${esc(t('otherTitle'))}</p>
+  $app.innerHTML = `<div class="card"><p class="big">${esc(t('otherTitle'))}</p>
     <p class="note">${esc(state.otherCat)}${trCat(c) ? ' / ' + esc(trCat(c)) : ''}</p>
     <p class="note">${esc(t('otherDesc'))}</p>
     <label class="field" for="otherInput">${esc(t('otherLabel'))}</label>
@@ -843,7 +906,6 @@ function renderOther() {
   const input = document.getElementById('otherInput');
   input.value = state.otherDraft || '';
   input.oninput = () => { state.otherDraft = input.value; document.getElementById('otherErr').textContent = ''; };
-  document.getElementById('backBtn').onclick = () => { state.otherDraft = ''; state.screen = 'cat'; render(); window.scrollTo(0, 0); };
   document.getElementById('otherNext').onclick = () => {
     const v = input.value.replace(/\s+/g, ' ').trim();
     if (!v) { document.getElementById('otherErr').textContent = t('otherEmpty'); input.focus(); return; }
