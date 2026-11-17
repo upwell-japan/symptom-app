@@ -148,7 +148,9 @@
   .summary-card .row .k{color:var(--muted);flex:none;}
 
   .worktype-grid{
-    display:grid;grid-template-columns:repeat(4,1fr);gap:8px;
+    /* 横に3つ。minmax(0,1fr) で、文字の長さに関係なく全部同じ幅にする。
+       grid-auto-rows:1fr で、同じまとまりの中は全部同じ高さにする */
+    display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:1fr;gap:8px;
   }
   .wt-block{
     background:#EDE9DE;border:1px solid var(--border);border-radius:16px;
@@ -160,7 +162,7 @@
   .worktype-btn{
     background:var(--surface);border:1px solid #000000;border-radius:10px;
     padding:12px 4px;text-align:center;font-size:15px;font-weight:700;
-    cursor:pointer;line-height:1.3;min-height:72px;
+    cursor:pointer;line-height:1.3;min-height:128px;   /* まとまりが違っても同じ高さに見えるよう、一番長い作業名が入る高さにそろえる */
     display:flex;align-items:center;justify-content:center;
     word-break:break-all;
   }
