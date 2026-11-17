@@ -106,6 +106,7 @@ button{font:inherit;font-weight:700;border-radius:10px;padding:10px 18px;cursor:
 const APP_URL = 'https://upwell-japan.github.io/symptom-app/itaku.html';
 const COLS = 4, ROWS = 6, PER = COLS * ROWS, SIZE = 40;   // mm
 const POS_DEFAULT = { mx: 17.5, my: 16, gx: 5, gy: 5 };
+const ROW_SHIFT = [3, 2, 1, 0, 0, 0];         // 段ごとに下へずらす量（mm）：1段目3mm・2段目2mm・3段目1mm
 const LS_POS = 'label_pos_v1';                 // 通販のシール発行ページと同じ寸法を使う
 const LS_CONN = 'itaku_seal_conn_v1';
 let seals = [];   // ['D00001', …]
@@ -202,7 +203,7 @@ function sheetsHtml(mode) {
     slots.slice(s, s + PER).forEach((u, k) => {
       if (!u) return;
       const col = k % COLS, row = Math.floor(k / COLS);
-      const style = `left:${p.mx + col * (SIZE + p.gx)}mm;top:${p.my + row * (SIZE + p.gy)}mm`;
+      const style = `left:${p.mx + col * (SIZE + p.gx)}mm;top:${p.my + row * (SIZE + p.gy) + (ROW_SHIFT[row] || 0)}mm`;
       if (u.guide) html += `<div class="label guide" style="${style}"><span class="slot">${u.guide}</span></div>`;
       else html += `<div class="label" style="${style}">${qrSvg(APP_URL + '?s=' + u.seal)}<div class="no">${esc(u.seal)}</div><div class="nm">業務委託</div></div>`;
     });
