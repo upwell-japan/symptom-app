@@ -48,6 +48,16 @@ label.field{display:block;font-size:14px;color:var(--ink2);margin:14px 0 6px}
 input[type=text]{width:100%;font:inherit;font-size:18px;padding:12px;border:1px solid var(--ink);border-radius:10px}
 .err{color:var(--danger);font-size:14px;margin-top:6px;min-height:1em}
 .link{background:none;border:0;color:var(--ink);text-decoration:underline;font:inherit;font-size:14px;padding:10px 0;cursor:pointer}
+.bat{display:flex;align-items:center;gap:10px;border:1px solid var(--rule);border-radius:12px;padding:10px 12px;margin:12px 0 4px}
+.bat.need{border:2px solid var(--amber);background:var(--amber-soft)}
+.bat .lbl{font-weight:700;font-size:15px}
+.bat .lbl small{display:block;font-weight:400;font-size:12px;color:var(--ink2)}
+.bat strong{margin-left:auto;font-size:22px;white-space:nowrap}
+.bat strong.none{font-size:15px;color:#8a5a00}
+.bat button{flex:none;min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--ink);background:#fff;color:var(--ink);font:inherit;font-weight:700;font-size:15px;cursor:pointer}
+.batin{display:flex;align-items:center;gap:10px;max-width:240px;margin-top:8px}
+.batin input[type=text]{font-size:34px;font-weight:700;text-align:right;padding:10px 14px}
+.batin span{font-size:30px;font-weight:700}
 .cam{position:relative;border-radius:12px;overflow:hidden;background:#000}
 .cam video{display:block;width:100%;max-height:62vh;object-fit:cover}
 .cam .frame{position:absolute;inset:18% 22%;border:3px solid var(--amber);border-radius:12px;pointer-events:none}
@@ -110,6 +120,15 @@ const T = {
   selEmpty:   { ja: 'まだ症状はありません。カテゴリを押して症状を選んでください。', en: 'No defects yet. Tap a category to choose a defect.', id: 'Belum ada cacat. Tekan kategori untuk memilih cacat.' },
   isNew:      { ja: '今回追加', en: 'New', id: 'Baru' },
   hasPhoto:   { ja: '写真', en: 'Photo', id: 'Foto' },
+  battery:    { ja: 'バッテリー容量', en: 'Battery capacity', id: 'Kapasitas baterai' },
+  batDesc:    { ja: '数字だけを入れてください（0〜100）。単位は％です。', en: 'Enter numbers only (0–100). The unit is %.', id: 'Masukkan angka saja (0–100). Satuannya %.' },
+  batNotSet:  { ja: '未入力', en: 'Not entered', id: 'Belum diisi' },
+  batEnter:   { ja: '入力', en: 'Enter', id: 'Isi' },
+  batChange:  { ja: '変更', en: 'Change', id: 'Ubah' },
+  batEmpty:   { ja: 'バッテリー容量を入れてください', en: 'Please enter the battery capacity', id: 'Silakan isi kapasitas baterai' },
+  batRange:   { ja: '0から100までの数字を入れてください', en: 'Enter a number from 0 to 100', id: 'Masukkan angka 0 sampai 100' },
+  batOk:      { ja: '決定', en: 'OK', id: 'OK' },
+  batOkSave:  { ja: '決定して保存', en: 'OK and save', id: 'OK dan simpan' },
   done:       { ja: '完了', en: 'Done', id: 'Selesai' },
   none:       { ja: '症状なし', en: 'No defects', id: 'Tidak ada cacat' },
   back:       { ja: '戻る', en: 'Back', id: 'Kembali' },
@@ -167,7 +186,8 @@ const state = {
   adds: new Map(), removes: new Set(),
   cat: '', photoFor: '', lastNone: false, error: '',
   addMeta: new Map(), photoOther: false, otherCat: '', otherDraft: '',
-  unitLoaded: true, unitFailed: false
+  unitLoaded: true, unitFailed: false,
+  battery: '', batteryEdited: false, batteryThen: ''   // batteryThen：入力のあとに保存するとき 'done' / 'none'
 };
 
 function loadLang() {
@@ -193,7 +213,8 @@ function saveDraft() {
     localStorage.setItem(LS_DRAFT, JSON.stringify({
       t: Date.now(), deviceId: state.deviceId, no: state.no, name: state.name,
       photoFor: state.photoFor, adds: [...state.adds], removes: [...state.removes],
-      meta: [...state.addMeta], photoOther: state.photoOther, otherCat: state.otherCat
+      meta: [...state.addMeta], photoOther: state.photoOther, otherCat: state.otherCat,
+      battery: state.battery, batteryEdited: state.batteryEdited
     }));
   } catch (e) {}
 }
@@ -285,6 +306,7 @@ function start() {
         d.removes.forEach(s => state.removes.add(s));
         (d.meta || []).forEach(([s, m]) => state.addMeta.set(s, m));
         state.photoOther = !!d.photoOther; state.otherCat = d.otherCat || '';
+        if (d.batteryEdited) { state.battery = d.battery || ''; state.batteryEdited = true; }
         state.photoFor = d.photoFor; state.screen = 'photo';
         render(); toast(t('retake'));
       });
@@ -319,6 +341,7 @@ function setUnit(info, nameFromQr, loaded) {
   state.adds = new Map(); state.removes = new Set(); state.cat = ''; state.lastNone = false;
   state.addMeta = new Map(); state.photoOther = false; state.otherCat = '';
   state.unitLoaded = loaded !== false; state.unitFailed = false;
+  state.battery = batteryText(info.battery); state.batteryEdited = false; state.batteryThen = '';
   syncUrl();
 }
 
@@ -348,9 +371,19 @@ function applyUnitInfo(info) {
   });
   state.current = cur;
   state.photoCounts = info.photoCounts || {};
+  if (!state.batteryEdited) {
+    let bat = batteryText(info.battery);
+    getOutbox().filter(j => normalizeNo(j.no) === normalizeNo(state.no) && batteryText(j.battery) !== '').forEach(j => { bat = batteryText(j.battery); });
+    state.battery = bat;
+  }
   if (!state.name && info.name) state.name = info.name;
   cur.forEach(c => state.adds.delete(c.symptom));   // 読み込み前に選んだものが登録済みなら、二重にしない
   state.unitLoaded = true; state.unitFailed = false;
+}
+// バッテリー容量を「0〜100の整数の文字」にする（入っていなければ ''）
+function batteryText(v) {
+  const s = String(v == null ? '' : v).trim();
+  return /^\d{1,3}$/.test(s) && Number(s) <= 100 ? String(Number(s)) : '';
 }
 function normalizeNo(no) {
   return String(no || '').trim().replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/[－ー―‐]/g, '-');
@@ -390,12 +423,13 @@ async function save(none) {
     id: Date.now() + '_' + Math.random().toString(36).slice(2, 7),
     no: state.no, name: state.name,
     adds: [...state.adds].map(([symptom, photo]) => { const m = state.addMeta.get(symptom); return m && m.other ? { symptom, photo, other: true, cat: m.cat } : { symptom, photo }; }),
-    removes: [...state.removes], none: !!none
+    removes: [...state.removes], none: !!none, battery: state.battery
   };
   const box = getOutbox(); box.push(job); setOutbox(box);
 
   state.current = effective().map(e => ({ symptom: e.symptom, photo: e.photo, cat: e.cat, other: e.other }));
   state.adds = new Map(); state.removes = new Set(); state.addMeta = new Map();
+  state.batteryEdited = false; state.batteryThen = '';
   state.lastNone = !!none; state.screen = 'result';
   render(); window.scrollTo(0, 0);
   flushOutbox();
@@ -420,7 +454,7 @@ async function flushOutbox() {
         job.adds.forEach(a => { if (isPending(a.photo)) a.photo = ''; });
       }
       try {
-        var saved = await call('apiSave', [state.deviceId, job.no, job.name, job.adds, job.removes, job.none]);
+        var saved = await call('apiSave', [state.deviceId, job.no, job.name, job.adds, job.removes, job.none, job.battery]);
       } catch (e) { failed = true; break; }
       setOutbox(getOutbox().filter(j => j.id !== job.id));
       // 開いている台なら、サーバーに記録された内容（翻訳後の症状名など）に合わせる
@@ -724,7 +758,7 @@ function renderHeader() {
 // 戻る・ホーム
 // ・画面の左上の「‹」と「家」のボタン、スマホの戻るボタンで使う
 // ---------------------------------------------------------------
-const NAV_SCREENS = new Set(['cat', 'sym', 'photo', 'other', 'result', 'camera', 'scan']);
+const NAV_SCREENS = new Set(['cat', 'sym', 'photo', 'other', 'result', 'camera', 'scan', 'battery']);
 const ICON_BACK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
 const ICON_HOME = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 9.5V20h5v-6h4v6h5V9.5"/></svg>';
 
@@ -736,6 +770,7 @@ function goBack() {
   else if (S === 'photo') { clearDraft(); state.screen = state.photoOther ? 'other' : 'sym'; }
   else if (S === 'other') { state.otherDraft = ''; state.screen = 'sym'; }
   else if (S === 'sym' || S === 'result') { state.screen = 'cat'; }
+  else if (S === 'battery') { state.batteryThen = ''; state.screen = 'cat'; }
   else if (S === 'cat') { goHome(); return; }
   else return;
   render(); window.scrollTo(0, 0);
@@ -743,13 +778,14 @@ function goBack() {
 
 // 最初の画面（台を開く）に戻る。保存していない症状があれば確かめる
 function goHome() {
-  if (state.screen !== 'result' && (state.adds.size || state.removes.size) && !confirm(t('leaveAsk'))) return;
+  if (state.screen !== 'result' && (state.adds.size || state.removes.size || state.batteryEdited) && !confirm(t('leaveAsk'))) return;
   stopCamera(); clearDraft();
   ++loadToken;   // 読み込み中の台の情報は使わない
   state.no = ''; state.name = ''; state.current = []; state.photoCounts = {};
   state.adds = new Map(); state.removes = new Set(); state.addMeta = new Map();
   state.cat = ''; state.photoFor = ''; state.photoOther = false; state.otherCat = ''; state.otherDraft = '';
   state.unitLoaded = true; state.unitFailed = false;
+  state.battery = ''; state.batteryEdited = false; state.batteryThen = '';
   syncUrl();
   state.screen = 'open'; render(); window.scrollTo(0, 0);
 }
@@ -781,6 +817,7 @@ function render() {
   else if (S === 'photo') renderPhoto();
   else if (S === 'other') renderOther();
   else if (S === 'result') renderResult();
+  else if (S === 'battery') renderBattery();
 }
 
 function renderError() {
@@ -849,7 +886,8 @@ function renderCat() {
   const counts = {};
   effList.forEach(e => { if (e.cat) counts[e.cat] = (counts[e.cat] || 0) + 1; });
   const empty = effList.length === 0;
-  $app.innerHTML = `<h2>${esc(t('catTitle'))}</h2>
+  $app.innerHTML = `${batteryRowHtml(true)}
+    <h2>${esc(t('catTitle'))}</h2>
     <div class="group">${state.cats.map((c, i) => `<button class="btn" type="button" data-cat="${i}">${esc(c.cat)}${sub(trCat(c))}${counts[c.cat] ? `<span class="badge">${counts[c.cat]}</span>` : ''}</button>`).join('')}</div>
     <h2>${esc(t('selTitle'))}</h2>${selectedListHtml(true)}
     ${state.unitFailed ? `<p class="note">${esc(t('unitFail'))} <button class="link" id="reload" type="button">${esc(t('retry'))}</button></p>`
@@ -861,9 +899,10 @@ function renderCat() {
       : `<button class="primary" id="doneBtn" type="button">${esc(t('done'))}</button>`}</div>`;
   $app.querySelectorAll('[data-cat]').forEach(b => b.onclick = () => { state.cat = state.cats[Number(b.dataset.cat)].cat; state.screen = 'sym'; render(); window.scrollTo(0, 0); });
   $app.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => removeSymptom(b.dataset.rm));
-  const done = document.getElementById('doneBtn'); if (done) done.onclick = () => save(false);
+  const done = document.getElementById('doneBtn'); if (done) done.onclick = () => finish(false);
+  const bb = document.getElementById('batBtn'); if (bb) bb.onclick = () => openBattery('');
   const rl = document.getElementById('reload'); if (rl) rl.onclick = () => { loadUnit(); render(); };
-  const none = document.getElementById('noneBtn'); if (none) none.onclick = () => save(true);
+  const none = document.getElementById('noneBtn'); if (none) none.onclick = () => finish(true);
 }
 
 function renderSym() {
@@ -918,12 +957,65 @@ function renderResult() {
   const n = effective().length;
   $app.innerHTML = `<h2>${esc(t('selTitle'))}${n ? ` <span class="note">${esc(t('count', n))}</span>` : ''}</h2>
     ${state.lastNone ? `<div class="empty">${esc(t('resNone'))}</div>` : selectedListHtml(false)}
+    ${batteryRowHtml(false)}
     <div class="actions"><button class="primary" id="nextBtn" type="button">${esc(t('next'))}</button></div>
     <div class="actions"><button class="secondary" id="fixBtn" type="button">${esc(t('fix'))}</button></div>
     <button class="link" id="numBtn" type="button">${esc(t('byNumber'))}</button>`;
   document.getElementById('nextBtn').onclick = openScanner;
   document.getElementById('fixBtn').onclick = () => { state.screen = 'cat'; render(); window.scrollTo(0, 0); };
   document.getElementById('numBtn').onclick = () => { state.no = ''; state.name = ''; state.screen = 'open'; render(); };
+}
+
+// ---------------------------------------------------------------
+// バッテリー容量（必ず入力する。数字だけ・単位は％）
+// ---------------------------------------------------------------
+function batteryRowHtml(withButton) {
+  const v = state.battery;
+  const sub2 = state.lang === 'ja' ? '' : `<small>${esc(T.battery.ja)}</small>`;
+  return `<div class="bat${v === '' && withButton ? ' need' : ''}"><span class="lbl">🔋 ${esc(t('battery'))}${sub2}</span>
+    ${v === '' ? `<strong class="none">${esc(t('batNotSet'))}</strong>` : `<strong>${esc(v)}%</strong>`}
+    ${withButton ? `<button type="button" id="batBtn">${esc(v === '' ? t('batEnter') : t('batChange'))}</button>` : ''}</div>`;
+}
+
+// 「完了」「症状なし」：バッテリー容量が未入力なら、先に入力の画面を出す
+function finish(none) {
+  if (state.battery === '') { openBattery(none ? 'none' : 'done'); return; }
+  save(none);
+}
+
+function openBattery(then) {
+  state.batteryThen = then || '';
+  state.screen = 'battery'; render(); window.scrollTo(0, 0);
+}
+
+function renderBattery() {
+  $app.innerHTML = `<div class="card"><p class="big">🔋 ${esc(t('battery'))}</p>
+    <p class="note">${esc(t('batDesc'))}</p>
+    <div class="batin"><input type="text" id="batInput" inputmode="numeric" pattern="[0-9]*" maxlength="3" autocomplete="off" enterkeyhint="done" aria-label="${esc(t('battery'))}"><span>%</span></div>
+    <div class="err" id="batErr"></div>
+    <div class="actions"><button class="primary" id="batOk" type="button">${esc(state.batteryThen ? t('batOkSave') : t('batOk'))}</button></div></div>`;
+  const input = document.getElementById('batInput');
+  const err = document.getElementById('batErr');
+  input.value = state.battery;
+  // 全角の数字は半角にして、数字以外は入らないようにする
+  input.oninput = () => {
+    input.value = input.value.replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/\D/g, '').slice(0, 3);
+    err.textContent = '';
+  };
+  const ok = () => {
+    const v = input.value;
+    if (v === '') { err.textContent = t('batEmpty'); input.focus(); return; }
+    if (Number(v) > 100) { err.textContent = t('batRange'); input.focus(); return; }
+    const nv = String(Number(v));
+    if (nv !== state.battery) { state.battery = nv; state.batteryEdited = true; }
+    const then = state.batteryThen;
+    state.batteryThen = '';
+    if (then) save(then === 'none');
+    else { state.screen = 'cat'; render(); window.scrollTo(0, 0); }
+  };
+  input.onkeydown = e => { if (e.key === 'Enter') ok(); };
+  document.getElementById('batOk').onclick = ok;
+  setTimeout(() => { try { input.focus(); } catch (e) {} }, 50);
 }
 
 function showBusy(msg) { const b = document.getElementById('busy'); b.textContent = msg; b.hidden = false; }
