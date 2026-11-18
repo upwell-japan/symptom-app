@@ -58,6 +58,9 @@ input[type=text]{width:100%;font:inherit;font-size:18px;padding:12px;border:1px 
 .batin{display:flex;align-items:center;gap:10px;max-width:240px;margin-top:8px}
 .batin input[type=text]{font-size:34px;font-weight:700;text-align:right;padding:10px 14px}
 .batin span{font-size:30px;font-weight:700}
+.shots{display:flex;gap:6px;overflow-x:auto;margin-top:8px}
+.shots img{width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--rule);flex:none}
+.primary:disabled,.secondary:disabled{opacity:.45;cursor:default}
 .cam{position:relative;border-radius:12px;overflow:hidden;background:#000}
 .cam video{display:block;width:100%;max-height:62vh;object-fit:cover}
 .cam .frame{position:absolute;inset:18% 22%;border:3px solid var(--amber);border-radius:12px;pointer-events:none}
@@ -73,7 +76,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--amber);outline-
 <header id="hd"></header>
 <main id="app"></main>
 <input type="file" id="camPhoto" accept="image/*" capture="environment" hidden>
-<input type="file" id="galPhoto" accept="image/*" hidden>
+<input type="file" id="galPhoto" accept="image/*" multiple hidden>
 <input type="file" id="camQr" accept="image/*" capture="environment" hidden>
 <div id="busy" hidden></div>
 <div id="toast" role="status"></div>
@@ -138,7 +141,11 @@ const T = {
   photoReq:   { ja: 'この症状は写真が必要です。瑕疵がはっきり分かるように撮影してください。', en: 'This defect needs a photo. Take a photo that clearly shows the defect.', id: 'Cacat ini perlu foto. Ambil foto yang memperlihatkan cacat dengan jelas.' },
   photoOpt:   { ja: '同じ型番で写真が{n}枚そろっているので、撮影は任意です。', en: 'This model already has {n} photos of this defect, so a photo is optional.', id: 'Model ini sudah punya {n} foto untuk cacat ini, jadi foto tidak wajib.' },
   shoot:      { ja: 'カメラで撮影', en: 'Open camera', id: 'Buka kamera' },
-  pick:       { ja: '写真を選ぶ（撮影済みの写真）', en: 'Choose a photo', id: 'Pilih foto' },
+  pick:       { ja: '写真を選ぶ（撮影済みの写真・複数可）', en: 'Choose photos (multiple OK)', id: 'Pilih foto (boleh beberapa)' },
+  camDone:    { ja: '決定（{n}枚）', en: 'Done ({n})', id: 'Selesai ({n})' },
+  camHint:    { ja: '続けて何枚でも撮れます（10枚まで）。撮り終わったら「決定」を押してください。', en: 'You can take several photos (up to 10). Press "Done" when finished.', id: 'Anda bisa mengambil beberapa foto (maks. 10). Tekan "Selesai" setelah selesai.' },
+  camMax:     { ja: '1つの症状につき10枚までです', en: 'Up to 10 photos per defect', id: 'Maksimal 10 foto per cacat' },
+  someFail:   { ja: '送れなかった写真がありました。足りない場合は、症状を外して撮り直してください。', en: 'Some photos could not be sent. If needed, remove the defect and take them again.', id: 'Beberapa foto gagal dikirim. Jika perlu, hapus cacat lalu foto ulang.' },
   skip:       { ja: '撮影しないで進む', en: 'Continue without photo', id: 'Lanjut tanpa foto' },
   cancel:     { ja: 'やめる', en: 'Cancel', id: 'Batal' },
   uploading:  { ja: '写真を保存しています…', en: 'Saving the photo…', id: 'Menyimpan foto…' },
@@ -445,13 +452,13 @@ async function flushOutbox() {
       let job = getOutbox()[0];
       if (!job) break;
       // この記録に送信中の写真があれば、届くのを待つ（ページを開き直して行方が分からないものは、写真なしにする）
-      const marks = job.adds.map(a => a.photo).filter(isPending);
+      const marks = [].concat(...job.adds.map(a => photoList(a.photo))).filter(isPending);
       if (marks.length) {
         await Promise.all(marks.map(m => uploadJobs.get(m) || Promise.resolve()));
         marks.forEach(m => { if (!uploadJobs.has(m)) replacePhoto(m, ''); });
         job = getOutbox().find(j => j.id === job.id);
         if (!job) continue;
-        job.adds.forEach(a => { if (isPending(a.photo)) a.photo = ''; });
+        job.adds.forEach(a => { a.photo = photoJoin(photoList(a.photo).filter(x => !isPending(x))); });
       }
       try {
         var saved = await call('apiSave', [state.deviceId, job.no, job.name, job.adds, job.removes, job.none, job.battery]);
@@ -499,49 +506,67 @@ function removeSymptom(h) {
 const pendingUploads = new Set();
 const uploadJobs = new Map();   // 目印 → 送信中の処理
 let uploadSeq = 0;
+// 1つの症状の写真は、URL（または送信中の目印）を改行でつないだ文字で持つ
+const PHOTO_LIMIT = 10;
+const photoList = p => String(p || '').split('\n').map(x => x.trim()).filter(Boolean);
+const photoJoin = a => a.filter(Boolean).join('\n');
+function swapIn(p, mark, url) {
+  const a = photoList(p);
+  return a.includes(mark) ? photoJoin(a.map(x => x === mark ? url : x)) : null;
+}
 function replacePhoto(mark, url) {
-  state.adds.forEach((p, s) => { if (p === mark) state.adds.set(s, url); });
-  state.current.forEach(c => { if (c.photo === mark) c.photo = url; });
+  state.adds.forEach((p, s) => { const v = swapIn(p, mark, url); if (v !== null) state.adds.set(s, v); });
+  state.current.forEach(c => { const v = swapIn(c.photo, mark, url); if (v !== null) c.photo = v; });
   const box = getOutbox();
   let changed = false;
-  box.forEach(j => j.adds.forEach(a => { if (a.photo === mark) { a.photo = url; changed = true; } }));
+  box.forEach(j => j.adds.forEach(a => { const v = swapIn(a.photo, mark, url); if (v !== null) { a.photo = v; changed = true; } }));
   if (changed) setOutbox(box);
 }
-function uploadPhoto(dataUrl) {
+// 写真（1枚でも複数でも）を裏で送る。先に症状を追加して、カテゴリ画面に戻る
+function uploadPhotos(dataUrls) {
   const h = state.photoFor, no = state.no;
-  const mark = 'pending:' + Date.now() + '_' + (++uploadSeq);
+  const marks = dataUrls.map(() => 'pending:' + Date.now() + '_' + (++uploadSeq));
   hideBusy();
-  addSymptom(h, mark);   // 先に症状を追加して、カテゴリ画面に戻る
+  addSymptom(h, photoJoin(marks));
   toast(t('uploading'));
-  const p = call('apiUploadPhoto', [state.deviceId, no, h, dataUrl])
-    .then(r => {
-      replacePhoto(mark, r.url);
-      state.photoCounts[h] = (state.photoCounts[h] || 0) + 1;
-    })
-    .catch(e => {
-      // 「完了」の前なら、症状を外して撮り直せるようにする
-      if (state.no === no && state.adds.get(h) === mark) {
-        state.adds.delete(h);
-        alert(t('errSave') + '\n' + (e.message || e));
-      }
-      replacePhoto(mark, '');   // 「完了」のあとなら、写真なしで症状だけ記録する
-    })
-    .then(() => { pendingUploads.delete(p); uploadJobs.delete(mark); refresh(); });
-  pendingUploads.add(p);
-  uploadJobs.set(mark, p);
-  return p;
+  let failed = 0, chain = Promise.resolve();
+  marks.forEach((mark, i) => {
+    // 1枚ずつ順に送る（電波が弱くても失敗しにくくするため）
+    const p = chain.then(() => call('apiUploadPhoto', [state.deviceId, no, h, dataUrls[i]]))
+      .then(r => {
+        replacePhoto(mark, r.url);
+        state.photoCounts[h] = (state.photoCounts[h] || 0) + 1;
+      })
+      .catch(() => { failed++; replacePhoto(mark, ''); })
+      .then(() => { pendingUploads.delete(p); uploadJobs.delete(mark); });
+    pendingUploads.add(p);
+    uploadJobs.set(mark, p);
+    chain = p;
+  });
+  chain.then(() => {
+    if (failed && state.no === no && state.adds.has(h)) {
+      // 「完了」の前で、1枚も送れなかったときは、症状を外して撮り直せるようにする
+      if (!photoList(state.adds.get(h)).length) { state.adds.delete(h); state.addMeta.delete(h); alert(t('errSave')); }
+      else alert(t('someFail'));
+    }
+    refresh();
+  });
+  return chain;
 }
+function uploadPhoto(dataUrl) { return uploadPhotos([dataUrl]); }
 const isPending = v => typeof v === 'string' && v.indexOf('pending:') === 0;
 
 // 「写真を選ぶ」、またはページ内カメラが使えない端末の撮影
 async function onPhotoPicked(ev) {
-  const file = ev.target.files && ev.target.files[0];
+  let files = Array.from((ev.target.files) || []);
   ev.target.value = '';
-  if (!file) return;
+  if (!files.length) return;
+  if (files.length > PHOTO_LIMIT) { files = files.slice(0, PHOTO_LIMIT); alert(t('camMax')); }
   try {
     showBusy(t('uploading'));
-    const dataUrl = await resizeImage(file, PHOTO_MAX, PHOTO_QUALITY);
-    await uploadPhoto(dataUrl);
+    const dataUrls = [];
+    for (const f of files) dataUrls.push(await resizeImage(f, PHOTO_MAX, PHOTO_QUALITY));
+    uploadPhotos(dataUrls);
   } catch (e) { hideBusy(); alert(t('errSave') + '\n' + (e.message || e)); }
 }
 ['camPhoto', 'galPhoto'].forEach(id => document.getElementById(id).addEventListener('change', onPhotoPicked));
@@ -574,22 +599,38 @@ async function openCamera() {
     return;
   }
   state.screen = 'camera'; renderHeader();
+  const shots = [];
   $app.innerHTML = `${cameraHtml(false)}
-    <div class="actions"><button class="primary" id="snap" type="button" aria-label="${esc(t('shoot'))}">📷</button></div>
+    <div class="shots" id="shots"></div>
+    <p class="note">${esc(t('camHint'))}</p>
+    <div class="actions"><button class="primary" id="snap" type="button" aria-label="${esc(t('shoot'))}">📷</button>
+      <button class="secondary" id="camDone" type="button" disabled>${esc(t('camDone', 0))}</button></div>
     <button class="link" id="camCancel" type="button">${esc(t('cancel'))}</button>`;
   const v = document.getElementById('vid');
   v.srcObject = camStream;
+  const snap = document.getElementById('snap'), doneB = document.getElementById('camDone');
+  const update = () => {
+    doneB.disabled = !shots.length;
+    doneB.textContent = t('camDone', shots.length);
+    snap.disabled = shots.length >= PHOTO_LIMIT;
+    document.getElementById('shots').innerHTML = shots.map(d => `<img src="${d}" alt="">`).join('');
+  };
   document.getElementById('camCancel').onclick = () => { stopCamera(); state.screen = 'photo'; render(); };
-  document.getElementById('snap').onclick = async () => {
+  snap.onclick = () => {
     if (!v.videoWidth) return;
+    if (shots.length >= PHOTO_LIMIT) { toast(t('camMax')); return; }
     const r = Math.min(1, PHOTO_MAX / Math.max(v.videoWidth, v.videoHeight));
     const c = document.createElement('canvas');
     c.width = Math.round(v.videoWidth * r); c.height = Math.round(v.videoHeight * r);
     c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
-    const dataUrl = c.toDataURL('image/jpeg', PHOTO_QUALITY);
+    shots.push(c.toDataURL('image/jpeg', PHOTO_QUALITY));
     c.width = c.height = 0;
+    update();
+  };
+  doneB.onclick = () => {
+    if (!shots.length) return;
     stopCamera();
-    await uploadPhoto(dataUrl);
+    uploadPhotos(shots.slice());
   };
 }
 
@@ -877,7 +918,7 @@ function selectedListHtml(withRemove) {
   const list = effective();
   if (!list.length) return state.unitLoaded ? `<div class="empty">${esc(t('selEmpty'))}</div>` : '';
   return `<ul class="sel">${list.map(e => `<li><span>${esc(e.symptom)}${sub(trSym(e.symptom))}</span>
-      ${e.other ? `<span class="tag">${esc(t('otherTag'))}</span>` : ''}${e.photo ? `<span class="tag">${esc(t('hasPhoto'))}</span>` : ''}${e.isNew && withRemove ? `<span class="tag new">${esc(t('isNew'))}</span>` : ''}
+      ${e.other ? `<span class="tag">${esc(t('otherTag'))}</span>` : ''}${photoList(e.photo).length ? `<span class="tag">${esc(t('hasPhoto'))}${photoList(e.photo).length > 1 ? ' ×' + photoList(e.photo).length : ''}</span>` : ''}${e.isNew && withRemove ? `<span class="tag new">${esc(t('isNew'))}</span>` : ''}
       ${withRemove ? `<button class="x" type="button" data-rm="${esc(e.symptom)}" aria-label="×">×</button>` : ''}</li>`).join('')}</ul>`;
 }
 
