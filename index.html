@@ -61,6 +61,8 @@ input[type=text]{width:100%;font:inherit;font-size:18px;padding:12px;border:1px 
 .shots{display:flex;gap:6px;overflow-x:auto;margin-top:8px}
 .shots img{width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--rule);flex:none}
 .primary:disabled,.secondary:disabled{opacity:.45;cursor:default}
+.markbox{background:#000;border-radius:12px;overflow:hidden;display:flex;justify-content:center}
+#markCv{display:block;max-width:100%;max-height:62vh;width:auto;height:auto;touch-action:none;cursor:crosshair}
 .cam{position:relative;border-radius:12px;overflow:hidden;background:#000}
 .cam video{display:block;width:100%;max-height:62vh;object-fit:cover}
 .cam .frame{position:absolute;inset:18% 22%;border:3px solid var(--amber);border-radius:12px;pointer-events:none}
@@ -142,6 +144,11 @@ const T = {
   photoOpt:   { ja: '同じ型番で写真が{n}枚そろっているので、撮影は任意です。', en: 'This model already has {n} photos of this defect, so a photo is optional.', id: 'Model ini sudah punya {n} foto untuk cacat ini, jadi foto tidak wajib.' },
   shoot:      { ja: 'カメラで撮影', en: 'Open camera', id: 'Buka kamera' },
   pick:       { ja: '写真を選ぶ（撮影済みの写真・複数可）', en: 'Choose photos (multiple OK)', id: 'Pilih foto (boleh beberapa)' },
+  markHint:   { ja: '瑕疵の場所を、指で押したまま斜めになぞると四角で囲めます。囲まなくても進めます。', en: 'Press and drag diagonally to draw a box around the defect. You can also continue without a box.', id: 'Tekan dan geser diagonal untuk membuat kotak di sekitar cacat. Boleh lanjut tanpa kotak.' },
+  markPhoto:  { ja: '写真', en: 'Photo', id: 'Foto' },
+  undo:       { ja: '1つ戻す', en: 'Undo', id: 'Batalkan' },
+  markNext:   { ja: '決定して次へ', en: 'OK, next', id: 'OK, berikutnya' },
+  markDone:   { ja: '決定', en: 'OK', id: 'OK' },
   camDone:    { ja: '決定（{n}枚）', en: 'Done ({n})', id: 'Selesai ({n})' },
   camHint:    { ja: '続けて何枚でも撮れます（10枚まで）。撮り終わったら「決定」を押してください。', en: 'You can take several photos (up to 10). Press "Done" when finished.', id: 'Anda bisa mengambil beberapa foto (maks. 10). Tekan "Selesai" setelah selesai.' },
   camMax:     { ja: '1つの症状につき10枚までです', en: 'Up to 10 photos per defect', id: 'Maksimal 10 foto per cacat' },
@@ -566,7 +573,8 @@ async function onPhotoPicked(ev) {
     showBusy(t('uploading'));
     const dataUrls = [];
     for (const f of files) dataUrls.push(await resizeImage(f, PHOTO_MAX, PHOTO_QUALITY));
-    uploadPhotos(dataUrls);
+    hideBusy();
+    reviewPhotos(dataUrls);
   } catch (e) { hideBusy(); alert(t('errSave') + '\n' + (e.message || e)); }
 }
 ['camPhoto', 'galPhoto'].forEach(id => document.getElementById(id).addEventListener('change', onPhotoPicked));
@@ -630,7 +638,7 @@ async function openCamera() {
   doneB.onclick = () => {
     if (!shots.length) return;
     stopCamera();
-    uploadPhotos(shots.slice());
+    reviewPhotos(shots.slice());
   };
 }
 
@@ -799,7 +807,7 @@ function renderHeader() {
 // 戻る・ホーム
 // ・画面の左上の「‹」と「家」のボタン、スマホの戻るボタンで使う
 // ---------------------------------------------------------------
-const NAV_SCREENS = new Set(['cat', 'sym', 'photo', 'other', 'result', 'camera', 'scan', 'battery']);
+const NAV_SCREENS = new Set(['cat', 'sym', 'photo', 'other', 'result', 'camera', 'scan', 'battery', 'mark']);
 const ICON_BACK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
 const ICON_HOME = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 9.5V20h5v-6h4v6h5V9.5"/></svg>';
 
@@ -812,6 +820,7 @@ function goBack() {
   else if (S === 'other') { state.otherDraft = ''; state.screen = 'sym'; }
   else if (S === 'sym' || S === 'result') { state.screen = 'cat'; }
   else if (S === 'battery') { state.batteryThen = ''; state.screen = 'cat'; }
+  else if (S === 'mark') { markJob = null; state.screen = 'photo'; }
   else if (S === 'cat') { goHome(); return; }
   else return;
   render(); window.scrollTo(0, 0);
@@ -820,7 +829,7 @@ function goBack() {
 // 最初の画面（台を開く）に戻る。保存していない症状があれば確かめる
 function goHome() {
   if (state.screen !== 'result' && (state.adds.size || state.removes.size || state.batteryEdited) && !confirm(t('leaveAsk'))) return;
-  stopCamera(); clearDraft();
+  stopCamera(); clearDraft(); markJob = null;
   ++loadToken;   // 読み込み中の台の情報は使わない
   state.no = ''; state.name = ''; state.current = []; state.photoCounts = {};
   state.adds = new Map(); state.removes = new Set(); state.addMeta = new Map();
@@ -859,6 +868,7 @@ function render() {
   else if (S === 'other') renderOther();
   else if (S === 'result') renderResult();
   else if (S === 'battery') renderBattery();
+  else if (S === 'mark') renderMark();
 }
 
 function renderError() {
@@ -1057,6 +1067,92 @@ function renderBattery() {
   input.onkeydown = e => { if (e.key === 'Enter') ok(); };
   document.getElementById('batOk').onclick = ok;
   setTimeout(() => { try { input.focus(); } catch (e) {} }, 50);
+}
+
+// ---------------------------------------------------------------
+// 写真の確認：指で斜めになぞって、瑕疵の場所を四角で囲む（任意）
+// ・複数枚のときは1枚ずつ順に出す。保存するのは枠を描き込んだ写真だけ
+// ---------------------------------------------------------------
+let markJob = null;   // { list: [dataUrl…], idx, out: [], rects: [], img }
+
+function reviewPhotos(list) {
+  if (!list.length) return;
+  markJob = { list: list, idx: 0, out: [], rects: [], img: null };
+  state.screen = 'mark'; render(); window.scrollTo(0, 0);
+}
+
+function drawMarks(ctx, img, rects, temp) {
+  const W = img.naturalWidth, H = img.naturalHeight;
+  const lw = Math.max(3, Math.round(Math.max(W, H) * 0.006));
+  ctx.drawImage(img, 0, 0, W, H);
+  rects.concat(temp ? [temp] : []).forEach(r => {
+    const x = Math.min(r.x1, r.x2), y = Math.min(r.y1, r.y2), w = Math.abs(r.x2 - r.x1), h = Math.abs(r.y2 - r.y1);
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = lw + 4; ctx.strokeRect(x, y, w, h);   // 暗い所でも見えるよう白で縁取り
+    ctx.strokeStyle = '#e53935'; ctx.lineWidth = lw; ctx.strokeRect(x, y, w, h);
+  });
+}
+
+function renderMark() {
+  const job = markJob;
+  if (!job) { state.screen = 'photo'; render(); return; }
+  const n = job.list.length, last = job.idx === n - 1;
+  $app.innerHTML = `<p class="big" style="margin-top:12px">${esc(state.photoFor)}${n > 1 ? ` <span class="note">${esc(t('markPhoto'))} ${job.idx + 1} / ${n}</span>` : ''}</p>
+    <p class="note">${esc(t('markHint'))}</p>
+    <div class="markbox"><canvas id="markCv"></canvas></div>
+    <div class="actions"><button class="secondary" id="undoBtn" type="button">${esc(t('undo'))}</button>
+      <button class="primary" id="markOk" type="button">${esc(last ? t('markDone') : t('markNext'))}</button></div>
+    <button class="link" id="markCancel" type="button">${esc(t('cancel'))}</button>`;
+  const cv = document.getElementById('markCv'), ctx = cv.getContext('2d');
+  const undo = document.getElementById('undoBtn');
+  let temp = null;
+  const redraw = () => { if (job.img) drawMarks(ctx, job.img, job.rects, temp); undo.disabled = !job.rects.length; };
+  const setup = () => { cv.width = job.img.naturalWidth; cv.height = job.img.naturalHeight; redraw(); };
+  if (job.img && job.img.dataset.i === String(job.idx)) setup();
+  else {
+    const img = new Image();
+    img.dataset.i = String(job.idx);
+    img.onload = () => { if (markJob === job) { job.img = img; setup(); } };
+    img.src = job.list[job.idx];
+  }
+  undo.disabled = !job.rects.length;
+
+  // 画面上の位置を、写真の中の位置に直す
+  const pos = e => { const b = cv.getBoundingClientRect(); return { x: (e.clientX - b.left) * cv.width / b.width, y: (e.clientY - b.top) * cv.height / b.height }; };
+  cv.onpointerdown = e => {
+    if (!job.img) return;
+    e.preventDefault();
+    const p = pos(e);
+    temp = { x1: p.x, y1: p.y, x2: p.x, y2: p.y };
+    try { cv.setPointerCapture(e.pointerId); } catch (err) {}
+  };
+  cv.onpointermove = e => {
+    if (!temp) return;
+    const p = pos(e);
+    temp.x2 = Math.max(0, Math.min(cv.width, p.x)); temp.y2 = Math.max(0, Math.min(cv.height, p.y));
+    redraw();
+  };
+  cv.onpointerup = () => {
+    if (!temp) return;
+    const min = Math.max(cv.width, cv.height) * 0.03;   // 指が少しずれただけの小さい枠は描かない
+    if (Math.abs(temp.x2 - temp.x1) >= min && Math.abs(temp.y2 - temp.y1) >= min) job.rects.push(temp);
+    temp = null; redraw();
+  };
+  cv.onpointercancel = () => { temp = null; redraw(); };
+
+  undo.onclick = () => { job.rects.pop(); redraw(); };
+  document.getElementById('markCancel').onclick = () => { markJob = null; state.screen = 'photo'; render(); };
+  document.getElementById('markOk').onclick = () => {
+    if (!job.img) return;
+    temp = null;
+    let out = job.list[job.idx];
+    if (job.rects.length) { drawMarks(ctx, job.img, job.rects, null); out = cv.toDataURL('image/jpeg', PHOTO_QUALITY); }
+    job.out.push(out);
+    job.idx++; job.rects = []; job.img = null;
+    if (job.idx < n) { render(); window.scrollTo(0, 0); return; }
+    markJob = null;
+    uploadPhotos(job.out);
+  };
 }
 
 function showBusy(msg) { const b = document.getElementById('busy'); b.textContent = msg; b.hidden = false; }
