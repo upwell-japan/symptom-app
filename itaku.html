@@ -516,6 +516,43 @@ const T = {
   acMvFull0: { ja: '端数 {a}個 を、{p} の端数の箱（{b}個）に入れてください → ちょうど1箱 {per}個 が満杯になります（シールのマスに {per} と書き直す。空になった箱のシールは捨てる）', en: 'Put the {a} partial into {p}\'s partial box ({b}) → exactly one full box of {per} (added to labels waiting)', id: 'Masukkan sisa {a} ke kotak sisa {p} ({b}) → tepat satu kotak penuh {per} (masuk antrean label)' },
   acMvBoxes: { ja: '満杯の箱 {f}箱 は、そのまま {p} へ', en: '{f} full boxes go to {p} as they are', id: '{f} kotak penuh langsung ke {p}' },
   acCtLabeled:{ ja: 'そのうち、もうシールを貼ってある箱（端数の箱も数える）', en: 'Of these, boxes already labeled', id: 'Dari ini, kotak yang sudah berlabel' },
+  modeParts: { ja: '🧩 パーツ（メモリ・SSD・HDD・WIFI）', en: '🧩 Parts (memory, SSD, HDD, WiFi)', id: '🧩 Part (memori, SSD, HDD, WiFi)' },
+  ptMenuT:   { ja: 'パーツの作業を選んでください', en: 'Choose a parts task', id: 'Pilih pekerjaan part' },
+  ptTake:    { ja: '🔧 パーツ抜き（入庫）', en: '🔧 Remove parts (in)', id: '🔧 Ambil part (masuk)' },
+  ptOut:     { ja: '📤 出庫', en: '📤 Out', id: '📤 Keluar' },
+  ptCount:   { ja: '🔢 棚卸し', en: '🔢 Count', id: '🔢 Stok opname' },
+  ptStock:   { ja: '🔍 パーツの在庫を見る', en: '🔍 Parts stock', id: '🔍 Stok part' },
+  ptTakeScan:{ ja: 'パーツを抜く台のシールを読み取ってください', en: 'Scan the seal of the unit you take parts from', id: 'Pindai segel unit yang diambil part-nya' },
+  ptTakeNote:{ ja: 'この台から抜いたパーツを、種類ごとに足してから保存してください。', en: 'Add each part taken from this unit, then save.', id: 'Tambahkan tiap part yang diambil dari unit ini, lalu simpan.' },
+  ptOutNote: { ja: '出庫の理由を選び、出すパーツを種類ごとに足してから保存してください。', en: 'Choose the reason, add the parts, then save.', id: 'Pilih alasan, tambahkan part, lalu simpan.' },
+  ptCountNote:{ ja: '数えたパーツを種類ごとに足して、数えた数を入れてください。今の数との差が記録されます。', en: 'Add each counted part and its count. The difference is recorded.', id: 'Tambahkan tiap part dan jumlah hitungannya. Selisihnya dicatat.' },
+  ptReason:  { ja: '出庫の理由', en: 'Reason', id: 'Alasan' },
+  ptR_ship:  { ja: 'パーツだけで出荷', en: 'Ship parts only', id: 'Kirim part saja' },
+  ptR_repair:{ ja: '修理でほかのPCに入れる', en: 'Use in repair', id: 'Dipakai untuk perbaikan' },
+  ptR_withpc:{ ja: 'PCの出荷に付けて出す', en: 'Ship with a PC', id: 'Dikirim bersama PC' },
+  ptR_other: { ja: 'その他', en: 'Other', id: 'Lainnya' },
+  ptDest:    { ja: '出し先（出荷先・入れたPCなど）', en: 'Destination', id: 'Tujuan' },
+  ptSeal:    { ja: 'シール番号（PCに入れたとき）', en: 'Seal number (if put in a PC)', id: 'Nomor segel (jika dipasang ke PC)' },
+  ptMemo:    { ja: 'メモ', en: 'Memo', id: 'Catatan' },
+  ptItems:   { ja: '記録するパーツ', en: 'Parts to record', id: 'Part yang dicatat' },
+  ptType:    { ja: 'タイプ', en: 'Type', id: 'Tipe' },
+  ptSize:    { ja: 'サイズ', en: 'Size', id: 'Ukuran' },
+  ptSpec:    { ja: '規格', en: 'Standard', id: 'Standar' },
+  ptCap:     { ja: '容量', en: 'Capacity', id: 'Kapasitas' },
+  ptModel:   { ja: '型名', en: 'Model', id: 'Model' },
+  ptMaker:   { ja: 'メーカー（SSD・HDDは必須）', en: 'Maker (required for SSD/HDD)', id: 'Merek (wajib untuk SSD/HDD)' },
+  ptQty:     { ja: '個数', en: 'Quantity', id: 'Jumlah' },
+  ptCounted: { ja: '数えた数', en: 'Counted', id: 'Hasil hitung' },
+  ptUnit:    { ja: '個', en: 'pcs', id: 'buah' },
+  ptNow:     { ja: '今の在庫：{n}個', en: 'Stock now: {n}', id: 'Stok sekarang: {n}' },
+  ptAddMore: { ja: '＋ パーツを足す', en: '+ Add a part', id: '+ Tambah part' },
+  ptNeedQty: { ja: '個数を入れてください', en: 'Enter the quantity', id: 'Masukkan jumlah' },
+  ptNeedMaker:{ ja: 'SSD・HDDは、メーカーを選んでください', en: 'Choose the maker for SSD/HDD', id: 'Pilih merek untuk SSD/HDD' },
+  ptSaved:   { ja: 'パーツの記録を {n}件 保存しました', en: 'Saved {n} parts records', id: '{n} catatan part tersimpan' },
+  ptCounted2:{ ja: '棚卸しを保存しました（変わった種類 {n}件）', en: 'Saved the count ({n} types changed)', id: 'Stok opname tersimpan ({n} jenis berubah)' },
+  ptStockNote:{ ja: 'パーツ記録表の在庫（{d} にパーツ記録表から届いた数）に、まだパーツ記録表へ反映していないアプリの記録を足し引きした数です。', en: 'Stock from the parts sheet (received {d}) plus app records not yet reflected.', id: 'Stok dari lembar part (diterima {d}) ditambah catatan aplikasi yang belum direfleksikan.' },
+  ptAppPend: { ja: 'まだ反映していないアプリの記録：{n}', en: 'App records not yet reflected: {n}', id: 'Catatan aplikasi belum direfleksikan: {n}' },
+  ptStockNone:{ ja: 'パーツの在庫はまだありません（パーツ記録表で「アプリの記録を反映」を実行すると出ます）', en: 'No parts stock yet (run the macro in the parts sheet)', id: 'Belum ada stok part (jalankan makro di lembar part)' },
   acCtTitle: { ja: '棚卸し（ACの種類ごと）', en: 'Count (by AC type)', id: 'Stok opname (per jenis AC)' },
   acCtNote:  { ja: 'ACはすべてパレットに移してから数えます。「数えたACを足す」で種類を選び、「1箱の個数 × 箱の数 ＋ 端数の箱」で入れてください。数えた数がそのメーカーのパレットの数になり、ほかの場所（ロットなど）の記録は0になります。', en: 'Count after moving all ACs to pallets. Add each type and enter the count. It becomes the maker pallet\'s stock; other places are set to 0.', id: 'Hitung setelah semua AC dipindah ke palet. Tambah tiap jenis dan isi jumlahnya. Menjadi stok palet merek; tempat lain jadi 0.' },
   acCtAdd:   { ja: '＋ 数えたACを足す', en: '+ Add a counted AC', id: '+ Tambah AC yang dihitung' },
@@ -904,6 +941,11 @@ function handleCode(code) {
   if (!code) return alert(t('qrFail'));
   if (code.type === 'ec') { toast(t('ecMove')); location.href = 'index.html?no=' + encodeURIComponent(code.no); return; }
   if (code.type === 'acPlace') return handleAcPlace(code.id);   // ACの看板・パレットの看板
+  if (scanPurpose === 'ptTake') {   // パーツ抜き：台のシールを読む
+    scanPurpose = 'any';
+    if (code.type !== 'seal') { alert(t('qrWrong')); state.screen = 'ptMenu'; return render(); }
+    return ptTakeScanned(code.seal || code.id);
+  }
   if (scanPurpose === 'pickAc' || scanPurpose === 'pickAcAll') { const back = scanPurpose; scanPurpose = 'any'; alert(t('qrWrong')); state.screen = back; return render(); }
   if (scanPurpose === 'pick') {
     if (code.type !== 'board') { alert(t('qrWrong')); return pickScan(); }
@@ -1377,7 +1419,7 @@ function render() {
               board: renderBoard, unit: renderUnit, cat: renderCat, sym: renderSym, mark: renderMark,
               grade: renderGrade, repair: renderRepair, photo: renderSym, stock: renderStock, gradeMany: renderGradeMany, spec: renderSpec, acLots: renderAcLots, ac: renderAc, acPrint: renderAcPrint,
               acMenu: renderAcMenu, acPlace: renderAcPlace, acMove: renderAcMove, acCount: renderAcCount, acPallets: renderAcPallets,
-              acBox: renderAcBox, acCountType: renderAcCountType, acCtLabels: renderAcCtLabels, acQueue: renderAcQueue, acReissue: renderAcReissue, acTc: renderAcTc, acBulk: renderAcBulk, pickAc: renderPickAc, pickAcQty: renderPickAcQty, pickAcAll: renderPickAcAll, pickAcTake: renderPickAcTake,
+              acBox: renderAcBox, acCountType: renderAcCountType, acCtLabels: renderAcCtLabels, acQueue: renderAcQueue, acReissue: renderAcReissue, ptMenu: renderPtMenu, ptEdit: renderPtEdit, ptStock: renderPtStock, acTc: renderAcTc, acBulk: renderAcBulk, pickAc: renderPickAc, pickAcQty: renderPickAcQty, pickAcAll: renderPickAcAll, pickAcTake: renderPickAcTake,
               shipList: renderShipList, ship: renderShip, shipItem: renderShipItem,
               batchCount: renderBatchCount, batch: renderBatch,
               gradeBoard: renderGradeBoard, slipList: renderSlipList, slipPrint: renderSlipPrint,
@@ -1391,12 +1433,13 @@ function render() {
 // どの画面でも「‹ 戻る」と「⌂ ホーム」を押せるようにする（誤操作したときに戻れるように）
 // ===============================================================
 // 入力の途中の画面（戻ると、保存していない入力が消える画面）
-const NAV_EDITING = ['cat', 'sym', 'photo', 'mark', 'grade', 'repair', 'spec', 'ac', 'acCount', 'acCountType', 'stock', 'gradeMany', 'shipItem', 'batch'];
+const NAV_EDITING = ['cat', 'sym', 'photo', 'mark', 'grade', 'repair', 'spec', 'ac', 'acCount', 'acCountType', 'ptEdit', 'stock', 'gradeMany', 'shipItem', 'batch'];
 function hasUnsaved() {
   const S = state.screen;
   if (S === 'spec') return !!(state.spec && Object.keys(state.spec.edits).length);
   if (S === 'ac') return !!(state.ac && state.ac.dirty);
   if (S === 'acCount') return !!(state.acCount && state.acCount.dirty);
+  if (S === 'ptEdit') return !!(state.pt && state.pt.ed && state.pt.ed.items.length);
   if (S === 'acCountType') return !!(state.acCt && state.acCt.dirty && state.acCt.items.length);
   if (S === 'stock') return !!(state.stock && (state.stock.photo || state.stock.boxes.some(x => x.per || x.n)));
   if (['cat', 'sym', 'photo', 'mark'].includes(S)) return state.adds.size > 0 || state.removes.size > 0;
@@ -1434,6 +1477,8 @@ function goBack() {
   else if (S === 'acCtLabels') { state.acCl = null; state.screen = 'acMenu'; }
   else if (S === 'acQueue') { state.acQ = null; state.screen = 'acMenu'; }
   else if (S === 'acReissue') { state.screen = 'acQueue'; }
+  else if (S === 'ptMenu') { state.screen = 'home'; }
+  else if (S === 'ptEdit' || S === 'ptStock') { if (state.pt) state.pt.ed = null; state.screen = 'ptMenu'; }
   else if (S === 'acTc') { const tc = state.acTc; state.acTc = null; state.screen = tc ? tc.back : 'acMenu'; }
   else if (S === 'acBulk') { state.acBulk = null; state.screen = 'acMenu'; }
   else if (S === 'acPlace' || S === 'acMove' || S === 'acCount' || S === 'acPallets') { state.acPlace = null; state.acMove = null; state.acCount = null; state.screen = 'acMenu'; }
@@ -1510,6 +1555,7 @@ function renderHome() {
       <button class="primary" id="scanBtn" type="button">${esc(t('modeSym'))}</button>
       <button class="primary" id="specBtn" type="button">${esc(t('modeSpec'))}</button>
       <button class="primary" id="acBtn" type="button">${esc(t('modeAc'))}</button>
+      <button class="primary" id="ptBtn" type="button">${esc(t('modeParts'))}</button>
       <button class="primary" id="gradeBtn" type="button">${esc(t('modeGrade'))}</button>
       <button class="primary" id="slipListBtn" type="button">${esc(t('modeSlip'))}</button>
       <button class="primary" id="stockBtn" type="button">${esc(t('modeStock'))}</button>
@@ -1523,6 +1569,7 @@ function renderHome() {
   document.getElementById('scanBtn').onclick = () => { scanPurpose = 'any'; scanBack = 'home'; openScanner(); };
   document.getElementById('specBtn').onclick = () => { scanPurpose = 'spec'; scanBack = 'home'; openScanner(t('specScan')); };
   document.getElementById('acBtn').onclick = acMenu;
+  document.getElementById('ptBtn').onclick = openPartsMenu;
   document.getElementById('shipBtn').onclick = openShipFiles;
   document.getElementById('pickBtn').onclick = openPickLists;
   document.getElementById('gradeBtn').onclick = gradeScan;
@@ -3369,6 +3416,150 @@ async function acQMarkDone() {
     state.acQ = { reissue: keep };
     openAcQueue();
   } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
+}
+
+// ===============================================================
+// 🧩 パーツ（メモリ・SSD・HDD・WIFIチップ）：パーツ抜き（入庫）・出庫・棚卸し・在庫を見る
+//   記録は業務委託のGASにためて、パーツ記録表（Excel）のマクロ「アプリの記録を反映」で、パーツ記録表に入る
+//   SSD・HDD はメーカー名が必須（パーツ記録表の「入力2」に入る）。MEM・WIFI はメーカー名なし（「入力」に入る）
+// ===============================================================
+const PT_DEF = {   // パーツ記録表の選択肢がまだ届いていないときの初期値（パーツ記録表の「設定」「設定2」から）
+  types: ['SSD', 'HDD', 'MEM', 'WIFI'], sizes: ['2.5inch', 'M2', '***'], specs: ['SATA', 'PCiE', 'DDR3', 'DDR4', '***'],
+  caps: ['1GB', '2GB', '4GB', '8GB', '16GB', '32GB', '128GB', '256GB', '320GB', '500GB', '512GB', '1TB'],
+  makers: ['SAMSUNG', 'KIOXIA', 'SK hynix', 'Intel', 'Western Digital', 'Micron', 'SEAGATE', 'TOSHIBA', 'HGST', 'SanDisk', 'Kingston', 'ADTEC', 'Phison', 'Lenovo'],
+  wifi: ['NFA344A', '3165NGW', '8260NGW', '9260NGW', '9560NGW', 'AX200', 'AX201', 'AX210', 'AX211']
+};
+function ptNeedMaker(type) { const x = String(type || '').toUpperCase(); return x === 'SSD' || x === 'HDD'; }
+function ptOpt(k) { const o = (state.pt && state.pt.options) || {}; return (o[k] && o[k].length) ? o[k] : PT_DEF[k]; }
+function ptText(x) { return [x.type, x.size, x.spec, x.cap, ptNeedMaker(x.type) ? x.maker : ''].filter(v => v && v !== '***').join('　'); }
+function ptKey(x) { return [String(x.type).toUpperCase(), x.size, String(x.spec).toUpperCase(), String(x.cap).toUpperCase(), ptNeedMaker(x.type) ? String(x.maker).toUpperCase() : ''].join('\t'); }
+async function ptLoad() {
+  const r = await call('kPartsInit', [state.deviceId], 'loading');
+  state.pt = Object.assign(state.pt || {}, { options: r.options || {}, stock: r.stock || [], at: r.at || '' });
+}
+async function openPartsMenu() {
+  try { await ptLoad(); } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); return; }
+  state.screen = 'ptMenu'; render(); window.scrollTo(0, 0);
+}
+function renderPtMenu() {
+  $app.innerHTML = `<div class="card"><p class="big">${esc(t('ptMenuT'))}</p>
+    <div class="modes">
+      <button class="primary" id="ptTake" type="button">${esc(t('ptTake'))}</button>
+      <button class="primary" id="ptOut" type="button">${esc(t('ptOut'))}</button>
+      <button class="primary" id="ptCount" type="button">${esc(t('ptCount'))}</button>
+      <button class="secondary" id="ptStock" type="button">${esc(t('ptStock'))}</button>
+    </div></div>
+    <button class="link" id="ptHome" type="button">${esc(t('stockBack'))}</button>`;
+  document.getElementById('ptTake').onclick = () => { scanPurpose = 'ptTake'; scanBack = 'ptMenu'; openScanner(t('ptTakeScan')); };
+  document.getElementById('ptOut').onclick = () => ptEdit('out', null);
+  document.getElementById('ptCount').onclick = () => ptEdit('count', null);
+  document.getElementById('ptStock').onclick = () => { state.screen = 'ptStock'; render(); window.scrollTo(0, 0); };
+  document.getElementById('ptHome').onclick = goHome;
+}
+// パーツ抜き：シールを読んだ台
+async function ptTakeScanned(seal) {
+  try {
+    const u = await call('kPartsUnit', [state.deviceId, seal], 'loading');
+    ptEdit('take', u);
+  } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); state.screen = 'ptMenu'; render(); }
+}
+function ptEdit(mode, unit) {
+  state.pt.ed = { mode: mode, unit: unit, items: [], adding: true, sel: { type: '', size: '', spec: '', cap: '', maker: '' }, qty: mode === 'count' ? '' : '1',
+                  reason: 'ship', dest: '', seal: '', memo: '', dirty: false };
+  state.screen = 'ptEdit'; render(); window.scrollTo(0, 0);
+}
+// パーツの種類を選ぶ欄（タイプ → サイズ → 規格 → 容量（WIFIは型名）→ メーカー（SSD・HDDだけ））
+function ptPickHtml(sel) {
+  const st = 'width:100%;font:inherit;font-size:20px;padding:12px;border:1px solid var(--ink);border-radius:10px;background:#fff;color:var(--ink)';
+  const opt = (list, cur) => `<option value="" ${cur ? '' : 'selected'}>${esc(t('acPickPh'))}</option>` + list.map(v => `<option value="${esc(v)}" ${String(cur) === String(v) ? 'selected' : ''}>${esc(v)}</option>`).join('');
+  const isW = String(sel.type).toUpperCase() === 'WIFI';
+  const caps = isW ? ptOpt('wifi') : ptOpt('caps');
+  return `<label class="field">${esc(t('ptType'))}</label><select id="ppType" style="${st}">${opt(ptOpt('types'), sel.type)}</select>
+    <label class="field">${esc(t('ptSize'))}</label><select id="ppSize" style="${st}">${opt(ptOpt('sizes'), sel.size)}</select>
+    <label class="field">${esc(t('ptSpec'))}</label><select id="ppSpec" style="${st}">${opt(ptOpt('specs'), sel.spec)}</select>
+    <label class="field">${esc(isW ? t('ptModel') : t('ptCap'))}</label><select id="ppCap" style="${st}">${opt(caps.concat(sel.cap && !caps.includes(sel.cap) ? [sel.cap] : []), sel.cap)}</select>
+    ${ptNeedMaker(sel.type) ? `<label class="field">${esc(t('ptMaker'))}</label><select id="ppMaker" style="${st}">${opt(ptOpt('makers'), sel.maker)}</select>` : ''}`;
+}
+function bindPtPick(sel) {
+  const on = (id, k, after) => { const el = document.getElementById(id); if (el) el.onchange = () => { sel[k] = el.value; if (after) after(); render(); }; };
+  on('ppType', 'type', () => {   // タイプを選んだら、決まっている欄を先に入れる
+    const x = String(sel.type).toUpperCase();
+    if (x === 'MEM') { sel.size = '***'; }
+    if (x === 'WIFI') { sel.size = 'M2'; sel.spec = '***'; sel.cap = ''; }
+    if (!ptNeedMaker(x)) sel.maker = '';
+  });
+  on('ppSize', 'size'); on('ppSpec', 'spec'); on('ppCap', 'cap'); on('ppMaker', 'maker');
+}
+function renderPtEdit() {
+  const ed = state.pt.ed, s = ed.sel;
+  const ready = s.type && s.size && s.spec && s.cap && (!ptNeedMaker(s.type) || s.maker);
+  const title = ed.mode === 'take' ? t('ptTake') : ed.mode === 'out' ? t('ptOut') : t('ptCount');
+  const cur = k => { const x = (state.pt.stock || []).find(y => ptKey(y) === k); return x ? x.n : 0; };
+  $app.innerHTML = `<div class="card"><p class="big">${esc(title)}</p>
+      ${ed.unit ? `<p class="note">${esc(ed.unit.name)}　${esc(ed.unit.seal)}（${esc(ed.unit.board)}・${esc(ed.unit.grade)}）</p>` : ''}
+      <p class="note">${esc(ed.mode === 'count' ? t('ptCountNote') : ed.mode === 'take' ? t('ptTakeNote') : t('ptOutNote'))}</p></div>
+    ${ed.mode === 'out' ? `<div class="card"><label class="field">${esc(t('ptReason'))}</label>
+        <div class="sb c2">${['ship', 'repair', 'withpc', 'other'].map(k => `<button class="secondary${ed.reason === k ? ' cur' : ''}" type="button" data-ptr="${k}">${esc(t('ptR_' + k))}</button>`).join('')}</div>
+        <label class="field">${esc(t('ptDest'))}</label><input type="text" id="ptDest" value="${esc(ed.dest)}" style="width:100%;font:inherit;font-size:18px;padding:10px;border:1px solid var(--ink);border-radius:10px">
+        <label class="field">${esc(t('ptSeal'))}</label><input type="text" id="ptSeal" value="${esc(ed.seal)}" autocapitalize="characters" style="width:100%;font:inherit;font-size:18px;padding:10px;border:1px solid var(--ink);border-radius:10px">
+        <label class="field">${esc(t('ptMemo'))}</label><input type="text" id="ptMemo" value="${esc(ed.memo)}" style="width:100%;font:inherit;font-size:18px;padding:10px;border:1px solid var(--ink);border-radius:10px"></div>` : ''}
+    ${ed.items.length ? `<h2>${esc(t('ptItems'))}</h2><ul class="spec">${ed.items.map((x, i) => `<li><div class="sh" style="cursor:default"><span class="sl">${esc(ptText(x))}${ed.mode === 'count' ? `<br><span class="note" style="font-weight:400">${esc(t('ptNow', { n: cur(ptKey(x)) }))}</span>` : ''}</span><span class="gn">${esc(x.qty)}${esc(t('ptUnit'))}</span><button class="secondary" type="button" data-ptdel="${i}" style="width:auto;padding:0 12px">×</button></div></li>`).join('')}</ul>` : ''}
+    ${ed.adding ? `<div class="card">${ptPickHtml(s)}
+        <label class="field">${esc(ed.mode === 'count' ? t('ptCounted') : t('ptQty'))}</label>
+        <div class="boxrow"><input type="number" inputmode="numeric" min="0" id="ptQty" value="${esc(ed.qty)}"><span>${esc(t('ptUnit'))}</span></div>
+        ${ready && ed.mode !== 'count' ? `<p class="note">${esc(t('ptNow', { n: cur(ptKey(s)) }))}</p>` : ''}
+        <div class="actions"><button class="secondary" id="ptAddOk" type="button" ${ready ? '' : 'disabled'}>${esc(t('acAddOk'))}</button></div></div>`
+      : `<div class="actions"><button class="secondary" id="ptAddMore" type="button">${esc(t('ptAddMore'))}</button></div>`}
+    ${ed.items.length ? `<div class="actions"><button class="primary" id="ptSave" type="button">${esc(t('acSave'))}（${ed.items.length}）</button></div>` : ''}
+    <button class="link" id="ptBack" type="button">${esc(t('back'))}</button>`;
+  if (ed.adding) bindPtPick(s);
+  $app.querySelectorAll('[data-ptr]').forEach(b => b.onclick = () => { ed.reason = b.dataset.ptr; render(); });
+  ['ptDest', 'ptSeal', 'ptMemo'].forEach(id => { const el = document.getElementById(id); if (el) el.oninput = () => { ed[id === 'ptDest' ? 'dest' : id === 'ptSeal' ? 'seal' : 'memo'] = el.value; }; });
+  const q = document.getElementById('ptQty'); if (q) q.oninput = () => { ed.qty = q.value; };
+  $app.querySelectorAll('[data-ptdel]').forEach(b => b.onclick = () => { ed.items.splice(+b.dataset.ptdel, 1); render(); });
+  const ok = document.getElementById('ptAddOk');
+  if (ok) ok.onclick = () => {
+    const n = Math.floor(Number(ed.qty));
+    if (!(ed.mode === 'count' ? n >= 0 : n > 0) || String(ed.qty).trim() === '') return alert(t('ptNeedQty'));
+    if (ptNeedMaker(s.type) && !s.maker) return alert(t('ptNeedMaker'));
+    if (ed.items.some(x => ptKey(x) === ptKey(s))) return alert(t('acAddDup'));
+    ed.items.push(Object.assign({}, s, { qty: n }));
+    ed.sel = { type: s.type, size: s.size, spec: s.spec, cap: '', maker: s.maker };   // 続けて同じタイプを入れやすいように
+    ed.qty = ed.mode === 'count' ? '' : '1'; ed.adding = false; ed.dirty = true; render();
+  };
+  const more = document.getElementById('ptAddMore'); if (more) more.onclick = () => { ed.adding = true; render(); };
+  const sv = document.getElementById('ptSave'); if (sv) sv.onclick = ptSave;
+  document.getElementById('ptBack').onclick = goBack;
+}
+async function ptSave() {
+  const ed = state.pt.ed;
+  try {
+    let r;
+    if (ed.mode === 'count') {
+      r = await call('kPartsCount', [state.deviceId, ed.items.map(x => ({ type: x.type, size: x.size, spec: x.spec, cap: x.cap, maker: x.maker, n: x.qty }))], 'saving');
+      toast(t('ptCounted2', { n: r.changed || 0 }));
+    } else {
+      const reason = ed.mode === 'take' ? 'パーツ抜き' : t('ptR_' + ed.reason);
+      const items = ed.items.map(x => ({ kind: ed.mode === 'take' ? '入庫' : '出庫', reason: reason, type: x.type, size: x.size, spec: x.spec, cap: x.cap, maker: x.maker, qty: x.qty,
+        seal: ed.unit ? ed.unit.seal : ed.seal, lot: ed.unit ? ed.unit.lot : '', dest: ed.dest, memo: ed.memo }));
+      r = await call('kPartsSave', [state.deviceId, items], 'saving');
+      toast(t('ptSaved', { n: items.length }));
+    }
+    state.pt.stock = r.stock || state.pt.stock;
+    const mode = ed.mode;
+    state.pt.ed = null;
+    if (mode === 'take') { scanPurpose = 'ptTake'; scanBack = 'ptMenu'; openScanner(t('ptTakeScan')); }   // 続けて次の台を読む
+    else ptEdit(mode, null);
+  } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
+}
+function renderPtStock() {
+  const list = (state.pt.stock || []).filter(x => x.n !== 0 || x.app !== 0);
+  $app.innerHTML = `<div class="card"><p class="big">${esc(t('ptStock'))}</p>
+      <p class="note">${esc(t('ptStockNote', { d: state.pt.at || '-' }))}</p></div>
+    ${list.length ? `<ul class="spec">${list.map(x => `<li><div class="sh" style="cursor:default"><span class="sl">${esc(ptText(x))}${x.app ? `<br><span class="note" style="font-weight:400">${esc(t('ptAppPend', { n: (x.app > 0 ? '+' : '') + x.app }))}</span>` : ''}</span><span class="sv" style="font-size:22px">${esc(x.n)}${esc(t('ptUnit'))}</span></div></li>`).join('')}</ul>`
+      : `<p class="note">${esc(t('ptStockNone'))}</p>`}
+    <button class="link" id="ptsBack" type="button">${esc(t('back'))}</button>`;
+  document.getElementById('ptsBack').onclick = goBack;
 }
 
 // ===============================================================
