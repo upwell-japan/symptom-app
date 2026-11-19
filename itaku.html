@@ -550,9 +550,9 @@ const T = {
   ptNeedMaker:{ ja: 'SSD・HDDは、メーカーを選んでください', en: 'Choose the maker for SSD/HDD', id: 'Pilih merek untuk SSD/HDD' },
   ptSaved:   { ja: 'パーツの記録を {n}件 保存しました', en: 'Saved {n} parts records', id: '{n} catatan part tersimpan' },
   ptCounted2:{ ja: '棚卸しを保存しました（変わった種類 {n}件）', en: 'Saved the count ({n} types changed)', id: 'Stok opname tersimpan ({n} jenis berubah)' },
-  ptStockNote:{ ja: 'パーツ記録表の在庫（{d} にパーツ記録表から届いた数）に、まだパーツ記録表へ反映していないアプリの記録を足し引きした数です。', en: 'Stock from the parts sheet (received {d}) plus app records not yet reflected.', id: 'Stok dari lembar part (diterima {d}) ditambah catatan aplikasi yang belum direfleksikan.' },
+  ptStockNote:{ ja: 'パーツ記録表（Googleスプレッドシート）の今の在庫です（{d} 時点）。アプリで記録すると、パーツ記録表にもすぐに入ります。', en: 'Current stock in the parts sheet (as of {d}). App records go into the parts sheet right away.', id: 'Stok saat ini di lembar part (per {d}). Catatan aplikasi langsung masuk ke lembar part.' },
   ptAppPend: { ja: 'まだ反映していないアプリの記録：{n}', en: 'App records not yet reflected: {n}', id: 'Catatan aplikasi belum direfleksikan: {n}' },
-  ptStockNone:{ ja: 'パーツの在庫はまだありません（パーツ記録表で「アプリの記録を反映」を実行すると出ます）', en: 'No parts stock yet (run the macro in the parts sheet)', id: 'Belum ada stok part (jalankan makro di lembar part)' },
+  ptStockNone:{ ja: 'パーツの在庫はまだありません', en: 'No parts stock yet', id: 'Belum ada stok part' },
   acCtTitle: { ja: '棚卸し（ACの種類ごと）', en: 'Count (by AC type)', id: 'Stok opname (per jenis AC)' },
   acCtNote:  { ja: 'ACはすべてパレットに移してから数えます。「数えたACを足す」で種類を選び、「1箱の個数 × 箱の数 ＋ 端数の箱」で入れてください。数えた数がそのメーカーのパレットの数になり、ほかの場所（ロットなど）の記録は0になります。', en: 'Count after moving all ACs to pallets. Add each type and enter the count. It becomes the maker pallet\'s stock; other places are set to 0.', id: 'Hitung setelah semua AC dipindah ke palet. Tambah tiap jenis dan isi jumlahnya. Menjadi stok palet merek; tempat lain jadi 0.' },
   acCtAdd:   { ja: '＋ 数えたACを足す', en: '+ Add a counted AC', id: '+ Tambah AC yang dihitung' },
@@ -3420,7 +3420,7 @@ async function acQMarkDone() {
 
 // ===============================================================
 // 🧩 パーツ（メモリ・SSD・HDD・WIFIチップ）：パーツ抜き（入庫）・出庫・棚卸し・在庫を見る
-//   記録は業務委託のGASにためて、パーツ記録表（Excel）のマクロ「アプリの記録を反映」で、パーツ記録表に入る
+//   記録は、パーツ記録表（Googleスプレッドシート）に直接入り、在庫の表もすぐに作り直される
 //   SSD・HDD はメーカー名が必須（パーツ記録表の「入力2」に入る）。MEM・WIFI はメーカー名なし（「入力」に入る）
 // ===============================================================
 const PT_DEF = {   // パーツ記録表の選択肢がまだ届いていないときの初期値（パーツ記録表の「設定」「設定2」から）
@@ -3553,7 +3553,7 @@ async function ptSave() {
   } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
 }
 function renderPtStock() {
-  const list = (state.pt.stock || []).filter(x => x.n !== 0 || x.app !== 0);
+  const list = (state.pt.stock || []).filter(x => x.n !== 0);
   $app.innerHTML = `<div class="card"><p class="big">${esc(t('ptStock'))}</p>
       <p class="note">${esc(t('ptStockNote', { d: state.pt.at || '-' }))}</p></div>
     ${list.length ? `<ul class="spec">${list.map(x => `<li><div class="sh" style="cursor:default"><span class="sl">${esc(ptText(x))}${x.app ? `<br><span class="note" style="font-weight:400">${esc(t('ptAppPend', { n: (x.app > 0 ? '+' : '') + x.app }))}</span>` : ''}</span><span class="sv" style="font-size:22px">${esc(x.n)}${esc(t('ptUnit'))}</span></div></li>`).join('')}</ul>`
