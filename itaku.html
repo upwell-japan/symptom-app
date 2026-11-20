@@ -540,6 +540,7 @@ const T = {
   ptSpec:    { ja: '規格', en: 'Standard', id: 'Standar' },
   ptCap:     { ja: '容量', en: 'Capacity', id: 'Kapasitas' },
   ptModel:   { ja: '型名', en: 'Model', id: 'Model' },
+  ptOther:   { ja: 'ほか（一覧に無いとき）', en: 'Other (if not listed)', id: 'Lainnya (jika tidak ada)' },
   ptMaker:   { ja: 'メーカー（SSD・HDDは必須）', en: 'Maker (required for SSD/HDD)', id: 'Merek (wajib untuk SSD/HDD)' },
   ptQty:     { ja: '個数', en: 'Quantity', id: 'Jumlah' },
   ptCounted: { ja: '数えた数', en: 'Counted', id: 'Hasil hitung' },
@@ -3468,27 +3469,59 @@ function ptEdit(mode, unit) {
                   reason: 'ship', dest: '', seal: '', memo: '', dirty: false };
   state.screen = 'ptEdit'; render(); window.scrollTo(0, 0);
 }
-// パーツの種類を選ぶ欄（タイプ → サイズ → 規格 → 容量（WIFIは型名）→ メーカー（SSD・HDDだけ））
+// パーツの種類をボタンで選ぶ（タイプ → サイズ → 規格 → 容量（WIFIは型名）→ メーカー（SSD・HDDだけ））
+//   ボタンは、今の在庫にある種類から、選んだタイプ（と規格）に合うものを先に出す。
+//   在庫にまだ無いタイプは、パーツ記録表の設定の一覧を出す。一覧に無いものは「＋ ほか」で入力する
+function ptChoices(sel, k) {
+  const T = String(sel.type || '').toUpperCase(), st = (state.pt.stock || []).filter(x => String(x.type).toUpperCase() === T);
+  const uniq = a => a.map(v => String(v || '').trim()).filter((v, i, z) => v && z.indexOf(v) === i);
+  let seen = [];
+  if (k === 'size') seen = st.map(x => x.size);
+  if (k === 'spec') seen = st.filter(x => !sel.size || x.size === sel.size).map(x => x.spec);
+  if (k === 'cap') seen = st.filter(x => (!sel.size || x.size === sel.size) && (!sel.spec || x.spec === sel.spec)).map(x => x.cap);
+  if (k === 'maker') seen = st.map(x => x.maker);
+  const base = { size: ptOpt('sizes'), spec: ptOpt('specs'), cap: T === 'WIFI' ? ptOpt('wifi') : ptOpt('caps'), maker: ptOpt('makers') }[k] || [];
+  // 在庫にある値を先に、そのあとに設定の一覧（メーカー・WIFIの型名・容量は、設定の一覧もすべて出す）
+  const list = uniq(seen.concat(k === 'size' || k === 'spec' ? (seen.length ? [] : base) : base));
+  if (sel[k] && list.indexOf(sel[k]) < 0) list.push(sel[k]);
+  return list;
+}
+function ptBtnGroup(label, sel, k, list, cols) {
+  return `<p class="note" style="margin-top:10px"><b>${esc(label)}</b></p>
+    <div class="sb ${cols}">${list.map(v => `<button class="secondary${String(sel[k]) === String(v) ? ' cur' : ''}" type="button" data-ptk="${k}" data-ptv="${esc(v)}">${esc(v)}</button>`).join('')}</div>
+    <div class="res"><input type="text" data-ptin="${k}" autocapitalize="characters" placeholder="${esc(t('ptOther'))}" style="flex:1;width:auto">
+      <button class="secondary" style="width:auto;padding:0 18px" type="button" data-ptok="${k}">${esc(t('specOk'))}</button></div>`;
+}
 function ptPickHtml(sel) {
-  const st = 'width:100%;font:inherit;font-size:20px;padding:12px;border:1px solid var(--ink);border-radius:10px;background:#fff;color:var(--ink)';
-  const opt = (list, cur) => `<option value="" ${cur ? '' : 'selected'}>${esc(t('acPickPh'))}</option>` + list.map(v => `<option value="${esc(v)}" ${String(cur) === String(v) ? 'selected' : ''}>${esc(v)}</option>`).join('');
-  const isW = String(sel.type).toUpperCase() === 'WIFI';
-  const caps = isW ? ptOpt('wifi') : ptOpt('caps');
-  return `<label class="field">${esc(t('ptType'))}</label><select id="ppType" style="${st}">${opt(ptOpt('types'), sel.type)}</select>
-    <label class="field">${esc(t('ptSize'))}</label><select id="ppSize" style="${st}">${opt(ptOpt('sizes'), sel.size)}</select>
-    <label class="field">${esc(t('ptSpec'))}</label><select id="ppSpec" style="${st}">${opt(ptOpt('specs'), sel.spec)}</select>
-    <label class="field">${esc(isW ? t('ptModel') : t('ptCap'))}</label><select id="ppCap" style="${st}">${opt(caps.concat(sel.cap && !caps.includes(sel.cap) ? [sel.cap] : []), sel.cap)}</select>
-    ${ptNeedMaker(sel.type) ? `<label class="field">${esc(t('ptMaker'))}</label><select id="ppMaker" style="${st}">${opt(ptOpt('makers'), sel.maker)}</select>` : ''}`;
+  const T = String(sel.type || '').toUpperCase(), isW = T === 'WIFI';
+  let h = `<p class="note"><b>${esc(t('ptType'))}</b></p><div class="sb c2">${['SSD', 'HDD', 'MEM', 'WIFI'].map(v => `<button class="secondary${T === v ? ' cur' : ''}" type="button" data-ptk="type" data-ptv="${v}">${v}</button>`).join('')}</div>`;
+  if (!T) return h;
+  h += ptBtnGroup(t('ptSize'), sel, 'size', ptChoices(sel, 'size'), 'c3');
+  if (sel.size) h += ptBtnGroup(t('ptSpec'), sel, 'spec', ptChoices(sel, 'spec'), 'c3');
+  if (sel.size && sel.spec) h += ptBtnGroup(isW ? t('ptModel') : t('ptCap'), sel, 'cap', ptChoices(sel, 'cap'), 'c3');
+  if (sel.size && sel.spec && sel.cap && ptNeedMaker(T)) h += ptBtnGroup(t('ptMaker'), sel, 'maker', ptChoices(sel, 'maker'), 'c2');
+  if (sel.size && sel.spec && sel.cap && (!ptNeedMaker(T) || sel.maker)) h += `<p class="big" style="margin-top:12px">${esc(ptText(sel))}</p>`;
+  return h;
 }
 function bindPtPick(sel) {
-  const on = (id, k, after) => { const el = document.getElementById(id); if (el) el.onchange = () => { sel[k] = el.value; if (after) after(); render(); }; };
-  on('ppType', 'type', () => {   // タイプを選んだら、決まっている欄を先に入れる
-    const x = String(sel.type).toUpperCase();
-    if (x === 'MEM') { sel.size = '***'; }
-    if (x === 'WIFI') { sel.size = 'M2'; sel.spec = '***'; sel.cap = ''; }
-    if (!ptNeedMaker(x)) sel.maker = '';
+  const order = ['type', 'size', 'spec', 'cap', 'maker'];
+  const set = (k, v) => {
+    if (k === 'type' && String(sel.type).toUpperCase() !== v) {   // タイプを変えたら、先の欄を選び直す（決まっている欄は先に入れる）
+      sel.size = ''; sel.spec = ''; sel.cap = ''; sel.maker = '';
+      if (v === 'MEM') sel.size = '***';
+      if (v === 'WIFI') { sel.size = 'M2'; sel.spec = '***'; }
+    } else if (sel[k] !== v) {
+      order.slice(order.indexOf(k) + 1).forEach(x => { if (x !== 'maker' || k !== 'cap') sel[x] = ''; });
+    }
+    sel[k] = v;
+    render();
+  };
+  $app.querySelectorAll('[data-ptk]').forEach(b => b.onclick = () => set(b.dataset.ptk, b.dataset.ptv));
+  $app.querySelectorAll('[data-ptok]').forEach(b => b.onclick = () => {
+    const k = b.dataset.ptok, inp = $app.querySelector('[data-ptin="' + k + '"]');
+    const v = String(inp && inp.value || '').trim();
+    if (v) set(k, v);
   });
-  on('ppSize', 'size'); on('ppSpec', 'spec'); on('ppCap', 'cap'); on('ppMaker', 'maker');
 }
 function renderPtEdit() {
   const ed = state.pt.ed, s = ed.sel;
