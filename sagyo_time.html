@@ -403,7 +403,8 @@ const I18N = {
     npPin: '📌 固定して表示する（古い案件でも、自動で一覧から外さない）', npOldWarn: n => `「${n}」は古い案件なので、📌を付けないと、追加してもすぐに一覧から外れます。📌を付けて追加しますか？`, npPinYes: '📌を付けて追加', pinOn: '固定を外す', pinOff: '固定する', pinTag: '📌固定',
     npDate: '入荷日（今日の日付ではなく、荷物が入荷した日）', npTapSource: '仕入先をタップ', npOther: '上記以外の仕入先', add: '追加',
     backToWork: '‹ 作業内容に戻る', timeTitle: '開始・終了時刻', start: '開始時刻', end: '終了時刻', hoursUnit: '時間',
-    hoursAuto: '作業時間合計（自動計算）', hoursHint: '開始・終了時刻を入力すると自動計算されます', next: '次へ',
+    hoursAuto: '作業時間合計（自動計算）', hoursHint: '開始・終了時刻を入力すると自動計算されます',
+    timeRange: '9:00〜18:00の時刻を入れてください。午前（AM）・午後（PM）が合っているか確かめてください', next: '次へ',
     backToTime: '‹ 時刻に戻る',
     sumYHours: '昨日までの累計作業時間', sumYCount: '昨日までの累計作業数', sumUph: 'UPH（作業数/時間）',
     boxTitle: 'ダンボールのサイズと箱数（必須）', boxSize: 'ダンボールのサイズ',
@@ -449,7 +450,8 @@ const I18N = {
     npPin: '📌 Pin (keep this case in the list even if it is old)', npOldWarn: n => `"${n}" is an old case. Without 📌 it disappears from the list right after adding. Add it with 📌?`, npPinYes: 'Add with 📌', pinOn: 'Unpin', pinOff: 'Pin', pinTag: '📌Pinned',
     npDate: 'Arrival date (the day the goods arrived, not today)', npTapSource: 'Tap the supplier', npOther: 'Other supplier', add: 'Add',
     backToWork: '‹ Back to tasks', timeTitle: 'Start and end time', start: 'Start', end: 'End', hoursUnit: 'hours',
-    hoursAuto: 'Total work time (calculated automatically)', hoursHint: 'Enter the start and end time to calculate', next: 'Next',
+    hoursAuto: 'Total work time (calculated automatically)', hoursHint: 'Enter the start and end time to calculate',
+    timeRange: 'Enter a time between 9:00 AM and 6:00 PM. Check that AM and PM are correct.', next: 'Next',
     backToTime: '‹ Back to time',
     sumYHours: 'Total hours until yesterday', sumYCount: 'Total quantity until yesterday', sumUph: 'UPH (quantity / hour)',
     boxTitle: 'Box size and number of boxes (required)', boxSize: 'Box size',
@@ -495,7 +497,8 @@ const I18N = {
     npPin: '📌 Sematkan (kasus lama tetap ada di daftar)', npOldWarn: n => `"${n}" adalah kasus lama. Tanpa 📌 akan hilang dari daftar setelah ditambahkan. Tambahkan dengan 📌?`, npPinYes: 'Tambah dengan 📌', pinOn: 'Lepas', pinOff: 'Sematkan', pinTag: '📌Disematkan',
     npDate: 'Tanggal masuk barang (bukan hari ini)', npTapSource: 'Ketuk pemasok', npOther: 'Pemasok lainnya', add: 'Tambah',
     backToWork: '‹ Kembali ke pekerjaan', timeTitle: 'Waktu mulai dan selesai', start: 'Mulai', end: 'Selesai', hoursUnit: 'jam',
-    hoursAuto: 'Total waktu kerja (dihitung otomatis)', hoursHint: 'Isi waktu mulai dan selesai untuk menghitung', next: 'Lanjut',
+    hoursAuto: 'Total waktu kerja (dihitung otomatis)', hoursHint: 'Isi waktu mulai dan selesai untuk menghitung',
+    timeRange: 'Isi waktu antara 9:00 pagi (AM) dan 6:00 sore (PM). Periksa apakah AM dan PM sudah benar.', next: 'Lanjut',
     backToTime: '‹ Kembali ke waktu',
     sumYHours: 'Total jam sampai kemarin', sumYCount: 'Total jumlah sampai kemarin', sumUph: 'UPH (jumlah / jam)',
     boxTitle: 'Ukuran dan jumlah kardus (wajib)', boxSize: 'Ukuran kardus',
@@ -776,6 +779,11 @@ function chooseWork(worktype){
   render();
 }
 // 時刻の画面の「戻る」で戻る先
+// 入力できる時刻の範囲（9:00〜18:00）。午前・午後の入れ間違い（例：午後3時のつもりで AM 3:00）を防ぐ
+// ※<input type="time"> の値は、画面がAM/PM表示でも必ず24時間の「HH:MM」になる（AM 3:00 → "03:00"、PM 10:00 → "22:00"）
+const TIME_MIN = '09:00', TIME_MAX = '18:00';
+function timeInRange(v){ return !v || (v >= TIME_MIN && v <= TIME_MAX); }
+function timesOk(){ return !!state.start && !!state.end && timeInRange(state.start) && timeInRange(state.end); }
 function screenBeforeTime(){
   const w = workOf(state.worktype);
   if(!w) return 'worktype';
@@ -1294,22 +1302,23 @@ function render(){
           <div class="time-row">
             <div class="time-box">
               <label>${t('start')}</label>
-              <input type="time" id="startTime" value="${esc(state.start)}">
+              <input type="time" id="startTime" min="${TIME_MIN}" max="${TIME_MAX}" value="${esc(state.start)}" ${timeInRange(state.start)?'':'style="border-color:var(--danger,#D64545);color:var(--danger,#D64545);"'}>
             </div>
             <div class="arrow">→</div>
             <div class="time-box">
               <label>${t('end')}</label>
-              <input type="time" id="endTime" value="${esc(state.end)}">
+              <input type="time" id="endTime" min="${TIME_MIN}" max="${TIME_MAX}" value="${esc(state.end)}" ${timeInRange(state.end)?'':'style="border-color:var(--danger,#D64545);color:var(--danger,#D64545);"'}>
             </div>
           </div>
+          ${(timeInRange(state.start) && timeInRange(state.end)) ? '' : `<div class="rulebox" style="background:#FDECEC;border-color:#D64545;color:#B00020;font-weight:700;">${esc(t('timeRange'))}</div>`}
           <div class="hours-display">
-            <div class="num">${hours!==null ? hours : '--'}<span>${t('hoursUnit')}</span></div>
+            <div class="num">${(hours!==null && timesOk()) ? hours : '--'}<span>${t('hoursUnit')}</span></div>
             <div class="hint">${hours!==null ? t('hoursAuto') : t('hoursHint')}</div>
           </div>
         </div>
       </main>
       <footer class="bar">
-        <button class="primary" id="${needsDetails() ? 'nextBtn' : 'submitBtn'}" ${(!state.start||!state.end)?'disabled':''}>${needsDetails() ? t('next') : t('record')}</button>
+        <button class="primary" id="${needsDetails() ? 'nextBtn' : 'submitBtn'}" ${!timesOk()?'disabled':''}>${needsDetails() ? t('next') : t('record')}</button>
       </footer>
     `;
     bindHeader();
@@ -1322,9 +1331,9 @@ function render(){
     document.getElementById('startTime').onchange = (e)=>{ state.start = e.target.value; render(); };
     document.getElementById('endTime').onchange = (e)=>{ state.end = e.target.value; render(); };
     const nextBtn = document.getElementById('nextBtn');
-    if(nextBtn) nextBtn.onclick = ()=>{ goToDetails(); };
+    if(nextBtn) nextBtn.onclick = ()=>{ if(timesOk()) goToDetails(); };
     const recBtn = document.getElementById('submitBtn');
-    if(recBtn) recBtn.onclick = ()=>{ submitEntry(); };   // 箱数・備考のいらない作業は、ここで記録する
+    if(recBtn) recBtn.onclick = ()=>{ if(timesOk()) submitEntry(); };   // 箱数・備考のいらない作業は、ここで記録する
     return;
   }
   if(state.screen === 'details'){

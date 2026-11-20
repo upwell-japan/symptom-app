@@ -554,6 +554,10 @@ const T = {
   ptStockNote:{ ja: 'パーツ記録表（Googleスプレッドシート）の今の在庫です（{d} 時点）。アプリで記録すると、パーツ記録表にもすぐに入ります。', en: 'Current stock in the parts sheet (as of {d}). App records go into the parts sheet right away.', id: 'Stok saat ini di lembar part (per {d}). Catatan aplikasi langsung masuk ke lembar part.' },
   ptAppPend: { ja: 'まだ反映していないアプリの記録：{n}', en: 'App records not yet reflected: {n}', id: 'Catatan aplikasi belum direfleksikan: {n}' },
   ptStockNone:{ ja: 'パーツの在庫はまだありません', en: 'No parts stock yet', id: 'Belum ada stok part' },
+  acUnknown2:{ ja: 'AC口型・Wが決まっていない機種です。「口型・Wを入れる」で入れると、ACの種類の一覧に入ります（その看板のスペックにも記録されます）', en: 'Models without AC connector/W. Set them with “Set connector/W” to add them to the AC list (also saved to the board specs)', id: 'Model tanpa konektor/W AC. Atur dengan “Atur konektor/W” agar masuk daftar AC (juga disimpan ke spesifikasi papan)' },
+  acUnkSet:  { ja: '口型・Wを入れる', en: 'Set connector/W', id: 'Atur konektor/W' },
+  acUnkOk:   { ja: 'この口型・Wにする', en: 'Use this connector/W', id: 'Pakai konektor/W ini' },
+  acUnkSaved:{ ja: '{n} を {c}・{w}W にしました', en: 'Set {n} to {c} {w}W', id: '{n} diatur ke {c} {w}W' },
   acCtTitle: { ja: '棚卸し（ACの種類ごと）', en: 'Count (by AC type)', id: 'Stok opname (per jenis AC)' },
   acCtNote:  { ja: 'ACはすべてパレットに移してから数えます。「数えたACを足す」で種類を選び、「1箱の個数 × 箱の数 ＋ 端数の箱」で入れてください。数えた数がそのメーカーのパレットの数になり、ほかの場所（ロットなど）の記録は0になります。', en: 'Count after moving all ACs to pallets. Add each type and enter the count. It becomes the maker pallet\'s stock; other places are set to 0.', id: 'Hitung setelah semua AC dipindah ke palet. Tambah tiap jenis dan isi jumlahnya. Menjadi stok palet merek; tempat lain jadi 0.' },
   acCtAdd:   { ja: '＋ 数えたACを足す', en: '+ Add a counted AC', id: '+ Tambah AC yang dihitung' },
@@ -2267,6 +2271,17 @@ async function openAcLot(lot) {
     state.screen = 'ac'; render(); window.scrollTo(0, 0);
   } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); }
 }
+// AC口型・Wが決まっていない機種の、口型・Wを入れる欄（口型はそのメーカーで出るものだけ、Wはプルダウン）
+function acUnkFormHtml(u, ss) {
+  const st = 'width:100%;font:inherit;font-size:20px;padding:12px;border:1px solid var(--ink);border-radius:10px;background:#fff;color:var(--ink)';
+  const conns = acSpecConns(u.maker), ws = ss.conn ? acWList(ss) : [];
+  return `<div class="card" style="margin:8px 0;border:2px solid var(--amber,#e9a320)"><p class="big" style="margin:0">${esc(u.name)}</p>
+    <p class="note">${esc(u.maker || '-')}　${esc(u.id)}</p>
+    <p class="note"><b>${esc(t('acConnL'))}</b></p><div class="sb c2">${conns.map(c => `<button class="secondary${ss.conn === c ? ' cur' : ''}" type="button" data-acuc="${esc(c)}">${esc(c)}</button>`).join('')}</div>
+    ${ss.conn ? `<label class="field" for="acuW">${esc(t('acW'))}</label><select id="acuW" style="${st}"><option value="">${esc(t('acPickPh'))}</option>${ws.map(w => `<option value="${esc(w)}" ${String(ss.w) === String(w) ? 'selected' : ''}>${esc(w)}W</option>`).join('')}${ss.w && !ws.includes(String(ss.w)) ? `<option value="${esc(ss.w)}" selected>${esc(ss.w)}W</option>` : ''}<option value="${AC_ADD}">${esc(t('acPickAddW'))}</option></select>` : ''}
+    <div class="actions"><button class="primary" id="acuOk" type="button" ${ss.conn && ss.w ? '' : 'disabled'}>${esc(t('acUnkOk'))}</button></div>
+    <button class="link" id="acuCancel" type="button">${esc(t('back'))}</button></div>`;
+}
 function renderAc() {
   const a = state.ac, r = a.info;
   const connOpts = (SPEC_DEF['AC口型'] || {}).opts || [], wOpts = (SPEC_DEF['W'] || {}).opts || [];
@@ -2283,13 +2298,42 @@ function renderAc() {
       <div class="actions"><button class="secondary" id="acPrint" type="button">${esc(t('acPrintBtn'))}</button></div></div>
     <h2>${esc(t('acTitle'))}</h2>
     ${a.types.map(rowHtml).join('')}
-    ${r.unknown && r.unknown.length ? `<div class="card"><p class="warn">${esc(t('acUnknown'))}</p>
-      <p class="note">${r.unknown.map(u => esc(u.name + '（' + (u.conn || '空欄') + '・' + (u.w || '空欄') + '）')).join('<br>')}</p></div>` : ''}
+    ${r.unknown && r.unknown.length ? `<div class="card"><p class="warn">${esc(t('acUnknown2'))}</p>
+      ${r.unknown.map((u, i) => a.specFor === i ? acUnkFormHtml(u, a.specSel) : `<div class="boxrow" style="justify-content:space-between;margin:6px 0"><span>${esc(u.name)}（${esc(u.maker || '-')}・${esc(u.conn || '空欄')}・${esc(u.w || '空欄')}）</span>
+        <button class="secondary" type="button" data-acu="${i}" style="width:auto;padding:0 14px">${esc(t('acUnkSet'))}</button></div>`).join('')}</div>` : ''}
     ${a.adding ? acAddFormHtml(a) : `<button class="link" id="acAddBtn" type="button">${esc(t('acAdd'))}</button>`}
     <p class="note">${esc(t('acAfter'))}</p>
     <div class="actions"><button class="primary" id="acSave" type="button">${esc(t('acSave'))}</button></div>
     <button class="link" id="acBack" type="button">${esc(t('back') || '‹')}</button>`;
   $app.querySelectorAll('[data-ac]').forEach(inp => inp.oninput = () => { a.types[+inp.dataset.ac].v = inp.value; a.dirty = true; });
+  // AC口型・Wが決まっていない機種：その場で口型・Wを入れる（看板のスペックとして記録し、ACの種類の一覧に入る）
+  $app.querySelectorAll('[data-acu]').forEach(b => b.onclick = () => { const u = r.unknown[+b.dataset.acu]; a.specFor = +b.dataset.acu; a.specSel = { maker: String(u.maker || '').toUpperCase(), conn: '', w: '' }; render(); });
+  if (a.specFor != null && a.specSel) {
+    const u = r.unknown[a.specFor], ss = a.specSel;
+    $app.querySelectorAll('[data-acuc]').forEach(b => b.onclick = () => { ss.conn = b.dataset.acuc; if (!acWList(ss).includes(String(ss.w))) ss.w = ''; render(); });
+    const wsel = document.getElementById('acuW');
+    if (wsel) wsel.onchange = () => {
+      let v = wsel.value;
+      if (v === AC_ADD) { v = String(prompt(t('acPickAddW')) || '').replace(/[^0-9.]/g, ''); }
+      ss.w = v; render();
+    };
+    document.getElementById('acuCancel').onclick = () => { a.specFor = null; a.specSel = null; render(); };
+    document.getElementById('acuOk').onclick = async () => {
+      if (!ss.conn || !ss.w) return alert(t('acAddNeed'));
+      const keep = {};
+      a.types.forEach(x => { keep[acKey(x.maker, x.conn, x.w)] = x.v; });
+      try {
+        const r2 = await call('kAcSetBoardSpec', [state.deviceId, u.id, ss.conn, ss.w], 'saving');
+        toast(t('acUnkSaved', { n: u.name, c: ss.conn, w: ss.w }));
+        // 入れかけの数は残して、ACの種類の一覧を読み直す
+        const extra = a.types.filter(x => x.extra && !(r2.types || []).some(y => acKey(y.maker, y.conn, y.w) === acKey(x.maker, x.conn, x.w)));
+        a.info = r2;
+        a.types = (r2.types || []).map(x => Object.assign({}, x, { v: keep[acKey(x.maker, x.conn, x.w)] != null ? keep[acKey(x.maker, x.conn, x.w)] : (x.n == null ? '' : String(x.n)) })).concat(extra);
+        a.specFor = null; a.specSel = null;
+        render();
+      } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
+    };
+  }
   const ab = document.getElementById('acAddBtn');
   if (ab) ab.onclick = () => { a.adding = true; render(); };
   if (a.adding) bindAcPick(a.pick);
