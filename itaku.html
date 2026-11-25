@@ -558,6 +558,31 @@ const T = {
   acUnkSet:  { ja: '口型・Wを入れる', en: 'Set connector/W', id: 'Atur konektor/W' },
   acUnkOk:   { ja: 'この口型・Wにする', en: 'Use this connector/W', id: 'Pakai konektor/W ini' },
   acUnkSaved:{ ja: '{n} を {c}・{w}W にしました', en: 'Set {n} to {c} {w}W', id: '{n} diatur ke {c} {w}W' },
+  acChooseNote:{ ja: '口型・Wの確認と、ACの数の入力は、別々にします。先にどちらをするか選んでください。', en: 'Checking connector/W and counting ACs are done separately. Choose one.', id: 'Cek konektor/W dan hitung AC dilakukan terpisah. Pilih salah satu.' },
+  acModeSpec:{ ja: '🔍 口型・Wを確認する', en: '🔍 Check connector/W', id: '🔍 Cek konektor/W' },
+  acModeCount:{ ja: '🔢 ACの数を入力する', en: '🔢 Enter AC count', id: '🔢 Input jumlah AC' },
+  acModels:  { ja: '{n}機種', en: '{n} models', id: '{n} model' },
+  acSpecNote:{ ja: 'AC口型・Wが決まっていない機種です。1機種ずつ、ACを見て口型とWを入れてください。ACの数は、あとで「ACの数を入力する」で入れます。', en: 'These models have no AC connector/W. Check each AC and set them. Count the ACs later.', id: 'Model ini belum punya konektor/W AC. Cek tiap AC dan atur. Hitung AC nanti.' },
+  acSpecDone:{ ja: 'このロットの口型・Wは、全部決まりました', en: 'All connectors/W in this lot are set', id: 'Semua konektor/W di lot ini sudah diatur' },
+  acUnkLeft: { ja: '口型・Wが決まっていない機種が {n}機種 あります（この機種のACは、まだ一覧に入っていません）', en: '{n} models have no connector/W yet (not in the list)', id: '{n} model belum punya konektor/W (belum di daftar)' },
+  acNewConn: { ja: '＋ {m} で今まで無かった口型を足す', en: '+ Add a new connector for {m}', id: '+ Tambah konektor baru untuk {m}' },
+  acNewConnAsk:{ ja: '{m} に足す口型を入れてください（例：{o}）', en: 'Enter the connector to add for {m} (e.g. {o})', id: 'Masukkan konektor untuk {m} (mis. {o})' },
+  acNewConnSaved:{ ja: '{m} の口型に「{c}」を足しました', en: 'Added “{c}” for {m}', id: '“{c}” ditambahkan untuk {m}' },
+  modeMerge: { ja: '🔗 看板をまとめる（_1・_2 など）', en: '🔗 Merge boards (_1, _2…)', id: '🔗 Gabung papan (_1, _2…)' },
+  mgScanFrom:{ ja: 'まとめる看板（なくす方。例：_2）のQRを読み取ってください', en: 'Scan the board to merge away (e.g. _2)', id: 'Pindai papan yang digabung (mis. _2)' },
+  mgScanTo:  { ja: '{id} をまとめる先の看板（残す方。例：_1）のQRを読み取ってください', en: 'Scan the board to merge {id} into (e.g. _1)', id: 'Pindai papan tujuan untuk {id} (mis. _1)' },
+  mgTitle:   { ja: '看板をまとめる', en: 'Merge boards', id: 'Gabung papan' },
+  mgFrom:    { ja: 'まとめる看板（なくす方）', en: 'Board to merge away', id: 'Papan yang digabung' },
+  mgTo:      { ja: 'まとめ先の看板（残す方）', en: 'Board to keep', id: 'Papan yang disimpan' },
+  mgQty:     { ja: '入荷数 {n}台', en: '{n} units', id: '{n} unit' },
+  mgAfter:   { ja: 'まとめたあとの入荷数：{n}台', en: 'After merging: {n} units', id: 'Setelah digabung: {n} unit' },
+  mgSame:    { ja: '2つの看板のスペックは同じです', en: 'The specs are the same', id: 'Spesifikasinya sama' },
+  mgDiff:    { ja: '2つの看板のスペックに、違うところがあります。本当にまとめてよいか確かめてください（まとめると、残す方のスペックになります）', en: 'The specs differ. Check before merging (the kept board’s specs remain).', id: 'Spesifikasinya berbeda. Periksa dulu (spesifikasi papan yang disimpan dipakai).' },
+  mgDiffAsk: { ja: 'スペックに違うところがあります。それでもまとめますか？', en: 'The specs differ. Merge anyway?', id: 'Spesifikasi berbeda. Tetap gabung?' },
+  mgNote:    { ja: 'まとめると、まとめる看板で登録した台（{n}台）は残す方の看板へ移り、まとめる看板は使えなくなります。入荷数と平均単価は、案件管理のロットファイルで Ctrl+Shift+N を実行したときに、作業結果でまとまります。', en: 'Registered units ({n}) move to the kept board and the merged board can no longer be used. Quantities and prices are merged in the lot file with Ctrl+Shift+N.', id: 'Unit terdaftar ({n}) pindah ke papan yang disimpan, papan yang digabung tidak bisa dipakai. Jumlah dan harga digabung di file lot dengan Ctrl+Shift+N.' },
+  mgGo:      { ja: '🔗 まとめる', en: '🔗 Merge', id: '🔗 Gabung' },
+  mgAsk:     { ja: '{f} を {to} にまとめます。元に戻せません。よろしいですか？', en: 'Merge {f} into {to}? This cannot be undone.', id: 'Gabung {f} ke {to}? Tidak bisa dibatalkan.' },
+  mgDone:    { ja: '{f} を {to} にまとめました。案件管理で Ctrl+Shift+N を実行してください', en: 'Merged {f} into {to}. Run Ctrl+Shift+N in the lot file', id: '{f} digabung ke {to}. Jalankan Ctrl+Shift+N di file lot' },
   acCtTitle: { ja: '棚卸し（ACの種類ごと）', en: 'Count (by AC type)', id: 'Stok opname (per jenis AC)' },
   acCtNote:  { ja: 'ACはすべてパレットに移してから数えます。「数えたACを足す」で種類を選び、「1箱の個数 × 箱の数 ＋ 端数の箱」で入れてください。数えた数がそのメーカーのパレットの数になり、ほかの場所（ロットなど）の記録は0になります。', en: 'Count after moving all ACs to pallets. Add each type and enter the count. It becomes the maker pallet\'s stock; other places are set to 0.', id: 'Hitung setelah semua AC dipindah ke palet. Tambah tiap jenis dan isi jumlahnya. Menjadi stok palet merek; tempat lain jadi 0.' },
   acCtAdd:   { ja: '＋ 数えたACを足す', en: '+ Add a counted AC', id: '+ Tambah AC yang dihitung' },
@@ -946,6 +971,10 @@ function handleCode(code) {
   if (!code) return alert(t('qrFail'));
   if (code.type === 'ec') { toast(t('ecMove')); location.href = 'index.html?no=' + encodeURIComponent(code.no); return; }
   if (code.type === 'acPlace') return handleAcPlace(code.id);   // ACの看板・パレットの看板
+  if (scanPurpose === 'mergeFrom' || scanPurpose === 'mergeTo') {   // 看板をまとめる：看板のQRを読む
+    if (code.type !== 'board') { alert(t('qrWrong')); return openScanner(scanPurpose === 'mergeFrom' ? t('mgScanFrom') : t('mgScanTo', { id: (state.merge || {}).from || '' })); }
+    return mergeScanned(code.id);
+  }
   if (scanPurpose === 'ptTake') {   // パーツ抜き：台のシールを読む
     scanPurpose = 'any';
     if (code.type !== 'seal') { alert(t('qrWrong')); state.screen = 'ptMenu'; return render(); }
@@ -1424,7 +1453,7 @@ function render() {
               board: renderBoard, unit: renderUnit, cat: renderCat, sym: renderSym, mark: renderMark,
               grade: renderGrade, repair: renderRepair, photo: renderSym, stock: renderStock, gradeMany: renderGradeMany, spec: renderSpec, acLots: renderAcLots, ac: renderAc, acPrint: renderAcPrint,
               acMenu: renderAcMenu, acPlace: renderAcPlace, acMove: renderAcMove, acCount: renderAcCount, acPallets: renderAcPallets,
-              acBox: renderAcBox, acCountType: renderAcCountType, acCtLabels: renderAcCtLabels, acQueue: renderAcQueue, acReissue: renderAcReissue, ptMenu: renderPtMenu, ptEdit: renderPtEdit, ptStock: renderPtStock, acTc: renderAcTc, acBulk: renderAcBulk, pickAc: renderPickAc, pickAcQty: renderPickAcQty, pickAcAll: renderPickAcAll, pickAcTake: renderPickAcTake,
+              acBox: renderAcBox, acCountType: renderAcCountType, acCtLabels: renderAcCtLabels, acQueue: renderAcQueue, acReissue: renderAcReissue, ptMenu: renderPtMenu, merge: renderMerge, ptEdit: renderPtEdit, ptStock: renderPtStock, acTc: renderAcTc, acBulk: renderAcBulk, pickAc: renderPickAc, pickAcQty: renderPickAcQty, pickAcAll: renderPickAcAll, pickAcTake: renderPickAcTake,
               shipList: renderShipList, ship: renderShip, shipItem: renderShipItem,
               batchCount: renderBatchCount, batch: renderBatch,
               gradeBoard: renderGradeBoard, slipList: renderSlipList, slipPrint: renderSlipPrint,
@@ -1483,6 +1512,7 @@ function goBack() {
   else if (S === 'acQueue') { state.acQ = null; state.screen = 'acMenu'; }
   else if (S === 'acReissue') { state.screen = 'acQueue'; }
   else if (S === 'ptMenu') { state.screen = 'home'; }
+  else if (S === 'merge') { state.merge = null; state.screen = 'home'; }
   else if (S === 'ptEdit' || S === 'ptStock') { if (state.pt) state.pt.ed = null; state.screen = 'ptMenu'; }
   else if (S === 'acTc') { const tc = state.acTc; state.acTc = null; state.screen = tc ? tc.back : 'acMenu'; }
   else if (S === 'acBulk') { state.acBulk = null; state.screen = 'acMenu'; }
@@ -1491,6 +1521,7 @@ function goBack() {
   else if (S === 'pickAcAll') { state.pick.acAll = null; state.pick.acFrom = null; openPick(state.pick.sel.dest, state.pick.sel.date); return; }
   else if (S === 'pickAcTake') { state.pick.acTake = null; state.screen = 'pickAcAll'; }
   else if (S === 'pickAcQty') { state.screen = 'pickAc'; }
+  else if (S === 'ac' && state.ac && state.ac.view !== 'choose' && (state.ac.info.unknown || []).length) { state.ac.view = 'choose'; state.ac.specFor = null; }
   else if (S === 'ac') { state.ac = null; openAcLots(false); return; }
   else if (S === 'acPrint') { state.screen = (state.acPrint && state.acPrint.back) || 'acMenu'; }
   else if (S === 'stock') { state.stock = null; state.screen = 'home'; }
@@ -1561,6 +1592,7 @@ function renderHome() {
       <button class="primary" id="specBtn" type="button">${esc(t('modeSpec'))}</button>
       <button class="primary" id="acBtn" type="button">${esc(t('modeAc'))}</button>
       <button class="primary" id="ptBtn" type="button">${esc(t('modeParts'))}</button>
+      <button class="secondary" id="mgBtn" type="button">${esc(t('modeMerge'))}</button>
       <button class="primary" id="gradeBtn" type="button">${esc(t('modeGrade'))}</button>
       <button class="primary" id="slipListBtn" type="button">${esc(t('modeSlip'))}</button>
       <button class="primary" id="stockBtn" type="button">${esc(t('modeStock'))}</button>
@@ -1575,6 +1607,7 @@ function renderHome() {
   document.getElementById('specBtn').onclick = () => { scanPurpose = 'spec'; scanBack = 'home'; openScanner(t('specScan')); };
   document.getElementById('acBtn').onclick = acMenu;
   document.getElementById('ptBtn').onclick = openPartsMenu;
+  document.getElementById('mgBtn').onclick = openMerge;
   document.getElementById('shipBtn').onclick = openShipFiles;
   document.getElementById('pickBtn').onclick = openPickLists;
   document.getElementById('gradeBtn').onclick = gradeScan;
@@ -2096,7 +2129,14 @@ const AC_SPEC_CONNS = {
   EPSON: ['丸口'],
   PANASONIC: ['丸口']
 };
-function acSpecConns(maker) { return AC_SPEC_CONNS[String(maker || '').trim().toUpperCase()] || AC_CONNS; }
+function acSpecConns(maker) {
+  const M = String(maker || '').trim().toUpperCase();
+  const base = (AC_SPEC_CONNS[M] || AC_CONNS).slice();
+  // あとから足した口型（「ACの口型の追加」）と、今までに記録のあるACの口型も選べるようにする
+  (state.acExtra || []).filter(x => x.maker === M).forEach(x => { if (!base.includes(x.conn)) base.push(x.conn); });
+  (state.acKnown || []).filter(x => String(x.maker).toUpperCase() === M).forEach(x => { if (!base.includes(x.conn)) base.push(x.conn); });
+  return base;
+}
 // 形がすべて同じなので、写真で見比べなくてよい口型（「四角口(小)」は形が違うので、写真で見比べる）
 const AC_NO_PHOTO = ['タイプC', '四角口'];
 function acNoPhoto(conn) { return AC_NO_PHOTO.includes(String(conn || '').trim()); }
@@ -2138,6 +2178,7 @@ function specNorm(item, v) {
   return v;
 }
 async function openSpec(boardId) {
+  acLoadKnown();   // AC口型の選択肢に、あとから足した口型も出すため（裏で読む）
   try {
     const r = await call('kLoadSpec', [state.deviceId, boardId], 'loading');
     if (r.board && r.board.retired) { alert(t('boardRetired', { id: r.board.id })); return openScanner(t('specScan')); }
@@ -2267,8 +2308,12 @@ function acKey(m, c, w) { return [String(m || '').trim().toUpperCase(), String(c
 async function openAcLot(lot) {
   try {
     const r = await call('kAcLoad', [state.deviceId, lot], 'loading');
-    state.ac = { info: r, types: (r.types || []).map(x => Object.assign({}, x, { v: x.n == null ? '' : String(x.n) })), dirty: false, adding: false };
+    const unk = (r.unknown || []).length;
+    // 口型・Wが決まっていない機種があれば、先に「口型・Wの確認」と「ACの数の入力」のどちらをするか選ぶ（同時にはしない）
+    state.ac = { info: r, types: (r.types || []).map(x => Object.assign({}, x, { v: x.n == null ? '' : String(x.n) })), dirty: false, adding: false,
+                 view: unk ? 'choose' : 'count' };
     state.screen = 'ac'; render(); window.scrollTo(0, 0);
+    acLoadKnown();
   } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); }
 }
 // AC口型・Wが決まっていない機種の、口型・Wを入れる欄（口型はそのメーカーで出るものだけ、Wはプルダウン）
@@ -2277,13 +2322,84 @@ function acUnkFormHtml(u, ss) {
   const conns = acSpecConns(u.maker), ws = ss.conn ? acWList(ss) : [];
   return `<div class="card" style="margin:8px 0;border:2px solid var(--amber,#e9a320)"><p class="big" style="margin:0">${esc(u.name)}</p>
     <p class="note">${esc(u.maker || '-')}　${esc(u.id)}</p>
-    <p class="note"><b>${esc(t('acConnL'))}</b></p><div class="sb c2">${conns.map(c => `<button class="secondary${ss.conn === c ? ' cur' : ''}" type="button" data-acuc="${esc(c)}">${esc(c)}</button>`).join('')}</div>
+    <p class="note"><b>${esc(t('acConnL'))}</b></p><div class="sb c2">${conns.concat(ss.conn && !conns.includes(ss.conn) ? [ss.conn] : []).map(c => `<button class="secondary${ss.conn === c ? ' cur' : ''}" type="button" data-acuc="${esc(c)}">${esc(c)}</button>`).join('')}</div>
+    <button class="link" id="acuNewConn" type="button">${esc(t('acNewConn', { m: u.maker || '-' }))}</button>
     ${ss.conn ? `<label class="field" for="acuW">${esc(t('acW'))}</label><select id="acuW" style="${st}"><option value="">${esc(t('acPickPh'))}</option>${ws.map(w => `<option value="${esc(w)}" ${String(ss.w) === String(w) ? 'selected' : ''}>${esc(w)}W</option>`).join('')}${ss.w && !ws.includes(String(ss.w)) ? `<option value="${esc(ss.w)}" selected>${esc(ss.w)}W</option>` : ''}<option value="${AC_ADD}">${esc(t('acPickAddW'))}</option></select>` : ''}
     <div class="actions"><button class="primary" id="acuOk" type="button" ${ss.conn && ss.w ? '' : 'disabled'}>${esc(t('acUnkOk'))}</button></div>
     <button class="link" id="acuCancel" type="button">${esc(t('back'))}</button></div>`;
 }
+// ロットを開いたときに、どちらの作業をするか選ぶ（口型・Wの確認／ACの数の入力）
+function renderAcChoose() {
+  const a = state.ac, r = a.info;
+  $app.innerHTML = `<div class="card"><p class="big">${esc(acLotName(r.lot))}　<small>${esc(r.lot)}</small></p>
+      <p class="note">${esc(t('acLotInfo', { d: r.date, s: r.supplier, n: r.boards }))}</p>
+      <p class="note">${esc(t('acChooseNote'))}</p>
+      <div class="modes">
+        <button class="primary" id="acgSpec" type="button">${esc(t('acModeSpec'))}（${esc(t('acModels', { n: (r.unknown || []).length }))}）</button>
+        <button class="primary" id="acgCount" type="button">${esc(t('acModeCount'))}</button>
+      </div></div>
+    <button class="link" id="acgBack" type="button">${esc(t('back'))}</button>`;
+  document.getElementById('acgSpec').onclick = () => { a.view = 'spec'; render(); window.scrollTo(0, 0); };
+  document.getElementById('acgCount').onclick = () => { a.view = 'count'; render(); window.scrollTo(0, 0); };
+  document.getElementById('acgBack').onclick = () => { state.ac = null; openAcLots(false); };
+}
+// 口型・Wの確認だけをする画面（ACの数は入れない）
+function renderAcSpec() {
+  const a = state.ac, r = a.info, list = r.unknown || [];
+  $app.innerHTML = `<div class="card"><p class="big">${esc(acLotName(r.lot))}　${esc(t('acModeSpec'))}</p>
+      <p class="note">${esc(t('acSpecNote'))}</p></div>
+    ${list.length ? list.map((u, i) => a.specFor === i ? acUnkFormHtml(u, a.specSel) : `<div class="card" style="margin-bottom:8px"><div class="boxrow" style="justify-content:space-between"><span><b>${esc(u.name)}</b><br><span class="note">${esc(u.maker || '-')}・${esc(u.conn || '空欄')}・${esc(u.w || '空欄')}</span></span>
+        <button class="secondary" type="button" data-acu="${i}" style="width:auto;padding:0 14px">${esc(t('acUnkSet'))}</button></div></div>`).join('')
+      : `<p class="note"><b>${esc(t('acSpecDone'))}</b></p>`}
+    <div class="actions"><button class="primary" id="acsToCount" type="button">${esc(t('acModeCount'))}</button></div>
+    <button class="link" id="acBack" type="button">${esc(t('back'))}</button>`;
+  document.getElementById('acsToCount').onclick = () => { a.view = 'count'; a.specFor = null; render(); window.scrollTo(0, 0); };
+  document.getElementById('acBack').onclick = goBack;
+
+  // AC口型・Wが決まっていない機種：その場で口型・Wを入れる（看板のスペックとして記録し、ACの種類の一覧に入る）
+  $app.querySelectorAll('[data-acu]').forEach(b => b.onclick = () => { const u = r.unknown[+b.dataset.acu]; a.specFor = +b.dataset.acu; a.specSel = { maker: String(u.maker || '').toUpperCase(), conn: '', w: '' }; render(); });
+  if (a.specFor != null && a.specSel) {
+    const u = r.unknown[a.specFor], ss = a.specSel;
+    $app.querySelectorAll('[data-acuc]').forEach(b => b.onclick = () => { ss.conn = b.dataset.acuc; if (!acWList(ss).includes(String(ss.w))) ss.w = ''; render(); });
+    const wsel = document.getElementById('acuW');
+    if (wsel) wsel.onchange = () => {
+      let v = wsel.value;
+      if (v === AC_ADD) { v = String(prompt(t('acPickAddW')) || '').replace(/[^0-9.]/g, ''); }
+      ss.w = v; render();
+    };
+    document.getElementById('acuCancel').onclick = () => { a.specFor = null; a.specSel = null; render(); };
+    // 今まで無かった口型のACが入ってきたとき：そのメーカーの口型として登録する（ほかの画面の選択肢にも出るようになる）
+    document.getElementById('acuNewConn').onclick = async () => {
+      const opts = AC_CONNS.filter(c => !acSpecConns(u.maker).includes(c));
+      const v = String(prompt(t('acNewConnAsk', { m: u.maker || '-', o: opts.join('・') || '-' })) || '').trim();
+      if (!v) return;
+      try {
+        if (u.maker) { const rr = await call('kAcAddConn', [state.deviceId, u.maker, v], 'saving'); state.acExtra = rr.extraConns || state.acExtra; }
+        ss.conn = v; ss.w = ''; toast(t('acNewConnSaved', { m: u.maker || '-', c: v })); render();
+      } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
+    };
+    document.getElementById('acuOk').onclick = async () => {
+      if (!ss.conn || !ss.w) return alert(t('acAddNeed'));
+      const keep = {};
+      a.types.forEach(x => { keep[acKey(x.maker, x.conn, x.w)] = x.v; });
+      try {
+        const r2 = await call('kAcSetBoardSpec', [state.deviceId, u.id, ss.conn, ss.w], 'saving');
+        toast(t('acUnkSaved', { n: u.name, c: ss.conn, w: ss.w }));
+        // 入れかけの数は残して、ACの種類の一覧を読み直す
+        const extra = a.types.filter(x => x.extra && !(r2.types || []).some(y => acKey(y.maker, y.conn, y.w) === acKey(x.maker, x.conn, x.w)));
+        a.info = r2;
+        a.types = (r2.types || []).map(x => Object.assign({}, x, { v: keep[acKey(x.maker, x.conn, x.w)] != null ? keep[acKey(x.maker, x.conn, x.w)] : (x.n == null ? '' : String(x.n)) })).concat(extra);
+        a.specFor = null; a.specSel = null;
+        if (!(r2.unknown || []).length) toast(t('acSpecDone'));
+        render();
+      } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
+    };
+  }
+}
 function renderAc() {
   const a = state.ac, r = a.info;
+  if (a.view === 'choose') return renderAcChoose();
+  if (a.view === 'spec') return renderAcSpec();
   const connOpts = (SPEC_DEF['AC口型'] || {}).opts || [], wOpts = (SPEC_DEF['W'] || {}).opts || [];
   const rowHtml = (x, i) => `<div class="card" style="margin-bottom:8px">
       <p class="big" style="margin:0">${esc(x.maker || '-')}　${esc(x.conn)}　${esc(x.w)}W</p>
@@ -2298,42 +2414,14 @@ function renderAc() {
       <div class="actions"><button class="secondary" id="acPrint" type="button">${esc(t('acPrintBtn'))}</button></div></div>
     <h2>${esc(t('acTitle'))}</h2>
     ${a.types.map(rowHtml).join('')}
-    ${r.unknown && r.unknown.length ? `<div class="card"><p class="warn">${esc(t('acUnknown2'))}</p>
-      ${r.unknown.map((u, i) => a.specFor === i ? acUnkFormHtml(u, a.specSel) : `<div class="boxrow" style="justify-content:space-between;margin:6px 0"><span>${esc(u.name)}（${esc(u.maker || '-')}・${esc(u.conn || '空欄')}・${esc(u.w || '空欄')}）</span>
-        <button class="secondary" type="button" data-acu="${i}" style="width:auto;padding:0 14px">${esc(t('acUnkSet'))}</button></div>`).join('')}</div>` : ''}
+    ${(r.unknown || []).length ? `<div class="card"><p class="warn">${esc(t('acUnkLeft', { n: r.unknown.length }))}</p><div class="actions"><button class="secondary" id="acToSpec" type="button">${esc(t('acModeSpec'))}</button></div></div>` : ''}
     ${a.adding ? acAddFormHtml(a) : `<button class="link" id="acAddBtn" type="button">${esc(t('acAdd'))}</button>`}
     <p class="note">${esc(t('acAfter'))}</p>
     <div class="actions"><button class="primary" id="acSave" type="button">${esc(t('acSave'))}</button></div>
     <button class="link" id="acBack" type="button">${esc(t('back') || '‹')}</button>`;
   $app.querySelectorAll('[data-ac]').forEach(inp => inp.oninput = () => { a.types[+inp.dataset.ac].v = inp.value; a.dirty = true; });
-  // AC口型・Wが決まっていない機種：その場で口型・Wを入れる（看板のスペックとして記録し、ACの種類の一覧に入る）
-  $app.querySelectorAll('[data-acu]').forEach(b => b.onclick = () => { const u = r.unknown[+b.dataset.acu]; a.specFor = +b.dataset.acu; a.specSel = { maker: String(u.maker || '').toUpperCase(), conn: '', w: '' }; render(); });
-  if (a.specFor != null && a.specSel) {
-    const u = r.unknown[a.specFor], ss = a.specSel;
-    $app.querySelectorAll('[data-acuc]').forEach(b => b.onclick = () => { ss.conn = b.dataset.acuc; if (!acWList(ss).includes(String(ss.w))) ss.w = ''; render(); });
-    const wsel = document.getElementById('acuW');
-    if (wsel) wsel.onchange = () => {
-      let v = wsel.value;
-      if (v === AC_ADD) { v = String(prompt(t('acPickAddW')) || '').replace(/[^0-9.]/g, ''); }
-      ss.w = v; render();
-    };
-    document.getElementById('acuCancel').onclick = () => { a.specFor = null; a.specSel = null; render(); };
-    document.getElementById('acuOk').onclick = async () => {
-      if (!ss.conn || !ss.w) return alert(t('acAddNeed'));
-      const keep = {};
-      a.types.forEach(x => { keep[acKey(x.maker, x.conn, x.w)] = x.v; });
-      try {
-        const r2 = await call('kAcSetBoardSpec', [state.deviceId, u.id, ss.conn, ss.w], 'saving');
-        toast(t('acUnkSaved', { n: u.name, c: ss.conn, w: ss.w }));
-        // 入れかけの数は残して、ACの種類の一覧を読み直す
-        const extra = a.types.filter(x => x.extra && !(r2.types || []).some(y => acKey(y.maker, y.conn, y.w) === acKey(x.maker, x.conn, x.w)));
-        a.info = r2;
-        a.types = (r2.types || []).map(x => Object.assign({}, x, { v: keep[acKey(x.maker, x.conn, x.w)] != null ? keep[acKey(x.maker, x.conn, x.w)] : (x.n == null ? '' : String(x.n)) })).concat(extra);
-        a.specFor = null; a.specSel = null;
-        render();
-      } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
-    };
-  }
+  const ts = document.getElementById('acToSpec');
+  if (ts) ts.onclick = () => { if (a.dirty && !confirm(t('acLeave'))) return; a.view = 'spec'; render(); window.scrollTo(0, 0); };
   const ab = document.getElementById('acAddBtn');
   if (ab) ab.onclick = () => { a.adding = true; render(); };
   if (a.adding) bindAcPick(a.pick);
@@ -2406,7 +2494,7 @@ function renderAcMenu() {
 }
 function acMenu() { state.screen = 'acMenu'; render(); window.scrollTo(0, 0); acLoadKnown(); }
 // 今までに記録のあるACの種類を読む（プルダウンの選択肢に足す。裏で読むので、待たなくてよい）
-function acLoadKnown() { call('kAcKnownTypes', [state.deviceId]).then(r => { state.acKnown = r.types || []; }).catch(() => {}); }
+function acLoadKnown() { call('kAcKnownTypes', [state.deviceId]).then(r => { state.acKnown = r.types || []; state.acExtra = r.extraConns || []; }).catch(() => {}); }
 function acTypeText(x) { return [x.maker || '-', x.conn, x.w + 'W'].join('　'); }
 function isPalletId(id) { return /^PL\d+$/i.test(String(id || '')); }
 // ACの看板・パレットの看板を読んだとき（目的ごとに分ける）
@@ -3637,6 +3725,50 @@ function renderPtStock() {
       : `<p class="note">${esc(t('ptStockNone'))}</p>`}
     <button class="link" id="ptsBack" type="button">${esc(t('back'))}</button>`;
   document.getElementById('ptsBack').onclick = goBack;
+}
+
+// ===============================================================
+// 🔗 看板をまとめる（同じロット・同じスペックの _1・_2 などを1つにする）
+//   まとめる看板（例：_2）→ まとめ先の看板（例：_1）の順にQRを読む → 確認 → まとめる
+//   入荷数・平均単価は、案件管理の Ctrl+Shift+N のときに作業結果でまとめる
+// ===============================================================
+function openMerge() { state.merge = { from: null }; scanPurpose = 'mergeFrom'; scanBack = 'home'; openScanner(t('mgScanFrom')); }
+async function mergeScanned(id) {
+  const m = state.merge || (state.merge = {});
+  if (scanPurpose === 'mergeFrom') {
+    scanPurpose = 'any';
+    m.from = normId(id);
+    scanPurpose = 'mergeTo'; scanBack = 'home';
+    return openScanner(t('mgScanTo', { id: m.from }));
+  }
+  scanPurpose = 'any';
+  try {
+    m.chk = await call('kMergeCheck', [state.deviceId, m.from, normId(id)], 'loading');
+    state.screen = 'merge'; render(); window.scrollTo(0, 0);
+  } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); state.merge = null; goHome(); }
+}
+function renderMerge() {
+  const c = state.merge.chk;
+  $app.innerHTML = `<div class="card"><p class="big">${esc(t('mgTitle'))}</p>
+      <p class="note">${esc(t('mgFrom'))}</p><p class="big" style="margin:0">${esc(c.from.name || '')}</p><p class="note">${esc(c.from.id)}　${esc(t('mgQty', { n: c.from.qty }))}</p>
+      <p style="font-size:28px;text-align:center;margin:4px 0">↓</p>
+      <p class="note">${esc(t('mgTo'))}</p><p class="big" style="margin:0">${esc(c.to.name || '')}</p><p class="note">${esc(c.to.id)}　${esc(t('mgQty', { n: c.to.qty }))}</p>
+      <p class="note"><b>${esc(t('mgAfter', { n: (Number(c.from.qty) || 0) + (Number(c.to.qty) || 0) }))}</b></p></div>
+    ${c.diff.length ? `<div class="card"><p class="warn">${esc(t('mgDiff'))}</p><ul class="spec">${c.diff.map(d => `<li><div class="sh" style="cursor:default"><span class="sl">${esc(d.item)}</span><span class="sv">${esc(d.from)} → ${esc(d.to)}</span></div></li>`).join('')}</ul></div>`
+      : `<p class="note">${esc(t('mgSame'))}</p>`}
+    <p class="note">${esc(t('mgNote', { n: c.units }))}</p>
+    <div class="actions"><button class="primary" id="mgGo" type="button">${esc(t('mgGo'))}</button></div>
+    <button class="link" id="mgBack" type="button">${esc(t('back'))}</button>`;
+  document.getElementById('mgGo').onclick = async () => {
+    if (c.diff.length && !confirm(t('mgDiffAsk'))) return;
+    if (!confirm(t('mgAsk', { f: c.from.id, to: c.to.id }))) return;
+    try {
+      const r = await call('kMergeBoards', [state.deviceId, c.from.id, c.to.id], 'saving');
+      toast(t('mgDone', { f: r.from.id, to: r.to.id }));
+      state.merge = null; goHome();
+    } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
+  };
+  document.getElementById('mgBack').onclick = goBack;
 }
 
 // ===============================================================
