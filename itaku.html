@@ -352,6 +352,10 @@ const T = {
   slipDoneAsk:{ ja: '{n}枚を「発行済み」にします。全部きれいに印刷できましたか？', en: 'Mark {n} as printed?', id: 'Tandai {n} sudah dicetak?' },
   slipDoneOk:{ ja: '{n}枚を発行済みにしました', en: 'Marked {n} as printed', id: '{n} ditandai sudah dicetak' },
   modeShip:  { ja: '🚚 出荷日を入れる', en: '🚚 Set ship date', id: '🚚 Isi tanggal kirim' },
+  sdHide:    { ja: '一覧から消す', en: 'Remove from list', id: 'Hapus dari daftar' },
+  sdHideNote:{ ja: '×：取り消された・別の方法で出荷が済んだファイルを、この一覧から消します（ファイルと在庫リストの出荷内訳は、そのまま残ります）', en: '×: removes a cancelled or already-shipped file from this list (the file and shipment records stay)', id: '×: menghapus file yang dibatalkan/sudah dikirim dari daftar ini (file dan catatan tetap ada)' },
+  sdHideAsk: { ja: '「{f}」を、この一覧から消します。よろしいですか？（ファイルと出荷内訳は消えません）', en: 'Remove “{f}” from this list? (The file and records stay)', id: 'Hapus “{f}” dari daftar ini? (File dan catatan tetap ada)' },
+  sdHidden:  { ja: '「{f}」を一覧から消しました', en: 'Removed “{f}” from the list', id: '“{f}” dihapus dari daftar' },
   sdPick:    { ja: '出荷日を入れるファイルを選んでください', en: 'Choose the request file', id: 'Pilih file permintaan' },
   sdPickNote:{ ja: 'Slackで出荷予定に登録した出荷依頼のファイル（出荷依頼_処理済み）です。新しい順に並んでいます。', en: 'Request files already registered in Slack (newest first).', id: 'File yang sudah didaftarkan di Slack (terbaru dulu).' },
   sdUpdated: { ja: '更新 {t}', en: 'updated {t}', id: 'diperbarui {t}' },
@@ -1781,8 +1785,19 @@ function renderShipFiles() {
   const f = state.sd.files || [];
   $app.innerHTML = `<div class="card"><p class="big">${esc(t('sdPick'))}</p><p class="note">${esc(t('sdPickNote'))}</p></div>
     ${f.length ? `<ul class="grp">${f.map((x, i) => `<li><span class="gs">${esc(x.name)}<br><span class="note">${esc(t('sdUpdated', { t: x.updated }))}</span></span>
-      <button class="secondary" type="button" data-sf="${i}">${esc(t('pickOpen'))}</button></li>`).join('')}</ul>` : `<p class="note">${esc(t('sdNone'))}</p>`}`;
+      <button class="secondary" type="button" data-sf="${i}">${esc(t('pickOpen'))}</button>
+      <button class="secondary" type="button" data-sfx="${i}" aria-label="${esc(t('sdHide'))}" style="width:auto;padding:0 12px">×</button></li>`).join('')}</ul>
+      <p class="note">${esc(t('sdHideNote'))}</p>` : `<p class="note">${esc(t('sdNone'))}</p>`}`;
   $app.querySelectorAll('[data-sf]').forEach(b => b.onclick = () => openShipFile(f[Number(b.dataset.sf)].id));
+  // 取り消された・別の方法で出荷が済んだファイルを、一覧から消す（ファイルと出荷内訳はそのまま）
+  $app.querySelectorAll('[data-sfx]').forEach(b => b.onclick = async () => {
+    const x = f[Number(b.dataset.sfx)];
+    if (!confirm(t('sdHideAsk', { f: x.name }))) return;
+    try {
+      state.sd.files = await call('kShipDateHide', [state.deviceId, x.id], 'saving');
+      toast(t('sdHidden', { f: x.name })); render();
+    } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
+  });
 }
 async function openShipFile(id) {
   try {
