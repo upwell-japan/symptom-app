@@ -305,8 +305,8 @@ const T = {
   modeAc:    { ja: '🔌 AC（入荷・パレット・棚卸し）', en: '🔌 AC (arrival, pallet, count)', id: '🔌 AC (masuk, palet, stok opname)' },
   boardRetired:{ ja: '看板 {id} は使われていない看板です（案件管理で消されました）。正しい看板のQRを読み取ってください。', en: 'Board {id} is no longer used (removed in the case file). Scan the correct board.', id: 'Papan {id} tidak dipakai lagi (dihapus). Pindai papan yang benar.' },
   retiredNote:{ ja: 'この看板は使われていません（案件管理で消されました）。登録されている台は、下の「台を別の看板へ移す」で、正しい看板へ移してください。', en: 'This board is no longer used. Move its units to the correct board below.', id: 'Papan ini tidak dipakai lagi. Pindahkan unitnya ke papan yang benar di bawah.' },
-  moveTitle: { ja: '台を別の看板へ移す', en: 'Move units to another board', id: 'Pindahkan unit ke papan lain' },
-  moveDesc:  { ja: '間違った看板で登録した台を選んで、正しい看板へ移します。', en: 'Choose units registered on the wrong board and move them.', id: 'Pilih unit yang terdaftar di papan salah, lalu pindahkan.' },
+  moveTitle: { ja: '台を選んで、別の看板へ移す・分類を変える', en: 'Move units to another board', id: 'Pindahkan unit ke papan lain' },
+  moveDesc:  { ja: '台を選んでから、「看板へ移す」（間違った看板で登録した台を正しい看板へ）か、分類のボタン（A・B・C・NG）を押してください。', en: 'Choose units registered on the wrong board and move them.', id: 'Pilih unit yang terdaftar di papan salah, lalu pindahkan.' },
   moveBtn:   { ja: '選んだ台を移す（{n}台）→ 移す先の看板のQRを読む', en: 'Move selected ({n}) → scan the target board', id: 'Pindahkan ({n}) → pindai papan tujuan' },
   moveScan:  { ja: '{n}台を移す先の看板のQRを読み取ってください', en: 'Scan the board to move {n} units to', id: 'Pindai papan tujuan untuk {n} unit' },
   moveSame:  { ja: '同じ看板です。移す先の看板を読み取ってください。', en: 'Same board. Scan the target board.', id: 'Papan sama. Pindai papan tujuan.' },
@@ -345,6 +345,8 @@ const T = {
   modeSlip:  { ja: '🏷 不具合看板を出す', en: '🏷 Print defect boards', id: '🏷 Cetak papan cacat' },
   gradeScanDesc:{ ja: 'グレーディングを変える看板のQRを読み取ってください', en: 'Scan the board QR to change grades', id: 'Pindai QR papan untuk mengubah grade' },
   gradeNext: { ja: '次の看板のQRを読む', en: 'Scan the next board', id: 'Pindai papan berikutnya' },
+  mvGradeNote:{ ja: '選んだ台の分類だけを変えるときは、下のボタンを押してください（看板は移しません）', en: 'To change only the grade of the selected units, tap a button below (the board stays)', id: 'Untuk mengubah grade unit terpilih saja, ketuk tombol di bawah (papan tetap)' },
+  mvGradeAsk:{ ja: '{s} の分類を「{g}」に変えます。よろしいですか？', en: 'Change the grade of {s} to “{g}”?', id: 'Ubah grade {s} menjadi “{g}”?' },
   grpSlipAsk:{ ja: 'この商品の「{g}」の看板は、まだ出ていません。続けて、{g} の看板を印刷しますか？', en: 'No “{g}” board has been printed for this item yet. Print the {g} board now?', id: 'Papan “{g}” untuk barang ini belum dicetak. Cetak papan {g} sekarang?' },
   slipTitle: { ja: '不具合看板（B・C・NG看板）を出す', en: 'Print defect boards (B / C / NG)', id: 'Cetak papan cacat (B / C / NG)' },
   slipDesc:  { ja: 'まだ出していない看板だけを出しています。出したい看板にチェックを付けて、印刷してください。', en: 'Only boards not printed yet are shown. Check the ones to print.', id: 'Hanya papan yang belum dicetak. Centang yang akan dicetak.' },
@@ -1865,13 +1867,32 @@ function moveSectionHtml(units) {
     <ul class="spec">${units.map(u => `<li><label class="sh" style="gap:12px"><input type="checkbox" data-mv="${esc(u.seal)}" ${sel.has(u.seal) ? 'checked' : ''} style="width:24px;height:24px">
       <span class="sl">${esc(u.seal)}　<span class="grade ${esc(u.grade)}" style="font-size:14px;padding:2px 8px">${esc(u.grade)}</span></span>
       <span class="note">${esc(u.sym || '')}</span></label></li>`).join('')}</ul>
-    <div class="actions"><button class="secondary" id="moveBtn" type="button" ${sel.size ? '' : 'disabled'}>${esc(t('moveBtn', { n: sel.size }))}</button></div>`;
+    <div class="actions"><button class="secondary" id="moveBtn" type="button" ${sel.size ? '' : 'disabled'}>${esc(t('moveBtn', { n: sel.size }))}</button></div>
+    <p class="note" style="margin-top:12px">${esc(t('mvGradeNote'))}</p>
+    <div class="grades">${['A', 'B', 'C', 'NG'].map(x => `<button class="secondary" type="button" data-mvg="${x}" ${sel.size ? '' : 'disabled'}>${x}</button>`).join('')}</div>`;
 }
 function bindMoveSection() {
   $app.querySelectorAll('[data-mv]').forEach(c => c.onchange = () => {
     if (c.checked) state.moveSel.add(c.dataset.mv); else state.moveSel.delete(c.dataset.mv);
     const b = document.getElementById('moveBtn');
     if (b) { b.disabled = !state.moveSel.size; b.textContent = t('moveBtn', { n: state.moveSel.size }); }
+    $app.querySelectorAll('[data-mvg]').forEach(x => { x.disabled = !state.moveSel.size; });
+  });
+  // 選んだ台（シール）の分類を変える（看板は移さない）
+  $app.querySelectorAll('[data-mvg]').forEach(btn => btn.onclick = async () => {
+    const seals = [...state.moveSel], ng = btn.dataset.mvg;
+    if (!seals.length) return;
+    if (!confirm(t('mvGradeAsk', { s: seals.join('、'), g: ng }))) return;
+    try {
+      const r = await call('kSetGradeMany', [state.deviceId, seals, ng], 'saving');
+      toast(t('grpDone', { n: r.updated, g: ng }));
+      state.moveSel = new Set();
+      // B・C・NGに変えて、その看板（看板ID×分類）がまだ出ていなければ、続けて不具合看板を出せるようにする
+      if (['B', 'C', 'NG'].includes(ng) && await slipNeedFor(state.board.id, ng)) {
+        if (confirm(t('grpSlipAsk', { g: ng }))) return openSlipFor(state.board.id, ng);
+      }
+      openGradeBoard(state.board.id);
+    } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
   });
   const mb = document.getElementById('moveBtn');
   if (mb) mb.onclick = () => { scanPurpose = 'moveTo'; scanBack = 'gradeBoard'; openScanner(t('moveScan', { n: state.moveSel.size })); };
