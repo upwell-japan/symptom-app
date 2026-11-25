@@ -345,6 +345,7 @@ const T = {
   modeSlip:  { ja: '🏷 不具合看板を出す', en: '🏷 Print defect boards', id: '🏷 Cetak papan cacat' },
   gradeScanDesc:{ ja: 'グレーディングを変える看板のQRを読み取ってください', en: 'Scan the board QR to change grades', id: 'Pindai QR papan untuk mengubah grade' },
   gradeNext: { ja: '次の看板のQRを読む', en: 'Scan the next board', id: 'Pindai papan berikutnya' },
+  grpSlipAsk:{ ja: 'この商品の「{g}」の看板は、まだ出ていません。続けて、{g} の看板を印刷しますか？', en: 'No “{g}” board has been printed for this item yet. Print the {g} board now?', id: 'Papan “{g}” untuk barang ini belum dicetak. Cetak papan {g} sekarang?' },
   slipTitle: { ja: '不具合看板（B・C・NG看板）を出す', en: 'Print defect boards (B / C / NG)', id: 'Cetak papan cacat (B / C / NG)' },
   slipDesc:  { ja: 'まだ出していない看板だけを出しています。出したい看板にチェックを付けて、印刷してください。', en: 'Only boards not printed yet are shown. Check the ones to print.', id: 'Hanya papan yang belum dicetak. Centang yang akan dicetak.' },
   slipQ:     { ja: 'しぼり込み（看板ID・品名の一部）', en: 'Filter (board ID or model)', id: 'Saring (ID papan atau model)' },
@@ -1264,7 +1265,13 @@ async function saveGrade() {
   try {
     await waitSeal(state.unit.seal);
     state.unit = await call('kSetGrade', [state.deviceId, state.unit.seal, state.grade], 'saving');
-    toast(t('saved')); state.screen = 'unit'; render(); window.scrollTo(0, 0);
+    toast(t('saved'));
+    // B・C・NGに変えて、その看板（看板ID×分類）がまだ出ていなければ、続けて不具合看板を出せるようにする
+    const ub = state.unit.board, bid = (ub && typeof ub === 'object' ? ub.id : ub) || (state.board && state.board.id), ng = state.grade;
+    if (bid && ['B', 'C', 'NG'].includes(ng) && await slipNeedFor(bid, ng)) {
+      if (confirm(t('grpSlipAsk', { g: ng }))) return openSlipFor(bid, ng);
+    }
+    state.screen = 'unit'; render(); window.scrollTo(0, 0);
   } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
 }
 
@@ -1899,6 +1906,23 @@ async function openSlipList() {
   } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); state.screen = 'home'; render(); }
 }
 function slipKey(id, g) { return id + '\t' + g; }
+// その看板×分類の不具合看板が、まだ出ていないか
+async function slipNeedFor(boardId, grade) {
+  try {
+    const list = await call('kSlipList', [state.deviceId, { q: boardId, all: false }], 'loading');
+    return list.some(b => b.id === boardId && b.grades.some(x => x.grade === grade && !x.issued));
+  } catch (e) { return false; }
+}
+// 不具合看板の一覧を、その看板×分類を選んだ状態で開く（グレーディングを変えたあと）
+async function openSlipFor(boardId, grade) {
+  try {
+    const list = await call('kSlipList', [state.deviceId, { q: boardId, all: false }], 'loading');
+    const sel = {};
+    list.forEach(b => b.grades.forEach(x => { if (b.id === boardId && x.grade === grade) sel[slipKey(b.id, x.grade)] = true; }));
+    state.slip = { q: boardId, all: false, sel: sel, list: list };
+    state.screen = 'slipList'; render(); window.scrollTo(0, 0);
+  } catch (e) { alert(t('errLoad') + '\n' + (e.message || e)); openGradeBoard(boardId); }
+}
 function renderSlipList() {
   const sl = state.slip, list = sl.list || [];
   const nSel = Object.keys(sl.sel).length;
@@ -3973,6 +3997,10 @@ function renderGradeMany() {
       const r = await call('kSetGradeMany', [state.deviceId, g.seals, ng], 'saving');
       toast(t('grpDone', { n: r.updated, g: ng }));
       state.grpEdit = null;
+      // B・C・NGに変えて、その看板（看板ID×分類）がまだ出ていなければ、続けて不具合看板を出せるようにする
+      if (['B', 'C', 'NG'].includes(ng) && await slipNeedFor(state.board.id, ng)) {
+        if (confirm(t('grpSlipAsk', { g: ng }))) return openSlipFor(state.board.id, ng);
+      }
       openGradeBoard(state.board.id);
     } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
   });
