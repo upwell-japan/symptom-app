@@ -236,10 +236,11 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// v19：作業内容の記号を1作業1記号にまとめ、入力の順番を「名前 → 作業内容 → ロット（または事業区分）→ 時刻 → 作業数」に変えた。
-// ★注意★ 作業内容の「記号＋名前」は、コード.gs の BUSINESS_SYMBOL_TABLE と必ず一致させること。
-// 記号は過去の記録と結びついているので、新しい作業には未使用の記号を使い、廃止した記号は使い回さない。
-// （画面での並び順はこの一覧の順番で決まるので、記号の順番とは関係なく自由に並べてよい）
+// v19：入力の順番を「名前 → 作業内容 → ロット（または事業区分）→ 時刻」に変えた。
+// v21：作業内容は記号（アルファベット）を使わず、名前だけで扱う（記録の作業内容も名前だけ。例：「検査」）。
+// ★注意★ 作業内容の名前は、コード.gs の WORK_TABLE と必ず一致させること。
+// 名前が記録と集計を結びつけているので、名前を変えるときはコード.gs の LEGACY_WORKTYPES に「古い名前: 新しい名前」を足す。
+// （画面での並び順はこの一覧の順番で決まるので、自由に並べてよい）
 // 基準UPHはコード.gs側（スプレッドシートの「設定」シート）から読み込んで使う。
 //  cats … その作業を使える事業区分
 //  lot  … true＝ロットを選ぶ／false＝複数のロットにまたがる作業（ロットの代わりに事業区分を選ぶ。1つしかなければ選ばない）
@@ -247,38 +248,38 @@
 //  box  … ダンボールのサイズと箱数の入力が必須になる事業区分
 const WORKS = [
   // ロットを選ぶ作業
-  { wt: "B 案件管理作成",   cats: ["業務委託","EC"], lot: true },
-  { wt: "C 荷受",           cats: ["業務委託","EC"], lot: true, quota: true },
-  { wt: "P AC荷受",         cats: ["業務委託","EC"], lot: true },
-  { wt: "D エアー",         cats: ["業務委託","EC"], lot: true, quota: true },
-  { wt: "E 検査",           cats: ["業務委託","EC"], lot: true, quota: true },
-  { wt: "F 修理",           cats: ["業務委託"],      lot: true, quota: true },
-  { wt: "G 作業結果入力",   cats: ["業務委託"],      lot: true },
-  { wt: "H 外磨き",         cats: ["業務委託","EC"], lot: true, quota: true },
-  { wt: "Q 内磨き",         cats: ["業務委託","EC"], lot: true, quota: true },
-  { wt: "I グレーディング", cats: ["業務委託"],      lot: true },
-  { wt: "J パーツ抜き",     cats: ["業務委託"],      lot: true, quota: true },
-  { wt: "N メモリ増設・減設", cats: ["業務委託"],    lot: true, quota: true },
-  { wt: "U シール剥がし",   cats: ["業務委託"],      lot: true },
-  { wt: "R AC磨き",         cats: ["EC"],            lot: true, quota: true },
-  { wt: "S OSインストール", cats: ["EC"],            lot: true, quota: true },
-  { wt: "T OS検査",         cats: ["EC"],            lot: true, quota: true },
+  { wt: "案件管理作成",   cats: ["業務委託","EC"], lot: true },
+  { wt: "荷受",           cats: ["業務委託","EC"], lot: true, quota: true },
+  { wt: "AC荷受",         cats: ["業務委託","EC"], lot: true },
+  { wt: "エアー",         cats: ["業務委託","EC"], lot: true, quota: true },
+  { wt: "検査",           cats: ["業務委託","EC"], lot: true, quota: true },
+  { wt: "修理",           cats: ["業務委託"],      lot: true, quota: true },
+  { wt: "作業結果入力",   cats: ["業務委託"],      lot: true },
+  { wt: "外磨き",         cats: ["業務委託","EC"], lot: true, quota: true },
+  { wt: "内磨き",         cats: ["業務委託","EC"], lot: true, quota: true },
+  { wt: "グレーディング", cats: ["業務委託"],      lot: true },
+  { wt: "パーツ抜き",     cats: ["業務委託"],      lot: true, quota: true },
+  { wt: "メモリ増設・減設", cats: ["業務委託"],    lot: true, quota: true },
+  { wt: "シール剥がし",   cats: ["業務委託"],      lot: true },
+  { wt: "AC磨き",         cats: ["EC"],            lot: true, quota: true },
+  { wt: "OSインストール", cats: ["EC"],            lot: true, quota: true },
+  { wt: "OS検査",         cats: ["EC"],            lot: true, quota: true },
   // ロットを選ばない作業（複数のロットにまたがる）
-  { wt: "X ピッキング",     cats: ["業務委託","EC"], lot: false, quota: true },
-  { wt: "K 荷造り",         cats: ["業務委託"],      lot: false, box: ["業務委託"] },
-  { wt: "Y 梱包",           cats: ["業務委託","EC"], lot: false, box: ["業務委託"] },
-  { wt: "M ダンボール作り", cats: ["業務委託"],      lot: false, quota: true },
-  { wt: "Z ロケーション管理", cats: ["業務委託","EC"], lot: false },
-  { wt: "O 棚卸し",         cats: ["業務委託","EC"], lot: false },
-  { wt: "Ω パーツ管理",     cats: ["業務委託"],      lot: false },
-  { wt: "Π パーツ出荷準備", cats: ["業務委託"],      lot: false },
-  { wt: "V 通販サイトの作成", cats: ["EC"],          lot: false },
-  { wt: "W 専門学校販売に関する打合せ", cats: ["EC"], lot: false },
+  { wt: "ピッキング",     cats: ["業務委託","EC"], lot: false, quota: true },
+  { wt: "荷造り",         cats: ["業務委託"],      lot: false, box: ["業務委託"] },
+  { wt: "梱包",           cats: ["業務委託","EC"], lot: false, box: ["業務委託"] },
+  { wt: "ダンボール作り", cats: ["業務委託"],      lot: false, quota: true },
+  { wt: "ロケーション管理", cats: ["業務委託","EC"], lot: false },
+  { wt: "棚卸し",         cats: ["業務委託","EC"], lot: false },
+  { wt: "パーツ管理",     cats: ["業務委託"],      lot: false },
+  { wt: "パーツ出荷準備", cats: ["業務委託"],      lot: false },
+  { wt: "通販サイトの作成", cats: ["EC"],          lot: false },
+  { wt: "専門学校販売に関する打合せ", cats: ["EC"], lot: false },
   // 共通業務（事業区分もロットも選ばない）
-  { wt: "ε 荷積み・荷降ろし", cats: ["共通業務"],    lot: false },
-  { wt: "α 打合せ",         cats: ["共通業務"],      lot: false },
-  { wt: "β その他",         cats: ["共通業務"],      lot: false },
-  { wt: "γ 清掃",           cats: ["共通業務"],      lot: false }
+  { wt: "荷積み・荷降ろし", cats: ["共通業務"],    lot: false },
+  { wt: "打合せ",         cats: ["共通業務"],      lot: false },
+  { wt: "その他",         cats: ["共通業務"],      lot: false },
+  { wt: "清掃",           cats: ["共通業務"],      lot: false }
 ];
 const WORK_OF = {};
 WORKS.forEach(w => { WORK_OF[w.wt] = w; });
@@ -288,8 +289,8 @@ function workOf(worktype){ return WORK_OF[worktype] || null; }
 const WORK_GROUPS = [
   { key: 'wgLot',    filter: w => w.lot },
   // 荷積み・荷降ろしも複数のロットにまたがる作業なので、ここに並べる（記録は今までどおり【260101】共通業務）
-  { key: 'wgMulti',  filter: w => !w.lot && (w.cats[0] !== '共通業務' || w.wt === 'ε 荷積み・荷降ろし') },
-  { key: 'wgCommon', filter: w => w.cats[0] === '共通業務' && w.wt !== 'ε 荷積み・荷降ろし' }
+  { key: 'wgMulti',  filter: w => !w.lot && (w.cats[0] !== '共通業務' || w.wt === '荷積み・荷降ろし') },
+  { key: 'wgCommon', filter: w => w.cats[0] === '共通業務' && w.wt !== '荷積み・荷降ろし' }
 ];
 
 // ロットを選ばない作業を記録する固定の案件（コード.gs の ALWAYS_KEEP_PROJECTS と同じ）
@@ -297,7 +298,7 @@ const FIXED_PROJECTS = { '業務委託': '【260101】業務委託', 'EC': '【2
 function isFixedProject(name){ return Object.keys(FIXED_PROJECTS).some(k => FIXED_PROJECTS[k] === name); }
 
 // 管理画面の箱数の小計に含める作業（過去の記録も含む）
-const BOX_WORKTYPES = ['A 荷降ろし', 'δ 荷降ろし', 'ε 荷積み', 'ε 荷積み・荷降ろし', 'K 荷造り', 'Y 梱包'];
+const BOX_WORKTYPES = ['荷造り', '梱包', '荷積み・荷降ろし', '荷降ろし（廃止）'];   // 作業内容の名前で比べる（以前の記号付きの記録も wtName で名前にそろえる）
 
 const NAMES = ["ラハマン","ダロ","ルスタリ","レヴィ","テスト"];
 
@@ -975,14 +976,22 @@ function needsDetails(){
 // 作業数の入力が必須の作業か（WORKS の quota。v19では使っていない）
 function isQuotaWork(worktype){ const w = workOf(worktype); return !!(w && w.quota); }
 
-// 基準UPHは「設定」シートの値（記号＝作業内容の先頭1文字で引く）
+// 基準UPHは「設定」シートの値（作業内容の名前で引く）
 function getBenchmarkUph(worktype){
-  const v = state.benchmarks[String(worktype).charAt(0)];
+  const v = state.benchmarks[wtName(worktype)];
   return (v === undefined || v === null || v === '') ? null : Number(v);
 }
-// 作業内容から先頭の記号を外した表示用の名前（例：「E 検査」→「検査」）
-// ※記号は集計の仕組みで使うため、保存するデータには残している
-function wtName(worktype){ return String(worktype || '').replace(/^\S+\s+/, ''); }
+// 作業内容の名前（以前の「E 検査」のような記号付きの記録は、先頭の1文字と空白を外す。コード.gs の workName と同じ）
+const LEGACY_WORKTYPES = {
+  'δ 荷降ろし': '荷積み・荷降ろし', 'ε 荷積み': '荷積み・荷降ろし',
+  'A 荷降ろし': '荷降ろし（廃止）', 'a 荷降ろし': '荷降ろし（廃止）', 'Α 荷降ろし': '荷降ろし（廃止）',
+  'L 荷積み': '荷積み（廃止）', 'Ε 荷積み': '荷積み（廃止）'
+};
+function wtName(worktype){
+  const w = String(worktype || '').trim();
+  if(LEGACY_WORKTYPES[w]) return LEGACY_WORKTYPES[w];
+  return /^\S\s+/.test(w) ? w.replace(/^\S\s+/, '') : w;
+}
 
 function getUphColor(worktype, uph){
   if(uph === null) return null;
@@ -1608,10 +1617,10 @@ function renderAdmin(app){
   const entries = state.adminEntries;
   const csv = entriesToCSV(entries);
   const box90 = entries
-    .filter(en=> BOX_WORKTYPES.includes(en.worktype) && en.boxSize==='90サイズ')
+    .filter(en=> BOX_WORKTYPES.includes(wtName(en.worktype)) && en.boxSize==='90サイズ')
     .reduce((sum,en)=> sum + (Number(en.count)||0), 0);
   const box115 = entries
-    .filter(en=> BOX_WORKTYPES.includes(en.worktype) && en.boxSize==='115サイズ')
+    .filter(en=> BOX_WORKTYPES.includes(wtName(en.worktype)) && en.boxSize==='115サイズ')
     .reduce((sum,en)=> sum + (Number(en.count)||0), 0);
   const blankIfEmpty = v => (v===''||v===undefined||v===null) ? '' : v;
   body.innerHTML = `
