@@ -555,6 +555,8 @@ const T = {
   ptAppPend: { ja: 'まだ反映していないアプリの記録：{n}', en: 'App records not yet reflected: {n}', id: 'Catatan aplikasi belum direfleksikan: {n}' },
   ptStockNone:{ ja: 'パーツの在庫はまだありません', en: 'No parts stock yet', id: 'Belum ada stok part' },
   acUnknown2:{ ja: 'AC口型・Wが決まっていない機種です。「口型・Wを入れる」で入れると、ACの種類の一覧に入ります（その看板のスペックにも記録されます）', en: 'Models without AC connector/W. Set them with “Set connector/W” to add them to the AC list (also saved to the board specs)', id: 'Model tanpa konektor/W AC. Atur dengan “Atur konektor/W” agar masuk daftar AC (juga disimpan ke spesifikasi papan)' },
+  acConnNone:{ ja: '-（ACなし・コードのみ。デスクトップなど）', en: '- (no AC, cord only; desktops etc.)', id: '- (tanpa AC, kabel saja; desktop dll.)' },
+  acConnNoneNote:{ ja: 'Wも「-」になります。この機種は、ACの数には入りません。', en: 'W becomes “-” too. This model is not counted for ACs.', id: 'W juga menjadi “-”. Model ini tidak dihitung untuk AC.' },
   acUnkSet:  { ja: '口型・Wを入れる', en: 'Set connector/W', id: 'Atur konektor/W' },
   acUnkOk:   { ja: 'この口型・Wにする', en: 'Use this connector/W', id: 'Pakai konektor/W ini' },
   acUnkSaved:{ ja: '{n} を {c}・{w}W にしました', en: 'Set {n} to {c} {w}W', id: '{n} diatur ke {c} {w}W' },
@@ -2242,6 +2244,11 @@ function renderSpec() {
     if (v === '') return;
     const base = sp.inputs[item] ? sp.inputs[item].value : (sp.excel[item] == null ? '' : String(sp.excel[item]));
     if (v === base) delete sp.edits[item]; else sp.edits[item] = v;
+    // AC口型を「-」（デスクトップなど、ACが無くコードだけ）にしたら、Wも「-」にする
+    if (item === 'AC口型' && v === '-') {
+      const bw = sp.inputs['W'] ? sp.inputs['W'].value : (sp.excel['W'] == null ? '' : String(sp.excel['W']));
+      if (bw === '-') delete sp.edits['W']; else sp.edits['W'] = '-';
+    }
     sp.open = null; render();
   };
   $app.querySelectorAll('[data-sv]').forEach(b => b.onclick = ev => { ev.stopPropagation(); setVal(b.dataset.sv); });
@@ -2322,9 +2329,10 @@ function acUnkFormHtml(u, ss) {
   const conns = acSpecConns(u.maker), ws = ss.conn ? acWList(ss) : [];
   return `<div class="card" style="margin:8px 0;border:2px solid var(--amber,#e9a320)"><p class="big" style="margin:0">${esc(u.name)}</p>
     <p class="note">${esc(u.maker || '-')}　${esc(u.id)}</p>
-    <p class="note"><b>${esc(t('acConnL'))}</b></p><div class="sb c2">${conns.concat(ss.conn && !conns.includes(ss.conn) ? [ss.conn] : []).map(c => `<button class="secondary${ss.conn === c ? ' cur' : ''}" type="button" data-acuc="${esc(c)}">${esc(c)}</button>`).join('')}</div>
+    <p class="note"><b>${esc(t('acConnL'))}</b></p><div class="sb c2">${conns.concat(ss.conn && ss.conn !== '-' && !conns.includes(ss.conn) ? [ss.conn] : []).map(c => `<button class="secondary${ss.conn === c ? ' cur' : ''}" type="button" data-acuc="${esc(c)}">${esc(c)}</button>`).join('')}</div>
+    <div class="actions"><button class="secondary${ss.conn === '-' ? ' cur' : ''}" type="button" data-acuc="-">${esc(t('acConnNone'))}</button></div>
     <button class="link" id="acuNewConn" type="button">${esc(t('acNewConn', { m: u.maker || '-' }))}</button>
-    ${ss.conn ? `<label class="field" for="acuW">${esc(t('acW'))}</label><select id="acuW" style="${st}"><option value="">${esc(t('acPickPh'))}</option>${ws.map(w => `<option value="${esc(w)}" ${String(ss.w) === String(w) ? 'selected' : ''}>${esc(w)}W</option>`).join('')}${ss.w && !ws.includes(String(ss.w)) ? `<option value="${esc(ss.w)}" selected>${esc(ss.w)}W</option>` : ''}<option value="${AC_ADD}">${esc(t('acPickAddW'))}</option></select>` : ''}
+    ${ss.conn === '-' ? `<p class="note">${esc(t('acConnNoneNote'))}</p>` : ss.conn ? `<label class="field" for="acuW">${esc(t('acW'))}</label><select id="acuW" style="${st}"><option value="">${esc(t('acPickPh'))}</option>${ws.map(w => `<option value="${esc(w)}" ${String(ss.w) === String(w) ? 'selected' : ''}>${esc(w)}W</option>`).join('')}${ss.w && !ws.includes(String(ss.w)) ? `<option value="${esc(ss.w)}" selected>${esc(ss.w)}W</option>` : ''}<option value="${AC_ADD}">${esc(t('acPickAddW'))}</option></select>` : ''}
     <div class="actions"><button class="primary" id="acuOk" type="button" ${ss.conn && ss.w ? '' : 'disabled'}>${esc(t('acUnkOk'))}</button></div>
     <button class="link" id="acuCancel" type="button">${esc(t('back'))}</button></div>`;
 }
@@ -2360,7 +2368,12 @@ function renderAcSpec() {
   $app.querySelectorAll('[data-acu]').forEach(b => b.onclick = () => { const u = r.unknown[+b.dataset.acu]; a.specFor = +b.dataset.acu; a.specSel = { maker: String(u.maker || '').toUpperCase(), conn: '', w: '' }; render(); });
   if (a.specFor != null && a.specSel) {
     const u = r.unknown[a.specFor], ss = a.specSel;
-    $app.querySelectorAll('[data-acuc]').forEach(b => b.onclick = () => { ss.conn = b.dataset.acuc; if (!acWList(ss).includes(String(ss.w))) ss.w = ''; render(); });
+    $app.querySelectorAll('[data-acuc]').forEach(b => b.onclick = () => {
+      ss.conn = b.dataset.acuc;
+      if (ss.conn === '-') ss.w = '-';                            // ACが無くコードだけ：Wも「-」
+      else if (ss.w === '-' || !acWList(ss).includes(String(ss.w))) ss.w = '';
+      render();
+    });
     const wsel = document.getElementById('acuW');
     if (wsel) wsel.onchange = () => {
       let v = wsel.value;
