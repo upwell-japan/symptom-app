@@ -117,8 +117,17 @@ details.note summary{cursor:pointer;padding:8px 0}
 .spec .sb button.cur{background:var(--amber-soft);border:3px solid var(--amber)}
 .spec .sb input{font:inherit;font-size:18px;padding:10px;border:1px solid var(--ink);border-radius:10px;width:160px}
 .spec .by{font-size:12px;color:var(--ink2);padding:0 14px 8px}
-.grp{list-style:none;padding:0;margin:0 0 10px}
-.grp li{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--rule);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+.grp{list-style:none;padding:0;margin:14px 0 10px}
+.grp li{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--rule);border-radius:12px;padding:10px 12px;margin-bottom:14px}
+/* ボタンを並べる箱（カードの中など、.spec の外でも）：ボタンどうしを均等に離す */
+.sb{display:grid;gap:10px;margin:8px 0 12px;grid-template-columns:repeat(auto-fill,minmax(96px,1fr))}
+.sb.c3{grid-template-columns:repeat(3,1fr)}
+.sb.c2{grid-template-columns:repeat(2,1fr)}
+.sb > button{width:100%;min-width:0;min-height:52px;padding:4px 6px;font-size:16px;line-height:1.25;word-break:keep-all;overflow-wrap:anywhere}
+.sb > button.cur{background:var(--amber-soft);border:3px solid var(--amber)}
+.card + .grp, .card + .card, .card + ul, .card + h2{margin-top:14px}
+.card .actions + .actions{margin-top:10px}
+.spec .sb{margin:0}   /* スペック入力の画面の並びは、これまでどおり */
 .grp .gs{flex:1;font-size:15px;line-height:1.5}
 .grp .gn{font-weight:700;white-space:nowrap}
 .grp button{min-height:44px;padding:0 12px;font-size:15px}
