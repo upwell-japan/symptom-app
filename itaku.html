@@ -607,6 +607,21 @@ const T = {
   mgGo:      { ja: '🔗 まとめる', en: '🔗 Merge', id: '🔗 Gabung' },
   mgAsk:     { ja: '{f} を {to} にまとめます。元に戻せません。よろしいですか？', en: 'Merge {f} into {to}? This cannot be undone.', id: 'Gabung {f} ke {to}? Tidak bisa dibatalkan.' },
   mgDone:    { ja: '{f} を {to} にまとめました。案件管理で Ctrl+Shift+N を実行してください', en: 'Merged {f} into {to}. Run Ctrl+Shift+N in the lot file', id: '{f} digabung ke {to}. Jalankan Ctrl+Shift+N di file lot' },
+  aiTitle:   { ja: '端数を合わせて、シールを貼る', en: 'Merge partials and label boxes', id: 'Gabung sisa dan beri label' },
+  aiNote:    { ja: '満杯にならない端数のACは、今すぐ、そのメーカーのパレットの端数の箱に入れてください（記録も、パレットへ移しました）。満杯の箱と、新しくできた端数の箱には、下でシールを印刷して貼ります。', en: 'Put the partial ACs into the maker pallet’s partial box now (records moved). Print labels below for full boxes and new partial boxes.', id: 'Masukkan AC sisa ke kotak sisa palet merek sekarang (catatan dipindah). Cetak label di bawah untuk kotak penuh dan kotak sisa baru.' },
+  aiFull:    { ja: '満杯の箱 {f}箱（{b}個入り）にシールを貼る。', en: 'Label {f} full boxes ({b} each). ', id: 'Beri label {f} kotak penuh ({b}). ' },
+  aiNoRest:  { ja: '端数はありません', en: 'No partial', id: 'Tidak ada sisa' },
+  aiNewRest: { ja: '端数 {r}個 は、新しい端数の箱にして {p} に置く（シールを印刷します）', en: 'Make a new partial box of {r} on {p} (label printed)', id: 'Buat kotak sisa baru {r} di {p} (label dicetak)' },
+  aiMerge:   { ja: '端数 {r}個 を、{p} の端数の箱（{a}個）に入れる → {c}個（シールのマスに {c} と書き直す）', en: 'Put {r} into {p}’s partial box ({a}) → {c} (rewrite the label)', id: 'Masukkan {r} ke kotak sisa {p} ({a}) → {c} (tulis ulang label)' },
+  aiMergeFull:{ ja: '端数 {r}個 を、{p} の端数の箱（{a}個）に入れる → ちょうど満杯 {b}個（シールのマスに {b} と書き直す）', en: 'Put {r} into {p}’s partial box ({a}) → exactly full {b} (rewrite the label)', id: 'Masukkan {r} ke kotak sisa {p} ({a}) → tepat penuh {b} (tulis ulang label)' },
+  aiMergeOver:{ ja: '端数 {r}個 を、{p} の端数の箱（{a}個）に入れる → 満杯 {b}個（シールのマスに {b} と書き直す）。入りきらない {c}個 は、新しい端数の箱にする（シールを印刷します）', en: 'Put {r} into {p}’s partial box ({a}) → full {b} (rewrite). The remaining {c} go in a new partial box (label printed)', id: 'Masukkan {r} ke kotak sisa {p} ({a}) → penuh {b} (tulis ulang). Sisa {c} ke kotak sisa baru (label dicetak)' },
+  aiOneMerge:{ ja: '1箱の個数が決まっていません。このAC {n}個を、{p} の同じ種類の箱（{a}個）に入れる → {c}個（シールのマスを書き直す）。入りきらなければ、1箱の個数を決めてください', en: 'No number per box yet. Put these {n} into the same type’s box on {p} ({a}) → {c} (rewrite)', id: 'Jumlah per kotak belum diatur. Masukkan {n} ke kotak jenis sama di {p} ({a}) → {c} (tulis ulang)' },
+  aiOneNew:  { ja: '1箱の個数が決まっていません。このAC {n}個を1つの箱にして {p} に置く（シールを印刷します）', en: 'No number per box yet. Put these {n} in one box on {p} (label printed)', id: 'Jumlah per kotak belum diatur. Satukan {n} dalam satu kotak di {p} (label dicetak)' },
+  aiNoPallet:{ ja: '{t} のメーカーのパレットが決まっていないので、端数は合わせていません（「ACのパレット」シートで決めてください）', en: 'No pallet for the maker of {t}; partial not merged', id: 'Belum ada palet untuk merek {t}; sisa tidak digabung' },
+  aiLabels:  { ja: '印刷するシール：{n}枚', en: 'Labels to print: {n}', id: 'Label dicetak: {n}' },
+  aiNoLabel: { ja: '新しく貼るシールはありません（写真がまだ無い種類は、「シールの印刷待ち」で写真を撮ってから印刷してください）', en: 'No new labels (types without photos: take a photo in “Labels waiting”)', id: 'Tidak ada label baru (jenis tanpa foto: ambil foto di “Label menunggu”)' },
+  aiEnd:     { ja: '終わる（シールはあとで「シールの印刷待ち」から出す）', en: 'Finish (print labels later from “Labels waiting”)', id: 'Selesai (cetak label nanti dari “Label menunggu”)' },
+  aiEndAsk:  { ja: 'シールを「印刷済み」にしないで終わります。シールは「シールの印刷待ち」に残ります。よろしいですか？', en: 'Finish without marking labels printed? They stay in “Labels waiting”.', id: 'Selesai tanpa menandai label dicetak? Tetap di “Label menunggu”.' },
   acCtTitle: { ja: '棚卸し（ACの種類ごと）', en: 'Count (by AC type)', id: 'Stok opname (per jenis AC)' },
   acCtNote:  { ja: 'ACはすべてパレットに移してから数えます。「数えたACを足す」で種類を選び、「1箱の個数 × 箱の数 ＋ 端数の箱」で入れてください。数えた数がそのメーカーのパレットの数になり、ほかの場所（ロットなど）の記録は0になります。', en: 'Count after moving all ACs to pallets. Add each type and enter the count. It becomes the maker pallet\'s stock; other places are set to 0.', id: 'Hitung setelah semua AC dipindah ke palet. Tambah tiap jenis dan isi jumlahnya. Menjadi stok palet merek; tempat lain jadi 0.' },
   acCtAdd:   { ja: '＋ 数えたACを足す', en: '+ Add a counted AC', id: '+ Tambah AC yang dihitung' },
@@ -1483,7 +1498,7 @@ function render() {
               board: renderBoard, unit: renderUnit, cat: renderCat, sym: renderSym, mark: renderMark,
               grade: renderGrade, repair: renderRepair, photo: renderSym, stock: renderStock, gradeMany: renderGradeMany, spec: renderSpec, acLots: renderAcLots, ac: renderAc, acPrint: renderAcPrint,
               acMenu: renderAcMenu, acPlace: renderAcPlace, acMove: renderAcMove, acCount: renderAcCount, acPallets: renderAcPallets,
-              acBox: renderAcBox, acCountType: renderAcCountType, acCtLabels: renderAcCtLabels, acQueue: renderAcQueue, acReissue: renderAcReissue, ptMenu: renderPtMenu, merge: renderMerge, ptEdit: renderPtEdit, ptStock: renderPtStock, acTc: renderAcTc, acBulk: renderAcBulk, pickAc: renderPickAc, pickAcQty: renderPickAcQty, pickAcAll: renderPickAcAll, pickAcTake: renderPickAcTake,
+              acBox: renderAcBox, acCountType: renderAcCountType, acCtLabels: renderAcCtLabels, acQueue: renderAcQueue, acInDone: renderAcInDone, acReissue: renderAcReissue, ptMenu: renderPtMenu, merge: renderMerge, ptEdit: renderPtEdit, ptStock: renderPtStock, acTc: renderAcTc, acBulk: renderAcBulk, pickAc: renderPickAc, pickAcQty: renderPickAcQty, pickAcAll: renderPickAcAll, pickAcTake: renderPickAcTake,
               shipList: renderShipList, ship: renderShip, shipItem: renderShipItem,
               batchCount: renderBatchCount, batch: renderBatch,
               gradeBoard: renderGradeBoard, slipList: renderSlipList, slipPrint: renderSlipPrint,
@@ -1540,6 +1555,7 @@ function goBack() {
   else if (S === 'acCountType') { state.acCt = null; state.screen = 'acMenu'; }
   else if (S === 'acCtLabels') { state.acCl = null; state.screen = 'acMenu'; }
   else if (S === 'acQueue') { state.acQ = null; state.screen = 'acMenu'; }
+  else if (S === 'acInDone') { state.acIn = null; openAcLots(false); return; }
   else if (S === 'acReissue') { state.screen = 'acQueue'; }
   else if (S === 'ptMenu') { state.screen = 'home'; }
   else if (S === 'merge') { state.merge = null; state.screen = 'home'; }
@@ -2550,9 +2566,11 @@ async function saveAc() {
   if (a.types.some(x => !/^\d+$/.test(String(x.v).trim()))) return alert(t('acNeedNum'));
   const items = a.types.map(x => ({ maker: x.maker, conn: x.conn, w: x.w, n: Number(String(x.v).trim()) }));
   try {
-    await call('kAcSave', [state.deviceId, a.info.lot, items], 'saving');
+    const r = await call('kAcSave', [state.deviceId, a.info.lot, items], 'saving');
     toast(t('acSaved', { l: a.info.lot }));
     state.ac = null;
+    // 端数をすぐパレットの端数の箱へ合わせる指示と、満杯の箱などのシールの印刷へ
+    if (r.plan && r.plan.some(x => x.n > 0)) return openAcInDone(r.lot, r.plan);
     openAcLots(false);
   } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
 }
@@ -3856,6 +3874,75 @@ function renderMerge() {
     } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
   };
   document.getElementById('mgBack').onclick = goBack;
+}
+
+// ===============================================================
+// 入荷数を保存したあと：端数を、すぐパレットの端数の箱へ合わせる指示と、シールの印刷
+//   満杯の箱と、新しくできた端数の箱のシールだけを印刷する（合わせた端数の箱は、シールのマスを書き直す）
+// ===============================================================
+function acInText(x) {
+  const T = acTypeText(x), b = x.per, r = x.rest;
+  if (x.noPallet) return t('aiNoPallet', { t: T });
+  if (b > 0) {
+    const head = x.full ? t('aiFull', { f: x.full, b: b }) : '';
+    if (!r) return head + t('aiNoRest');
+    if (!x.palRest) return head + t('aiNewRest', { r: r, p: x.pallet });
+    const c = x.palRest + r;
+    if (c < b) return head + t('aiMerge', { r: r, p: x.pallet, a: x.palRest, c: c });
+    if (c === b) return head + t('aiMergeFull', { r: r, p: x.pallet, a: x.palRest, b: b });
+    return head + t('aiMergeOver', { r: r, p: x.pallet, a: x.palRest, b: b, c: c - b });
+  }
+  return x.palN ? t('aiOneMerge', { n: x.n, p: x.pallet, a: x.palN, c: x.palN + x.n }) : t('aiOneNew', { n: x.n, p: x.pallet });
+}
+async function openAcInDone(lot, plan) {
+  let labels = [], used = [];
+  try {
+    const q = await call('kAcLabelQueue', [state.deviceId], 'loading');
+    const keys = new Set(plan.map(x => acKey(x.maker, x.conn, x.w)));
+    const places = new Set([lot].concat(plan.map(x => x.pallet).filter(Boolean)));
+    q.items.filter(x => places.has(x.place) && keys.has(acKey(x.maker, x.conn, x.w)) && acQReady(x)).forEach(x => {
+      x.labels.forEach(v => labels.push({ b: x, n: v }));
+      used.push({ place: x.place, maker: x.maker, conn: x.conn, w: x.w, count: x.labels.length });
+    });
+  } catch (e) {}
+  state.acIn = { lot: lot, plan: plan, labels: labels, used: used, start: String(acQNextPos()), printed: false };
+  state.screen = 'acInDone'; render(); window.scrollTo(0, 0);
+}
+function renderAcInDone() {
+  const a = state.acIn;
+  $app.innerHTML = `<div class="card"><p class="big">${esc(acLotName(a.lot))}　${esc(t('aiTitle'))}</p><p class="note">${esc(t('aiNote'))}</p></div>
+    ${a.plan.filter(x => x.n > 0).map(x => `<div class="card" style="margin-bottom:8px"><p class="big" style="margin:0">${esc(acTypeText(x))}　${esc(x.n)}${esc(t('acUnit'))}</p>
+      <p style="font-weight:700;margin:6px 0 0">${esc(acInText(x))}</p></div>`).join('')}
+    <div class="card"><p class="big">${esc(t('aiLabels', { n: a.labels.length }))}</p>
+      ${a.labels.length ? `<p class="note">${esc(a.labels.map(l => acTypeText(l.b) + ' ' + l.n + '/' + (l.b.per || 'X')).join('、'))}</p>
+        <div class="boxrow"><span>${esc(t('acClStart'))}</span><input type="number" inputmode="numeric" min="1" max="${ACB_PER}" id="aiStart" value="${esc(a.start)}"></div>
+        <div class="actions"><button class="primary" id="aiPrint" type="button">${esc(t('acbPrint'))}</button></div>
+        ${a.printed ? `<div class="actions"><button class="primary" id="aiDone" type="button">${esc(t('acClDoneBtn'))}</button></div>` : ''}`
+        : `<p class="note">${esc(t('aiNoLabel'))}</p>`}</div>
+    <div class="actions"><button class="secondary" id="aiEnd" type="button">${esc(t('aiEnd'))}</button></div>
+    <div id="printArea" class="printarea"></div>`;
+  const st = document.getElementById('aiStart'); if (st) st.oninput = e => { a.start = e.target.value; };
+  const pb = document.getElementById('aiPrint');
+  if (pb) pb.onclick = () => {
+    const start = Math.floor(Number(a.start) || 1);
+    if (start < 1 || start > ACB_PER) return alert(t('acbNeedStart'));
+    a.printed = true; a.startUsed = start; render();
+    acPrintLabels(a.labels, start);
+  };
+  const dn = document.getElementById('aiDone');
+  if (dn) dn.onclick = async () => {
+    if (!confirm(t('acClDoneAsk', { n: a.labels.length }))) return;
+    try {
+      await call('kAcLabelMark', [state.deviceId, a.used], 'saving');
+      acQSavePos(a.startUsed || 1, a.labels.length);
+      toast(t('acClLogged', { n: a.labels.length }));
+      state.acIn = null; openAcLots(false);
+    } catch (e) { alert(t('errSave') + '\n' + (e.message || e)); }
+  };
+  document.getElementById('aiEnd').onclick = () => {
+    if (a.labels.length && !confirm(t('aiEndAsk'))) return;
+    state.acIn = null; openAcLots(false);
+  };
 }
 
 // ===============================================================
