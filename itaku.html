@@ -717,6 +717,9 @@ const T = {
   acAllLeft: { ja: 'あと {n}個 のACを出します', en: '{n} ACs still to add', id: 'Masih {n} AC yang harus ditambah' },
   acAllDone: { ja: 'ACは全部出してあります', en: 'All ACs have been added', id: 'Semua AC sudah ditambahkan' },
   acAllTaken:{ ja: '（出した数：{n}個）', en: '(added: {n})', id: '(sudah: {n})' },
+  acAllPlan: { ja: '出荷予定：', en: 'Planned:', id: 'Rencana:' },
+  acAllNoPlan:{ ja: 'この出荷で出すACはありません', en: 'No ACs in this shipment', id: 'Tidak ada AC di pengiriman ini' },
+  acAllLack: { ja: '不足数', en: 'Shortfall', id: 'Kekurangan' },
   acAllTypes:{ ja: '必要なAC（種類ごと）', en: 'ACs needed (by type)', id: 'AC yang dibutuhkan (per jenis)' },
   acAllWhere:{ ja: '出す場所（この看板から出してください）', en: 'Where to take them (from these boards)', id: 'Ambil dari (papan berikut)' },
   acAllShort:{ ja: 'ACの在庫が足りません', en: 'Not enough AC stock', id: 'Stok AC tidak cukup' },
@@ -2937,9 +2940,13 @@ async function openPickAcAll() {
 }
 function renderPickAcAll() {
   const r = state.pick.acAll, sel = state.pick.sel;
+  // 上：出荷予定（種類ごとに、この出荷で出すACの全部の数）／下：不足数（まだ出していない数）
   $app.innerHTML = `<div class="card"><p class="big">${esc(sel.date)}　${esc(sel.dest)}</p>
-      <p class="note"><b style="font-size:20px">${esc(r.left ? t('acAllLeft', { n: r.left }) : t('acAllDone'))}</b>${r.done ? '　' + esc(t('acAllTaken', { n: r.done })) : ''}</p></div>
-    ${r.types.length ? `<h2>${esc(t('acAllTypes'))}</h2><ul class="spec">${r.types.map(x => `<li><div class="sh" style="cursor:default"><span class="sl">${esc(acTypeText(x))}</span><span class="sv" style="font-size:22px">${esc(x.need)}${esc(t('acUnit'))}</span></div></li>`).join('')}</ul>` : ''}
+      <p class="note" style="margin-bottom:4px"><b>${esc(t('acAllPlan'))}</b></p>
+      ${r.types.length ? r.types.map(x => `<p style="font-size:20px;font-weight:700;margin:2px 0">${esc(acTypeText(x))}　${esc(x.need + x.done)}${esc(t('acUnit'))}</p>`).join('') : `<p class="note">${esc(t('acAllNoPlan'))}</p>`}</div>
+    ${r.types.length ? `<div class="card"><p class="note" style="margin-bottom:4px"><b>${esc(t('acAllLack'))}</b></p>
+      ${r.types.map(x => `<p style="font-size:20px;font-weight:700;margin:2px 0;${x.need ? 'color:var(--danger,#b3261e)' : ''}">${esc(acTypeText(x))}　${esc(x.need)}${esc(t('acUnit'))}</p>`).join('')}
+      </div>` : ''}
     ${r.places.length ? `<h2>${esc(t('acAllWhere'))}</h2>${r.places.map(P => `<div class="card" style="margin-bottom:8px"><p class="big" style="margin:0">${esc(P.label)}</p>
         <p class="note">${P.items.map(x => esc(acTypeText(x) + '　' + x.n + t('acUnit'))).join('<br>')}</p>
         ${isPalletId(P.place) ? `<div class="actions"><button class="secondary" type="button" data-tp="${esc(P.place)}">${esc(t('acTakeHere', { p: P.place }))}</button></div>` : `<p class="note">${esc(t('acTakeScanLot'))}</p>`}</div>`).join('')}` : ''}
