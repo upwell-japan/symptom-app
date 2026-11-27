@@ -149,6 +149,10 @@ const T = {
   undo:       { ja: '1つ戻す', en: 'Undo', id: 'Batalkan' },
   markNext:   { ja: '決定して次へ', en: 'OK, next', id: 'OK, berikutnya' },
   markDone:   { ja: '決定', en: 'OK', id: 'OK' },
+  detTitle:   { ja: '内容を入力してください', en: 'Enter the details', id: 'Masukkan detail' },
+  detDesc:    { ja: '何の症状か分かるように入力してください（例：Bluetooth、不明なデバイス）。英語やインドネシア語でもかまいません。', en: 'Describe what it is (e.g. Bluetooth, Unknown device). English or Indonesian is OK.', id: 'Tulis detailnya (mis. Bluetooth, Unknown device). Boleh bahasa Inggris atau Indonesia.' },
+  detEmpty:   { ja: '内容を入力してください', en: 'Please enter the details', id: 'Silakan isi detailnya' },
+  sizeTitle:  { ja: '大きさを選んでください', en: 'Choose the size', id: 'Pilih ukuran' },
   camDone:    { ja: '決定（{n}枚）', en: 'Done ({n})', id: 'Selesai ({n})' },
   camHint:    { ja: '続けて何枚でも撮れます（10枚まで）。撮り終わったら「決定」を押してください。', en: 'You can take several photos (up to 10). Press "Done" when finished.', id: 'Anda bisa mengambil beberapa foto (maks. 10). Tekan "Selesai" setelah selesai.' },
   camMax:     { ja: '1つの症状につき10枚までです', en: 'Up to 10 photos per defect', id: 'Maksimal 10 foto per cacat' },
@@ -201,6 +205,7 @@ const state = {
   cat: '', photoFor: '', lastNone: false, error: '',
   addMeta: new Map(), photoOther: false, otherCat: '', otherDraft: '',
   unitLoaded: true, unitFailed: false,
+  flow: null,   // 症状を選んでから登録するまでの途中経過 { base, detail, photo, size, upId }
   battery: '', batteryEdited: false, batteryThen: ''   // batteryThen：入力のあとに保存するとき 'done' / 'none'
 };
 
@@ -228,7 +233,7 @@ function saveDraft() {
       t: Date.now(), deviceId: state.deviceId, no: state.no, name: state.name,
       photoFor: state.photoFor, adds: [...state.adds], removes: [...state.removes],
       meta: [...state.addMeta], photoOther: state.photoOther, otherCat: state.otherCat,
-      battery: state.battery, batteryEdited: state.batteryEdited
+      battery: state.battery, batteryEdited: state.batteryEdited, flow: state.flow
     }));
   } catch (e) {}
 }
@@ -248,10 +253,23 @@ function effective() {
   state.adds.forEach((photo, s) => { const m = state.addMeta.get(s) || {}; list.push({ symptom: s, photo: photo, isNew: true, cat: m.cat, other: !!m.other }); });
   // その他の症状は、そのカテゴリの最後に並べる
   const catIdx = c => { const i = state.cats.findIndex(x => x.cat === c); return i < 0 ? 99 : i; };
-  const order = e => { const m = state.masterMap[e.symptom]; return m ? catIdx(m.cat) * 1000 + m.idx % 1000 : catIdx(e.cat) * 1000 + 999; };
-  list.forEach(e => { if (!e.cat && state.masterMap[e.symptom]) e.cat = state.masterMap[e.symptom].cat; });
+  const order = e => { const m = e.other ? null : state.masterMap[baseOf(e.symptom)]; return m ? catIdx(m.cat) * 1000 + m.idx % 1000 : catIdx(e.cat) * 1000 + 999; };
+  list.forEach(e => { const m = e.other ? null : state.masterMap[baseOf(e.symptom)]; if (!e.cat && m) e.cat = m.cat; });
   return list.sort((a, b) => order(a) - order(b));
 }
+// 登録した名前（例：天板キズ(小)）から、症状マスタの「表記」を探す
+function baseOf(name) {
+  let s = String(name || '');
+  if (state.masterMap[s]) return s;
+  while (/\([^()]*\)$/.test(s)) {
+    s = s.replace(/\([^()]*\)$/, '');
+    if (state.masterMap[s]) return s;
+  }
+  return '';
+}
+const SIZES = ['大', '中', '小'];
+const SIZE_TR = { '大': { en: 'Large', id: 'Besar' }, '中': { en: 'Medium', id: 'Sedang' }, '小': { en: 'Small', id: 'Kecil' } };
+function flowName(f) { return f.base + (f.detail ? '(' + f.detail + ')' : '') + (f.size ? '(' + f.size + ')' : ''); }
 function effectiveSet() { return new Set(effective().map(e => e.symptom)); }
 
 // ===============================================================
@@ -321,6 +339,7 @@ function start() {
         (d.meta || []).forEach(([s, m]) => state.addMeta.set(s, m));
         state.photoOther = !!d.photoOther; state.otherCat = d.otherCat || '';
         if (d.batteryEdited) { state.battery = d.battery || ''; state.batteryEdited = true; }
+        state.flow = d.flow || null;
         state.photoFor = d.photoFor; state.screen = 'photo';
         render(); toast(t('retake'));
       });
@@ -436,7 +455,12 @@ async function save(none) {
   const job = {
     id: Date.now() + '_' + Math.random().toString(36).slice(2, 7),
     no: state.no, name: state.name,
-    adds: [...state.adds].map(([symptom, photo]) => { const m = state.addMeta.get(symptom); return m && m.other ? { symptom, photo, other: true, cat: m.cat } : { symptom, photo }; }),
+    adds: [...state.adds].map(([symptom, photo]) => {
+      const m = state.addMeta.get(symptom);
+      if (m && m.other) return { symptom, photo, other: true, cat: m.cat };
+      if (m && m.base) { const o = { symptom: m.base, photo }; if (m.detail) o.detail = m.detail; if (m.size) o.size = m.size; return o; }
+      return { symptom, photo };
+    }),
     removes: [...state.removes], none: !!none, battery: state.battery
   };
   const box = getOutbox(); box.push(job); setOutbox(box);
@@ -488,16 +512,53 @@ window.addEventListener('online', flushOutbox);
 // ===============================================================
 // 操作
 // ===============================================================
+// 症状を押したとき：詳細入力 → 写真 → 大きさ の順に、必要なものだけ進む
 function pickSymptom(h) {
   const m = state.masterMap[h];
-  if (!m || effectiveSet().has(h)) return;
+  if (!m) return;
+  if (!m.detail && !m.size && effectiveSet().has(h)) return;
   state.photoOther = false;
-  if (m.photo) { state.photoFor = h; state.screen = 'photo'; render(); window.scrollTo(0, 0); return; }
-  addSymptom(h, '');
+  state.flow = { base: h };
+  nextStep();
 }
-function addSymptom(h, photo) {
+function nextStep() {
+  const f = state.flow, m = f && state.masterMap[f.base];
+  if (!m) { state.flow = null; state.screen = 'cat'; render(); return; }
+  state.photoFor = f.base;
+  if (m.detail && !f.detail) state.screen = 'detail';
+  else if (m.photo && f.photo === undefined) state.screen = 'photo';
+  else if (m.size && !f.size) state.screen = 'size';
+  else return finishFlow();
+  render(); window.scrollTo(0, 0);
+}
+function finishFlow() {
   clearDraft();
-  if (state.photoOther && h === state.photoFor) state.addMeta.set(h, { cat: state.otherCat, other: true });
+  const f = state.flow, key = flowName(f);
+  state.flow = null;
+  // 大きさの症状は、同じ症状の別の大きさと入れ替える
+  if (f.size) {
+    const re = new RegExp('^' + (f.base + (f.detail ? '(' + f.detail + ')' : '')).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\((大|中|小)\\)$');
+    [...state.adds.keys()].forEach(k => { if (k !== key && re.test(k)) { state.adds.delete(k); state.addMeta.delete(k); } });
+    state.current.forEach(c => { if (c.symptom !== key && re.test(c.symptom)) state.removes.add(c.symptom); });
+  }
+  if (state.removes.has(key)) state.removes.delete(key);
+  else {
+    state.adds.set(key, f.photo || '');
+    const meta = { base: f.base, cat: (state.masterMap[f.base] || {}).cat, upId: f.upId };
+    if (f.detail) meta.detail = f.detail;
+    if (f.size) meta.size = f.size;
+    state.addMeta.set(key, meta);
+  }
+  state.screen = 'cat'; state.cat = ''; render(); window.scrollTo(0, 0);
+}
+// 写真を撮り終わったとき
+function afterPhoto(photo, upId) {
+  if (state.flow && !state.photoOther) { state.flow.photo = photo; state.flow.upId = upId; nextStep(); return; }
+  addSymptom(state.photoFor, photo, upId);
+}
+function addSymptom(h, photo, upId) {
+  clearDraft();
+  if (state.photoOther && h === state.photoFor) state.addMeta.set(h, { cat: state.otherCat, other: true, upId: upId });
   state.photoOther = false; state.otherDraft = '';
   if (state.removes.has(h)) state.removes.delete(h); else state.adds.set(h, photo || '');
   state.screen = 'cat'; state.cat = ''; render(); window.scrollTo(0, 0);
@@ -524,6 +585,7 @@ function swapIn(p, mark, url) {
 function replacePhoto(mark, url) {
   state.adds.forEach((p, s) => { const v = swapIn(p, mark, url); if (v !== null) state.adds.set(s, v); });
   state.current.forEach(c => { const v = swapIn(c.photo, mark, url); if (v !== null) c.photo = v; });
+  if (state.flow && state.flow.photo) { const v = swapIn(state.flow.photo, mark, url); if (v !== null) state.flow.photo = v; }
   const box = getOutbox();
   let changed = false;
   box.forEach(j => j.adds.forEach(a => { const v = swapIn(a.photo, mark, url); if (v !== null) { a.photo = v; changed = true; } }));
@@ -533,8 +595,9 @@ function replacePhoto(mark, url) {
 function uploadPhotos(dataUrls) {
   const h = state.photoFor, no = state.no;
   const marks = dataUrls.map(() => 'pending:' + Date.now() + '_' + (++uploadSeq));
+  const upId = 'u' + uploadSeq;
   hideBusy();
-  addSymptom(h, photoJoin(marks));
+  afterPhoto(photoJoin(marks), upId);
   toast(t('uploading'));
   let failed = 0, chain = Promise.resolve();
   marks.forEach((mark, i) => {
@@ -551,10 +614,16 @@ function uploadPhotos(dataUrls) {
     chain = p;
   });
   chain.then(() => {
-    if (failed && state.no === no && state.adds.has(h)) {
-      // 「完了」の前で、1枚も送れなかったときは、症状を外して撮り直せるようにする
-      if (!photoList(state.adds.get(h)).length) { state.adds.delete(h); state.addMeta.delete(h); alert(t('errSave')); }
-      else alert(t('someFail'));
+    if (failed && state.no === no) {
+      const key = [...state.adds.keys()].find(k => (state.addMeta.get(k) || {}).upId === upId);
+      if (key !== undefined) {
+        // 「完了」の前で、1枚も送れなかったときは、症状を外して撮り直せるようにする
+        if (!photoList(state.adds.get(key)).length) { state.adds.delete(key); state.addMeta.delete(key); alert(t('errSave')); }
+        else alert(t('someFail'));
+      } else if (state.flow && state.flow.upId === upId) {
+        if (!photoList(state.flow.photo).length) { state.flow = null; state.screen = 'cat'; alert(t('errSave')); }
+        else alert(t('someFail'));
+      }
     }
     refresh();
   });
@@ -779,6 +848,14 @@ const $app = document.getElementById('app');
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 function trSym(h) { const m = state.masterMap[h]; return !m || state.lang === 'ja' ? '' : (state.lang === 'en' ? m.en : m.id); }
 function trCat(c) { return state.lang === 'ja' ? '' : (state.lang === 'en' ? c.en : c.id); }
+// 登録した名前の訳（例：天板キズ(小) → Top cover scratch (Small)）
+function trName(name) {
+  const b = baseOf(name);
+  if (!b || state.lang === 'ja') return '';
+  const tr = trSym(b);
+  if (!tr) return '';
+  return tr + name.slice(b.length).replace(/\((大|中|小)\)$/, (x, z) => '(' + SIZE_TR[z][state.lang] + ')');
+}
 function sub(s) { return s ? `<small>${esc(s)}</small>` : ''; }
 
 function renderHeader() {
@@ -807,7 +884,7 @@ function renderHeader() {
 // 戻る・ホーム
 // ・画面の左上の「‹」と「家」のボタン、スマホの戻るボタンで使う
 // ---------------------------------------------------------------
-const NAV_SCREENS = new Set(['cat', 'sym', 'photo', 'other', 'result', 'camera', 'scan', 'battery', 'mark']);
+const NAV_SCREENS = new Set(['cat', 'sym', 'photo', 'other', 'result', 'camera', 'scan', 'battery', 'mark', 'detail', 'size']);
 const ICON_BACK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
 const ICON_HOME = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 9.5V20h5v-6h4v6h5V9.5"/></svg>';
 
@@ -816,7 +893,8 @@ function goBack() {
   const S = state.screen;
   if (S === 'camera') { stopCamera(); state.screen = 'photo'; }
   else if (S === 'scan') { stopCamera(); state.screen = state.back; }
-  else if (S === 'photo') { clearDraft(); state.screen = state.photoOther ? 'other' : 'sym'; }
+  else if (S === 'photo') { clearDraft(); state.flow = null; state.screen = state.photoOther ? 'other' : 'sym'; }
+  else if (S === 'detail' || S === 'size') { state.flow = null; state.screen = 'sym'; }
   else if (S === 'other') { state.otherDraft = ''; state.screen = 'sym'; }
   else if (S === 'sym' || S === 'result') { state.screen = 'cat'; }
   else if (S === 'battery') { state.batteryThen = ''; state.screen = 'cat'; }
@@ -829,7 +907,7 @@ function goBack() {
 // 最初の画面（台を開く）に戻る。保存していない症状があれば確かめる
 function goHome() {
   if (state.screen !== 'result' && (state.adds.size || state.removes.size || state.batteryEdited) && !confirm(t('leaveAsk'))) return;
-  stopCamera(); clearDraft(); markJob = null;
+  stopCamera(); clearDraft(); markJob = null; state.flow = null;
   ++loadToken;   // 読み込み中の台の情報は使わない
   state.no = ''; state.name = ''; state.current = []; state.photoCounts = {};
   state.adds = new Map(); state.removes = new Set(); state.addMeta = new Map();
@@ -869,6 +947,8 @@ function render() {
   else if (S === 'result') renderResult();
   else if (S === 'battery') renderBattery();
   else if (S === 'mark') renderMark();
+  else if (S === 'detail') renderDetail();
+  else if (S === 'size') renderSize();
 }
 
 function renderError() {
@@ -927,7 +1007,7 @@ function renderOpen() {
 function selectedListHtml(withRemove) {
   const list = effective();
   if (!list.length) return state.unitLoaded ? `<div class="empty">${esc(t('selEmpty'))}</div>` : '';
-  return `<ul class="sel">${list.map(e => `<li><span>${esc(e.symptom)}${sub(trSym(e.symptom))}</span>
+  return `<ul class="sel">${list.map(e => `<li><span>${esc(e.symptom)}${sub(e.other ? '' : trName(e.symptom))}</span>
       ${e.other ? `<span class="tag">${esc(t('otherTag'))}</span>` : ''}${photoList(e.photo).length ? `<span class="tag">${esc(t('hasPhoto'))}${photoList(e.photo).length > 1 ? ' ×' + photoList(e.photo).length : ''}</span>` : ''}${e.isNew && withRemove ? `<span class="tag new">${esc(t('isNew'))}</span>` : ''}
       ${withRemove ? `<button class="x" type="button" data-rm="${esc(e.symptom)}" aria-label="×">×</button>` : ''}</li>`).join('')}</ul>`;
 }
@@ -957,7 +1037,7 @@ function renderCat() {
 }
 
 function renderSym() {
-  const eff = effectiveSet();
+  const eff = new Set(effective().filter(e => !e.other).map(e => baseOf(e.symptom)));
   const c = state.cats.find(x => x.cat === state.cat) || {};
   const items = state.master.filter(m => m.cat === state.cat);
   $app.innerHTML = `<h2>${esc(state.cat)}${trCat(c) ? ` <span class="note">${esc(trCat(c))}</span>` : ''}</h2>
@@ -979,8 +1059,8 @@ function renderPhoto() {
     <button class="link" id="cancelBtn" type="button">${esc(t('cancel'))}</button></div>`;
   document.getElementById('shootBtn').onclick = openCamera;
   document.getElementById('pickBtn').onclick = () => { saveDraft(); document.getElementById('galPhoto').click(); };
-  const skip = document.getElementById('skipBtn'); if (skip) skip.onclick = () => addSymptom(h, '');
-  document.getElementById('cancelBtn').onclick = () => { clearDraft(); state.screen = state.photoOther ? 'other' : 'sym'; render(); };
+  const skip = document.getElementById('skipBtn'); if (skip) skip.onclick = () => afterPhoto('', '');
+  document.getElementById('cancelBtn').onclick = () => { clearDraft(); state.flow = null; state.screen = state.photoOther ? 'other' : 'sym'; render(); };
 }
 
 // その他（リストにない症状）の入力
@@ -1002,6 +1082,45 @@ function renderOther() {
     if (effectiveSet().has(v)) { document.getElementById('otherErr').textContent = t('otherDup'); input.focus(); return; }
     state.photoFor = v; state.photoOther = true; state.screen = 'photo'; render(); window.scrollTo(0, 0);
   };
+}
+
+// 詳細入力（例：デバイスマネージャーエラーの内容）
+function renderDetail() {
+  const f = state.flow || {};
+  $app.innerHTML = `<div class="card"><p class="big">${esc(f.base)}</p>${trSym(f.base) ? `<p class="note">${esc(trSym(f.base))}</p>` : ''}
+    <p class="note">${esc(t('detDesc'))}</p>
+    <label class="field" for="detInput">${esc(t('detTitle'))}</label>
+    <input type="text" id="detInput" maxlength="40" autocomplete="off">
+    <div class="err" id="detErr"></div>
+    <div class="actions"><button class="primary" id="detNext" type="button">${esc(t('otherNext'))}</button></div>
+    <button class="link" id="detCancel" type="button">${esc(t('cancel'))}</button></div>`;
+  const input = document.getElementById('detInput'), err = document.getElementById('detErr');
+  input.oninput = () => { err.textContent = ''; };
+  const next = () => {
+    const v = input.value.replace(/[()（）]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!v) { err.textContent = t('detEmpty'); input.focus(); return; }
+    const m = state.masterMap[f.base] || {};
+    if (!m.size && effectiveSet().has(f.base + '(' + v + ')')) { err.textContent = t('otherDup'); input.focus(); return; }
+    state.flow.detail = v; nextStep();
+  };
+  input.onkeydown = e => { if (e.key === 'Enter') next(); };
+  document.getElementById('detNext').onclick = next;
+  document.getElementById('detCancel').onclick = () => { state.flow = null; state.screen = 'sym'; render(); };
+  setTimeout(() => { try { input.focus(); } catch (e) {} }, 50);
+}
+
+// 大きさ（大・中・小）を選ぶ
+function renderSize() {
+  const f = state.flow || {};
+  const nm = f.base + (f.detail ? '(' + f.detail + ')' : '');
+  const n = photoList(f.photo).length;
+  $app.innerHTML = `<div class="card"><p class="big">${esc(nm)}</p>${trSym(f.base) ? `<p class="note">${esc(trSym(f.base))}</p>` : ''}
+    ${n ? `<p class="note">📷 ${esc(t('hasPhoto'))} ×${n}</p>` : ''}
+    <h2>${esc(t('sizeTitle'))}</h2>
+    <div class="group">${SIZES.map(z => `<button class="btn" type="button" data-size="${z}">${z}${sub(state.lang === 'ja' ? '' : SIZE_TR[z][state.lang])}</button>`).join('')}</div>
+    <button class="link" id="sizeCancel" type="button">${esc(t('cancel'))}</button></div>`;
+  $app.querySelectorAll('[data-size]').forEach(b => b.onclick = () => { state.flow.size = b.dataset.size; nextStep(); });
+  document.getElementById('sizeCancel').onclick = () => { state.flow = null; state.screen = 'sym'; render(); };
 }
 
 function renderResult() {
