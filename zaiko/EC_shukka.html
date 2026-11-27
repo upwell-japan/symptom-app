@@ -11,14 +11,14 @@
 :root{
   --paper:#F1F4F6; --surface:#FFFFFF; --ink:#16202A; --muted:#56626E; --line:#D6DDE3;
   --blue:#0F5E8C; --blue-soft:#E2EEF5; --tag:#FFD84D; --tag-ink:#2A2200;
-  --bad:#B42318; --bad-soft:#FBE7E5; --ok:#1C7346;
+  --bad:#B42318; --bad-soft:#FBE7E5; --ok:#1C7346; --on-blue:#FFFFFF;
   --font:"BIZ UDPGothic","Hiragino Sans","Yu Gothic UI","Meiryo",system-ui,sans-serif;
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){:root{
   --paper:#11171C; --surface:#182129; --ink:#E7EDF2; --muted:#9AA7B2; --line:#2B3640;
   --blue:#6BB6E0; --blue-soft:#17303F; --tag:#F2CB45; --tag-ink:#231C00;
-  --bad:#F08A80; --bad-soft:#3A1E1B; --ok:#7FCB9C; color-scheme:dark}}
+  --bad:#F08A80; --bad-soft:#3A1E1B; --ok:#7FCB9C; --on-blue:#0B1A24; color-scheme:dark}}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.6}
 body{padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -38,7 +38,7 @@ header{position:sticky;top:0;z-index:5;background:var(--surface);border-bottom:1
 .find{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:0 0 10px}
 .find input{width:100%;border:2px solid var(--line);background:var(--surface);border-radius:10px;padding:12px 14px;font-size:17px}
 .find input:focus{border-color:var(--blue);outline:none}
-.scan{border:0;border-radius:10px;background:var(--blue);color:#fff;font-weight:700;padding:0 18px;cursor:pointer;display:flex;align-items:center;gap:8px}
+.scan{border:0;border-radius:10px;background:var(--blue);color:var(--on-blue);font-weight:700;padding:0 18px;cursor:pointer;display:flex;align-items:center;gap:8px}
 .scan svg{width:22px;height:22px}
 .opts{display:flex;align-items:center;gap:14px;font-size:13.5px;color:var(--muted);padding:0 0 10px}
 .opts label{display:flex;align-items:center;gap:6px;cursor:pointer}
@@ -109,13 +109,13 @@ dd{margin:0;overflow-wrap:anywhere}
 @media (max-width:520px){.form{grid-template-columns:minmax(0,1fr)}.form label{margin-top:4px}}
 .seg{display:inline-flex;border:1.5px solid var(--line);border-radius:8px;overflow:hidden}
 .seg button{border:0;background:none;padding:8px 18px;cursor:pointer}
-.seg button[aria-pressed="true"]{background:var(--blue);color:#fff;font-weight:700}
+.seg button[aria-pressed="true"]{background:var(--blue);color:var(--on-blue);font-weight:700}
 .picked{border:2px solid var(--tag);border-radius:10px;padding:12px 14px;margin:12px 0}
 .picked .title{font-size:17px}
 .choices{display:grid;gap:6px;margin:8px 0}
 .calc{display:flex;gap:6px 22px;flex-wrap:wrap;margin:12px 0;font-variant-numeric:tabular-nums}
 .calc b{font-size:18px}
-.primary{border:0;border-radius:10px;background:var(--blue);color:#fff;font-weight:700;padding:13px 22px;cursor:pointer;width:100%;font-size:16px}
+.primary{border:0;border-radius:10px;background:var(--blue);color:var(--on-blue);font-weight:700;padding:13px 22px;cursor:pointer;width:100%;font-size:16px}
 .primary:disabled{opacity:.4;cursor:default}
 .struck td{color:var(--muted);text-decoration:line-through}
 .link.danger{color:var(--bad)}
@@ -238,13 +238,57 @@ async function api(fn, ...args) {
   return j.result;
 }
 
+// ---- 在庫の一覧を画面の中に持ち、検索やQRの判定をここで行う（速くするため） ----
+const local = { at: 0, items: {}, byGid: {}, old: {}, g: {} };
+const normQ = s => String(s == null ? '' : s).normalize('NFKC').trim().toUpperCase();
+function setSnapshot(snap) {
+  local.at = Date.now(); local.g = snap.g; local.items = {}; local.byGid = {}; local.old = {};
+  snap.i.forEach(r => {
+    const g = snap.g[r[2]] || [];
+    const it = { no: r[0], kind: r[1] === 'u' ? 'unit' : 'qty', gid: r[2], rank: r[3], stock: r[4], location: r[5], oldCode: r[6],
+      cancelled: !!r[7], maker: g[0] || '', name: g[1] || '', model: g[2] || '', lot: g[3] || '', category: g[4] || '' };
+    it.hay = normQ([it.no, it.oldCode, it.gid, it.location, it.maker, it.name, it.model, it.lot].join(' '));
+    local.items[normQ(it.no)] = it;
+    (local.byGid[it.gid] = local.byGid[it.gid] || []).push(it);
+    if (it.oldCode) local.old[normQ(it.oldCode)] = it;
+  });
+}
+function groupLocal(gid) {
+  const g = local.g[gid]; if (!g) return null;
+  const items = (local.byGid[gid] || []).slice();
+  return { gid: gid, maker: g[0], name: g[1], model: g[2], lot: g[3], category: g[4], manage: g[5], dept: g[6],
+    stock: items.reduce((n, i) => n + i.stock, 0), items: items };
+}
+// 892-01 → 個体 ／ 数字だけ → 看板のG_ID ／ 1-B1・931 → 在庫コード ／ 旧コード → 新しい番号
+function lookupLocal(text) {
+  const q = normQ(text); if (!q) return { type: 'none' };
+  const it = local.items[q];
+  if (it && it.kind === 'unit') return { type: 'item', item: it };
+  if (/^\d+$/.test(q) && local.g[q]) {
+    const g = groupLocal(q);
+    return g.items.length === 1 ? { type: 'item', item: g.items[0] } : { type: 'group', group: g };
+  }
+  if (it) return { type: 'item', item: it };
+  if (local.old[q]) return { type: 'item', item: local.old[q], from: q };
+  return { type: 'none', text: q };
+}
+function searchLocal(text, onlyInStock) {
+  const words = normQ(text).split(/\s+/).filter(Boolean); if (!words.length) return { total: 0, items: [] };
+  let items = Object.values(local.items).filter(i => !i.cancelled && words.every(w => i.hay.indexOf(w) >= 0));
+  if (onlyInStock) items = items.filter(i => i.stock > 0);
+  items.sort((a, b) => (Number(a.gid) - Number(b.gid)) || (a.no < b.no ? -1 : a.no > b.no ? 1 : 0));
+  return { total: items.length, items: items.slice(0, 200) };
+}
+function setLocalStock(no, stock) { const it = local.items[normQ(no)]; if (it) it.stock = stock; }
+
 // ---- 端末の申請・許可待ち ----
 async function checkDevice() {
   $('#appView').hidden = true; $('#devView').hidden = false; $('#devErr').hidden = true;
   $('#devBody').innerHTML = `<p class="msg">${esc(t('loading'))}</p>`;
-  try { deviceState = await api('deviceStatus'); }
+  let r;
+  try { r = await api('init'); deviceState = r.device; }
   catch (e) { $('#devBody').innerHTML = ''; $('#devErr').hidden = false; $('#devErr').textContent = e.message; return; }
-  if (deviceState.state === '許可') return enterApp();
+  if (deviceState.state === '許可' && r.snap) return enterApp(r);
   if (deviceState.state === '申請中') {
     $('#devBody').innerHTML = `<p>${esc(t('devPending', { n: deviceState.name }))}</p><button class="primary" id="devCheck" type="button">${esc(t('devCheck'))}</button>`;
     $('#devCheck').addEventListener('click', checkDevice);
@@ -264,23 +308,22 @@ async function checkDevice() {
 // ---- 出荷の画面 ----
 const sf = { date: '', dept: localStorage.getItem('zaikoDept') || '通販', buyer: '', item: null };
 let buyers = [];
-async function enterApp() {
+let todayCache = null;
+function enterApp(r) {
   $('#devView').hidden = true; $('#appView').hidden = false;
   $('#devName').textContent = t('devName', { n: deviceState.name });
-  $('#staff').value = localStorage.getItem('shukkaStaff') || '';
-  $('#main').innerHTML = `<p class="msg">${esc(t('loading'))}</p>`;
-  try {
-    const info = await api('shipInfo');
-    buyers = info.buyers; if (!sf.date) sf.date = info.today;
-    $('#staffList').innerHTML = info.staff.map(s => `<option value="${esc(s)}">`).join('');
-    renderShip();
-  } catch (e) {
-    if (e.message === 'device') return;
-    // 担当が空でも画面は出す（出荷の前に入れてもらう）
-    renderShip();
-    if (e.message !== t('needStaff')) toast(e.message, true);
-  }
+  buyers = r.buyers; if (!sf.date) sf.date = r.today;
+  $('#staffList').innerHTML = r.staff.map(s => `<option value="${esc(s)}">`).join('');
+  setSnapshot(r.snap); todayCache = r.todayShips;
+  renderShip();
 }
+// 5分ごと、または画面に戻ってきたときに一覧を受け取り直す
+async function refreshAll() {
+  try { const r = await api('init'); if (r.snap) { setSnapshot(r.snap); todayCache = r.todayShips; showToday(); } } catch (e) {}
+}
+setInterval(() => { if (!$('#appView').hidden) refreshAll(); }, 5 * 60 * 1000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && !$('#appView').hidden && Date.now() - local.at > 2 * 60 * 1000) refreshAll(); });
+$('#staff').value = localStorage.getItem('shukkaStaff') || '';
 $('#staff').addEventListener('change', () => { localStorage.setItem('shukkaStaff', $('#staff').value.trim()); loadToday(); });
 
 function rankHtml(r) { return r ? `<span class="rank">${esc(r)}</span>` : `<span class="rank none">${esc(t('rankNone'))}</span>`; }
@@ -339,14 +382,19 @@ function renderShip() {
   $('#doShip').addEventListener('click', doShip);
   $('#today').addEventListener('click', onTodayClick);
   sf.item = null;
-  loadToday();
+  if (todayCache) showToday(); else loadToday();
   $('#shipNo').focus();
 }
 async function pickNo(text) {
   text = String(text || '').trim(); if (!text) return;
+  let r = lookupLocal(text);
+  if (r.type !== 'none') return showPick(r, text);
   $('#picked').innerHTML = `<p class="count">${esc(t('loading'))}</p>`;
-  try {
-    const r = await api('shipLookup', text);
+  try { r = await api('shipLookup', text); showPick(r, text); }   // 一覧を受け取った後に入荷したものはサーバーで探す
+  catch (e) { if (e.message !== 'device') $('#picked').innerHTML = `<p class="err">${esc(e.message)}</p>`; }
+}
+function showPick(r, text) {
+  {
     if (r.type === 'item') return setItem(r.item, r.from);
     if (r.type === 'group') {
       const items = r.group.items.filter(i => i.stock > 0);
@@ -356,7 +404,7 @@ async function pickNo(text) {
       $('#shipFields').hidden = true; sf.item = null; return;
     }
     $('#picked').innerHTML = `<p class="err">${esc(t('none'))}（${esc(text)}）</p>`; $('#shipFields').hidden = true; sf.item = null;
-  } catch (e) { if (e.message !== 'device') $('#picked').innerHTML = `<p class="err">${esc(e.message)}</p>`; }
+  }
 }
 function setItem(it, from) {
   sf.item = it;
@@ -387,9 +435,10 @@ async function doShip() {
       price: $('#sPrice').value, shipping: $('#sShipping').value, fee: $('#sFee').value, packing: $('#sPacking').value,
       cod: $('#sCod').value, orderId: $('#sOrder').value.trim(), invoice: $('#sInvoice').value.trim(), note: $('#sNote').value.trim() });
     if (buyers.indexOf(sf.buyer) < 0) buyers.push(sf.buyer);
+    setLocalStock(r.no, r.stockAfter); todayCache = r.todayShips;
     toast(t('shipped', { sid: r.sid, no: r.no, left: r.stockAfter }) + (r.lowered.length ? ' ' + t('lowered', { s: r.lowered.map(v).join('、') }) : ''));
     sf.item = null; $('#picked').innerHTML = ''; $('#shipFields').hidden = true; $('#shipNo').value = ''; $('#shipNo').focus();
-    loadToday();
+    showToday();
   } catch (e) { if (e.message !== 'device') toast(e.message, true); }
   finally { btn.disabled = false; }
 }
@@ -397,20 +446,30 @@ async function loadToday() {
   const el = $('#today'); if (!el) return;
   if (!$('#staff').value.trim()) { el.innerHTML = `<p class="count">${esc(t('needStaff'))}</p>`; return; }
   el.innerHTML = `<p class="count">${esc(t('loading'))}</p>`;
-  try {
-    const list = await api('todayShips');
+  try { todayCache = await api('todayShips'); showToday(); }
+  catch (e) { if (e.message !== 'device') el.innerHTML = `<p class="err">${esc(e.message)}</p>`; }
+}
+function showToday() {
+  const el = $('#today'); if (!el) return;
+  if (!$('#staff').value.trim()) { el.innerHTML = `<p class="count">${esc(t('needStaff'))}</p>`; return; }
+  const list = todayCache || [];
+  {
     el.innerHTML = list.length ? `<div class="scroll"><table class="tbl"><tbody>${list.map(s => `<tr class="${s.state === '取消' ? 'struck' : ''}">
       <td>${esc(s.at)}</td><td><span class="tag">${esc(s.no)}</span><br><span class="count">${esc(s.sid)} ${esc(s.name)}</span></td>
       <td class="n">${esc(s.qty)}</td><td>${esc(v(s.buyer))}</td><td class="n">${yen(s.price)}</td>
       <td>${s.state === '取消' ? esc(t('canceledState')) : `<button class="link danger" data-cancel="${esc(s.sid)}" data-cno="${esc(s.no)}">${esc(t('cancel'))}</button>`}</td>
     </tr>`).join('')}</tbody></table></div>` : `<p class="count">${esc(t('noToday'))}</p>`;
-  } catch (e) { if (e.message !== 'device') el.innerHTML = `<p class="err">${esc(e.message)}</p>`; }
+  }
 }
 async function onTodayClick(e) {
   const b = e.target.closest('[data-cancel]'); if (!b) return;
   if (!confirm(t('confirmCancel', { sid: b.dataset.cancel, no: b.dataset.cno }))) return;
   b.disabled = true;
-  try { await api('cancelShip', b.dataset.cancel); toast(t('cancelled2', { sid: b.dataset.cancel })); loadToday(); }
+  try {
+    const r = await api('cancelShip', b.dataset.cancel);
+    const it = local.items[normQ(r.no)]; if (it) it.stock += r.qty;
+    todayCache = r.todayShips; toast(t('cancelled2', { sid: b.dataset.cancel })); showToday();
+  }
   catch (err) { b.disabled = false; if (err.message !== 'device') toast(err.message, true); }
 }
 
