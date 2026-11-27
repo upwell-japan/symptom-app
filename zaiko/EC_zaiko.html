@@ -216,7 +216,7 @@ function showLogin(msg) {
 async function onCredential(r) {
   idToken = r.credential; sessionStorage.setItem('zaikoToken', idToken);
   try { const me = await api('me'); enterApp(me); }
-  catch (e) { /* api() が案内を出す */ }
+  catch (e) { if (e.message !== 'login') { $('#loginErr').hidden = false; $('#loginErr').textContent = e.message; } }
 }
 function enterApp(me) {
   $('#loginView').hidden = true; $('#appView').hidden = false;
@@ -237,7 +237,8 @@ async function api(fn, ...args) {
     res = await fetch(CONFIG.API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ fn, args, idToken }) });
   } catch (e) { throw new Error(t('netErr')); }
-  const j = await res.json();
+  let j;
+  try { j = await res.json(); } catch (e) { throw new Error(t('netErr') + '（' + res.status + '）'); }
   if (!j.ok) {
     if (j.error === 'login_required') { sessionStorage.removeItem('zaikoToken'); showLogin(t('domainErr')); throw new Error('login'); }
     throw new Error(j.error);
