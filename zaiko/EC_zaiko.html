@@ -145,7 +145,7 @@ dd{margin:0;overflow-wrap:anywhere}
 <script>
 // ---- 設定（2か所を書き換える） ----
 const CONFIG = {
-  API_URL: 'https://script.google.com/a/macros/up-well.co.jp/s/AKfycbzgoiSYHEmDUt868TzLIqGo-gWG9JfcYusufYMzHY96anUVRSghHmJWGYge2FFJm7Oj6Q/exec',
+  API_URL: 'https://script.google.com/macros/s/AKfycbzgoiSYHEmDUt868TzLIqGo-gWG9JfcYusufYMzHY96anUVRSghHmJWGYge2FFJm7Oj6Q/exec',
   CLIENT_ID: '40949323235-5sugtedvq1m9qoo4u9qrsm973hohmlo7.apps.googleusercontent.com'
 };
 
@@ -379,7 +379,7 @@ $('#logout').addEventListener('click', logout);
 // ---- はじめ ----
 applyLang();
 history.replaceState(state, '');
-if (tokenValid(idToken)) api('me').then(enterApp).catch(() => {}); else showLogin();
+if (tokenValid(idToken)) api('me').then(enterApp).catch(e => showLogin(e.message === 'login' ? '' : e.message)); else showLogin();
 </script>
 </body>
 </html>
