@@ -97,6 +97,32 @@ dd{margin:0;overflow-wrap:anywhere}
 .cam #reader{width:min(92vw,460px);background:#000;border-radius:10px;overflow:hidden}
 .cam p{color:#fff;margin:12px 0}
 .cam button{background:#fff;color:#000;border:0;border-radius:8px;padding:10px 22px;font-weight:700;cursor:pointer}
+/* タブ */
+.tabs{display:flex;gap:4px;padding:0 0 8px}
+.tabs button{border:0;background:none;padding:8px 16px;border-radius:8px;font-weight:700;color:var(--muted);cursor:pointer}
+.tabs button[aria-current="page"]{background:var(--blue-soft);color:var(--blue)}
+/* 出荷 */
+.stack{display:grid;gap:14px}
+.form{display:grid;grid-template-columns:7.5em minmax(0,1fr);gap:8px 12px;align-items:center}
+.form input{width:100%;border:1.5px solid var(--line);background:var(--surface);border-radius:8px;padding:9px 10px}
+.form input:focus{border-color:var(--blue);outline:none}
+@media (max-width:520px){.form{grid-template-columns:minmax(0,1fr)}.form label{margin-top:4px}}
+.seg{display:inline-flex;border:1.5px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:none;padding:8px 18px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--blue);color:#fff;font-weight:700}
+.picked{border:2px solid var(--tag);border-radius:10px;padding:12px 14px;margin:12px 0}
+.picked .title{font-size:17px}
+.choices{display:grid;gap:6px;margin:8px 0}
+.calc{display:flex;gap:6px 22px;flex-wrap:wrap;margin:12px 0;font-variant-numeric:tabular-nums}
+.calc b{font-size:18px}
+.primary{border:0;border-radius:10px;background:var(--blue);color:#fff;font-weight:700;padding:13px 22px;cursor:pointer;width:100%;font-size:16px}
+.primary:disabled{opacity:.4;cursor:default}
+.struck td{color:var(--muted);text-decoration:line-through}
+.link.danger{color:var(--bad)}
+.tbl button{white-space:nowrap}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:8px;z-index:30;max-width:calc(100vw - 32px);box-shadow:0 4px 16px rgba(0,0,0,.25)}
+.toast.bad{background:var(--bad);color:#fff}
+.shipbtn{margin:0 0 18px;max-width:320px}
 [hidden]{display:none!important}
 @media (prefers-reduced-motion:no-preference){.row,.scan{transition:background-color .12s}}
 </style>
@@ -121,6 +147,10 @@ dd{margin:0;overflow-wrap:anywhere}
         <button class="link" id="lang" type="button"></button>
         <button class="link" id="logout" type="button" data-t="logout"></button>
       </div>
+      <nav class="tabs" id="tabs">
+        <button type="button" data-tab="stock" data-t="tabStock"></button>
+        <button type="button" data-tab="devices" data-t="tabDevices"></button>
+      </nav>
       <form class="find" id="findForm" autocomplete="off">
         <input id="q" type="search" enterkeyhint="search" data-tp="placeholder" aria-label="search">
         <button class="scan" id="camBtn" type="button">
@@ -128,12 +158,13 @@ dd{margin:0;overflow-wrap:anywhere}
           <span data-t="camera"></span>
         </button>
       </form>
-      <div class="opts"><label><input type="checkbox" id="inStock" checked> <span data-t="inStock"></span></label></div>
+      <div class="opts" id="optsRow"><label><input type="checkbox" id="inStock" checked> <span data-t="inStock"></span></label></div>
     </div>
   </header>
   <main class="wrap" id="main"></main>
 </div>
 
+<div class="toast" id="toast" role="status" hidden></div>
 <div class="cam" id="cam" hidden>
   <div id="reader"></div>
   <p data-t="camHelp"></p>
@@ -142,11 +173,12 @@ dd{margin:0;overflow-wrap:anywhere}
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="EC_zaiko_config.js"></script>
 <script>
-// ---- 設定（2か所を書き換える） ----
-const CONFIG = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbzgoiSYHEmDUt868TzLIqGo-gWG9JfcYusufYMzHY96anUVRSghHmJWGYge2FFJm7Oj6Q/exec',
-  CLIENT_ID: '40949323235-5sugtedvq1m9qoo4u9qrsm973hohmlo7.apps.googleusercontent.com'
+// ---- 設定は EC_zaiko_config.js に書く（このファイルは書き換えなくてよい） ----
+const CONFIG = window.ZAIKO_CONFIG || {
+  API_URL: 'ここにApps ScriptのウェブアプリのURLを貼る',
+  CLIENT_ID: 'ここにOAuthクライアントIDを貼る.apps.googleusercontent.com'
 };
 
 // ---- 文言（日本語・英語） ----
@@ -162,7 +194,11 @@ const T = {
     noListing:'出品していません。', cancelled:'この番号は取消（使っていない番号）です。', group:'このG_IDの在庫',
     fromOld:'旧コード {o} を読み取りました。', loginRequired:'ログインが切れました。もう一度ログインしてください。',
     domainErr:'会社のGoogleアカウントでログインしてください。', camErr:'カメラを使えません。ブラウザの設定でカメラを許可してください。',
-    netErr:'サーバーにつながりません。通信を確かめて、もう一度試してください。' },
+    netErr:'サーバーにつながりません。通信を確かめて、もう一度試してください。',
+    tabStock:'在庫', tabDevices:'端末', devicesLead:'出荷アプリを使う端末です。申請された端末を確かめてから許可してください。',
+    noDevices:'申請された端末はまだありません。', dvName:'端末名', dvState:'状態', dvAsked:'申請日', dvPending:'申請中', dvAllowed:'許可',
+    dvStopped:'停止', dvAllow:'許可する', dvStop:'停止する', dvConfirmStop:'この端末で出荷できなくなります。停止しますか？', dvDone:'変更しました',
+    notAllowed:'在庫を見る権限がありません。管理者に「利用者」シートへの追加を頼んでください。' },
   en: { app:'Online stock', loginLead:'Sign in with your company Google account.', logout:'Sign out', langBtn:'日本語',
     placeholder:'Number, name, model or shelf (scanner works too)', camera:'Scan', inStock:'In stock only',
     camHelp:'Fit the QR code inside the frame', close:'Close', start:'Scan a number, or search by name and other details.',
@@ -174,7 +210,11 @@ const T = {
     noListing:'Not listed.', cancelled:'This number is cancelled (not in use).', group:'Stock in this G_ID',
     fromOld:'Read old code {o}.', loginRequired:'Your session ended. Please sign in again.',
     domainErr:'Please sign in with your company Google account.', camErr:'The camera is not available. Allow camera access in your browser settings.',
-    netErr:'Cannot reach the server. Check your connection and try again.' }
+    netErr:'Cannot reach the server. Check your connection and try again.',
+    tabStock:'Stock', tabDevices:'Devices', devicesLead:'Devices that use the shipping app. Check each request before allowing it.',
+    noDevices:'No device requests yet.', dvName:'Device', dvState:'Status', dvAsked:'Requested', dvPending:'Requested', dvAllowed:'Allowed',
+    dvStopped:'Stopped', dvAllow:'Allow', dvStop:'Stop', dvConfirmStop:'This device will no longer be able to ship. Stop it?', dvDone:'Updated',
+    notAllowed:'You do not have access to stock. Ask an administrator to add you to the users sheet.' }
 };
 // 画面に出る値の英訳（シートの日本語をそのまま見せる代わりに使う）
 const V = { en: { '個体':'Per unit','数量':'By quantity','通販':'Online','業販':'Wholesale','入庫':'In','出荷':'Shipped',
@@ -241,6 +281,7 @@ async function api(fn, ...args) {
   try { j = await res.json(); } catch (e) { throw new Error(t('netErr') + '（' + res.status + '）'); }
   if (!j.ok) {
     if (j.error === 'login_required') { sessionStorage.removeItem('zaikoToken'); showLogin(t('domainErr')); throw new Error('login'); }
+    if (j.error === 'not_allowed') { sessionStorage.removeItem('zaikoToken'); showLogin(t('notAllowed')); throw new Error('login'); }
     throw new Error(j.error);
   }
   return j.result;
@@ -260,7 +301,11 @@ async function run(key, fn) {
 
 async function render() {
   const m = $('#main');
+  const onDev = state.view === 'devices';
+  document.querySelectorAll('#tabs button').forEach(b => b.setAttribute('aria-current', (b.dataset.tab === 'devices') === onDev ? 'page' : 'false'));
+  $('#findForm').hidden = onDev; $('#optsRow').hidden = onDev;
   try {
+    if (onDev) { await renderDevices(); return; }
     if (state.view === 'start') { m.innerHTML = `<p class="msg">${esc(t('start'))}</p>`; return; }
     if (state.view === 'list') {
       const r = await run('s|' + state.q + '|' + state.inStock, () => api('search', state.q, state.inStock));
@@ -336,6 +381,7 @@ function detailHtml(d) {
 
 // 一覧やG_IDを押したとき
 $('#main').addEventListener('click', e => {
+  if (state.view === 'devices') return;
   const r = e.target.closest('[data-no]'); if (r) { go({ view: 'detail', no: r.dataset.no, inStock: state.inStock }); return; }
   const g = e.target.closest('[data-gid]'); if (g) go({ view: 'group', gid: g.dataset.gid, inStock: $('#inStock').checked });
 });
@@ -358,23 +404,58 @@ $('#findForm').addEventListener('submit', e => { e.preventDefault(); const q = $
 $('#inStock').addEventListener('change', () => { if (state.view === 'list' || state.view === 'group') go(Object.assign({}, state, { inStock: $('#inStock').checked }), true); });
 
 // ---- カメラでQRを読む ----
-let qr = null;
-async function openCam() {
+let qr = null, camTarget = 'stock';
+async function openCam(target) {
+  camTarget = target === 'ship' ? 'ship' : 'stock';
   $('#cam').hidden = false;
   try {
     qr = qr || new Html5Qrcode('reader');
     await qr.start({ facingMode: 'environment' }, { fps: 10, qrbox: { width: 240, height: 240 } }, async text => {
-      await closeCam(); $('#q').value = text; handle(text);
+      await closeCam();
+      $('#q').value = text; handle(text);
     });
   } catch (e) { await closeCam(); $('#main').innerHTML = `<p class="err">${esc(t('camErr'))}</p>`; }
 }
 async function closeCam() { try { if (qr && qr.isScanning) await qr.stop(); } catch (e) {} $('#cam').hidden = true; }
-$('#camBtn').addEventListener('click', openCam);
+$('#camBtn').addEventListener('click', () => openCam('stock'));
 $('#camClose').addEventListener('click', closeCam);
 
 $('#lang').addEventListener('click', toggleLang);
 $('#langLogin').addEventListener('click', () => { toggleLang(); showLogin(); });
 $('#logout').addEventListener('click', logout);
+$('#tabs').addEventListener('click', e => {
+  const b = e.target.closest('[data-tab]'); if (!b) return;
+  if (b.dataset.tab === 'devices') go({ view: 'devices' }); else go({ view: 'start' });
+});
+
+// ---- 端末の許可（出荷アプリを使う端末） ----
+function toast(msg, bad) {
+  const el = $('#toast'); el.textContent = msg; el.className = 'toast' + (bad ? ' bad' : ''); el.hidden = false;
+  clearTimeout(toast.tm); toast.tm = setTimeout(() => { el.hidden = true; }, bad ? 6000 : 3500);
+}
+function devicesHtml(list) {
+  if (!list.length) return `<p class="msg">${esc(t('noDevices'))}</p>`;
+  const stateText = s => ({ '申請中': t('dvPending'), '許可': t('dvAllowed'), '停止': t('dvStopped') }[s] || s);
+  return `<p class="count">${esc(t('devicesLead'))}</p><div class="scroll"><table class="tbl"><thead><tr>
+    <th>${esc(t('dvName'))}</th><th>${esc(t('dvState'))}</th><th>${esc(t('dvAsked'))}</th><th></th></tr></thead><tbody>
+    ${list.map(d => `<tr><td>${esc(d.name)}</td><td>${esc(stateText(d.state))}${d.by ? `<br><span class="count">${esc(d.by)}</span>` : ''}</td>
+      <td>${esc(d.asked)}</td><td>${d.state !== '許可' ? `<button class="link" data-dev="${esc(d.id)}" data-st="許可">${esc(t('dvAllow'))}</button>` : ''}
+      ${d.state !== '停止' ? `<button class="link danger" data-dev="${esc(d.id)}" data-st="停止">${esc(t('dvStop'))}</button>` : ''}</td></tr>`).join('')}
+    </tbody></table></div>`;
+}
+async function renderDevices() {
+  const m = $('#main');
+  m.innerHTML = `<p class="msg">${esc(t('loading'))}</p>`;
+  const list = await api('devices');
+  m.innerHTML = `<section class="box"><h2>${esc(t('tabDevices'))}</h2><div id="devList">${devicesHtml(list)}</div></section>`;
+  $('#devList').addEventListener('click', async e => {
+    const b = e.target.closest('[data-dev]'); if (!b) return;
+    if (b.dataset.st === '停止' && !confirm(t('dvConfirmStop'))) return;
+    b.disabled = true;
+    try { const l = await api('setDevice', b.dataset.dev, b.dataset.st); $('#devList').innerHTML = devicesHtml(l); toast(t('dvDone')); }
+    catch (err) { b.disabled = false; if (err.message !== 'login') toast(err.message, true); }
+  });
+}
 
 // ---- はじめ ----
 applyLang();

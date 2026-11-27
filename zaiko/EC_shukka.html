@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>通販 出荷</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap">
+<style>
+/* 出荷アプリ：在庫アプリと同じ見た目。番号は黄色い商品札の形 */
+:root{
+  --paper:#F1F4F6; --surface:#FFFFFF; --ink:#16202A; --muted:#56626E; --line:#D6DDE3;
+  --blue:#0F5E8C; --blue-soft:#E2EEF5; --tag:#FFD84D; --tag-ink:#2A2200;
+  --bad:#B42318; --bad-soft:#FBE7E5; --ok:#1C7346;
+  --font:"BIZ UDPGothic","Hiragino Sans","Yu Gothic UI","Meiryo",system-ui,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --paper:#11171C; --surface:#182129; --ink:#E7EDF2; --muted:#9AA7B2; --line:#2B3640;
+  --blue:#6BB6E0; --blue-soft:#17303F; --tag:#F2CB45; --tag-ink:#231C00;
+  --bad:#F08A80; --bad-soft:#3A1E1B; --ok:#7FCB9C; color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.6}
+body{padding-bottom:env(safe-area-inset-bottom,0px)}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.wrap{max-width:1100px;margin:0 auto;padding:0 max(14px,env(safe-area-inset-left,0px)) 0 max(14px,env(safe-area-inset-right,0px))}
+
+/* 上の帯 */
+header{position:sticky;top:0;z-index:5;background:var(--surface);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
+.bar{display:flex;align-items:center;gap:10px;padding:10px 0}
+.bar h1{font-size:17px;margin:0;font-weight:700}
+.bar .sp{flex:1}
+.who{font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:40vw}
+.link{background:none;border:0;color:var(--blue);padding:6px 4px;cursor:pointer;font-size:13.5px}
+
+/* 読み取り・検索 */
+.find{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:0 0 10px}
+.find input{width:100%;border:2px solid var(--line);background:var(--surface);border-radius:10px;padding:12px 14px;font-size:17px}
+.find input:focus{border-color:var(--blue);outline:none}
+.scan{border:0;border-radius:10px;background:var(--blue);color:#fff;font-weight:700;padding:0 18px;cursor:pointer;display:flex;align-items:center;gap:8px}
+.scan svg{width:22px;height:22px}
+.opts{display:flex;align-items:center;gap:14px;font-size:13.5px;color:var(--muted);padding:0 0 10px}
+.opts label{display:flex;align-items:center;gap:6px;cursor:pointer}
+
+main{padding:16px 0 48px}
+.msg{color:var(--muted);padding:28px 0;text-align:center}
+.err{background:var(--bad-soft);color:var(--bad);border-radius:8px;padding:10px 14px;margin:0 0 12px}
+.count{font-size:13px;color:var(--muted);margin:0 0 8px}
+
+/* 番号の札 */
+.tag{display:inline-block;background:var(--tag);color:var(--tag-ink);font-weight:700;border-radius:4px;padding:1px 8px;
+  font-variant-numeric:tabular-nums;letter-spacing:.02em;white-space:nowrap;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+.tag.big{font-size:30px;padding:4px 14px;border-radius:6px}
+.rank{display:inline-block;min-width:2.2em;text-align:center;border:1.5px solid var(--ink);border-radius:4px;font-weight:700;font-size:13px;padding:0 5px}
+.rank.none{border-style:dashed;color:var(--muted);border-color:var(--muted);font-weight:400}
+
+/* 一覧 */
+.list{list-style:none;margin:0;padding:0;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.list li+li{border-top:1px solid var(--line)}
+.row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 12px;align-items:center;width:100%;background:none;border:0;text-align:left;padding:12px 14px;cursor:pointer}
+.row:hover{background:var(--blue-soft)}
+.row .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .sub{grid-column:2/4;font-size:12.5px;color:var(--muted);display:flex;gap:12px;flex-wrap:wrap}
+.qty{font-variant-numeric:tabular-nums;font-weight:700;text-align:right;white-space:nowrap}
+.qty.zero{color:var(--muted);font-weight:400}
+
+/* 詳細 */
+.back{margin:0 0 12px}
+.head{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin:0 0 6px}
+.title{font-size:20px;font-weight:700;margin:0 0 4px;overflow-wrap:anywhere}
+.stockline{display:flex;align-items:baseline;gap:8px;margin:6px 0 18px}
+.stockline b{font-size:34px;font-variant-numeric:tabular-nums;line-height:1}
+.notice{background:var(--bad-soft);color:var(--bad);border-radius:8px;padding:8px 12px;margin:0 0 14px;font-size:14px}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+@media (max-width:760px){.cols{grid-template-columns:minmax(0,1fr)}}
+section.box{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;min-width:0}
+section.box h2{font-size:14px;margin:0 0 8px;color:var(--muted);font-weight:700}
+dl{display:grid;grid-template-columns:8.5em minmax(0,1fr);gap:4px 12px;margin:0}
+dt{color:var(--muted);font-size:13.5px}
+dd{margin:0;overflow-wrap:anywhere}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th,.tbl td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.tbl th{font-size:12.5px;color:var(--muted);font-weight:400}
+.tbl td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.minus{color:var(--bad)} .plus{color:var(--ok)}
+.scroll{overflow-x:auto}
+
+/* ログイン */
+.login{max-width:380px;margin:12vh auto 0;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:28px 24px;text-align:center}
+.login h1{font-size:22px;margin:0 0 8px}
+.login p{color:var(--muted);margin:0 0 20px}
+#gbtn{display:flex;justify-content:center;min-height:44px}
+
+/* カメラ */
+.cam{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.86);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px}
+.cam #reader{width:min(92vw,460px);background:#000;border-radius:10px;overflow:hidden}
+.cam p{color:#fff;margin:12px 0}
+.cam button{background:#fff;color:#000;border:0;border-radius:8px;padding:10px 22px;font-weight:700;cursor:pointer}
+/* タブ */
+.tabs{display:flex;gap:4px;padding:0 0 8px}
+.tabs button{border:0;background:none;padding:8px 16px;border-radius:8px;font-weight:700;color:var(--muted);cursor:pointer}
+.tabs button[aria-current="page"]{background:var(--blue-soft);color:var(--blue)}
+/* 出荷 */
+.stack{display:grid;gap:14px}
+.form{display:grid;grid-template-columns:7.5em minmax(0,1fr);gap:8px 12px;align-items:center}
+.form input{width:100%;border:1.5px solid var(--line);background:var(--surface);border-radius:8px;padding:9px 10px}
+.form input:focus{border-color:var(--blue);outline:none}
+@media (max-width:520px){.form{grid-template-columns:minmax(0,1fr)}.form label{margin-top:4px}}
+.seg{display:inline-flex;border:1.5px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:none;padding:8px 18px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--blue);color:#fff;font-weight:700}
+.picked{border:2px solid var(--tag);border-radius:10px;padding:12px 14px;margin:12px 0}
+.picked .title{font-size:17px}
+.choices{display:grid;gap:6px;margin:8px 0}
+.calc{display:flex;gap:6px 22px;flex-wrap:wrap;margin:12px 0;font-variant-numeric:tabular-nums}
+.calc b{font-size:18px}
+.primary{border:0;border-radius:10px;background:var(--blue);color:#fff;font-weight:700;padding:13px 22px;cursor:pointer;width:100%;font-size:16px}
+.primary:disabled{opacity:.4;cursor:default}
+.struck td{color:var(--muted);text-decoration:line-through}
+.link.danger{color:var(--bad)}
+.tbl button{white-space:nowrap}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:8px;z-index:30;max-width:calc(100vw - 32px);box-shadow:0 4px 16px rgba(0,0,0,.25)}
+.toast.bad{background:var(--bad);color:#fff}
+.shipbtn{margin:0 0 18px;max-width:320px}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion:no-preference){.row,.scan{transition:background-color .12s}}
+</style>
+<style>
+.staff{display:flex;align-items:center;gap:6px;font-size:13.5px}
+.staff input{width:9em;border:1.5px solid var(--line);background:var(--surface);border-radius:8px;padding:5px 8px}
+.devbox input{width:100%;border:1.5px solid var(--line);background:var(--surface);border-radius:8px;padding:10px 12px;margin:0 0 12px;font-size:16px}
+.devbox .primary{margin:4px 0 0}
+</style>
+</head>
+<body>
+
+<div id="devView" class="login devbox" hidden>
+  <h1 data-t="app"></h1>
+  <div id="devBody"></div>
+  <p class="err" id="devErr" hidden></p>
+  <button class="link" id="langDev" type="button"></button>
+</div>
+
+<div id="appView" hidden>
+  <header>
+    <div class="wrap">
+      <div class="bar">
+        <h1 data-t="app"></h1>
+        <span class="sp"></span>
+        <label class="staff"><span data-t="staff"></span><input id="staff" list="staffList" autocomplete="off"></label>
+        <datalist id="staffList"></datalist>
+        <button class="link" id="lang" type="button"></button>
+      </div>
+      <p class="count" id="devName"></p>
+    </div>
+  </header>
+  <main class="wrap" id="main"></main>
+</div>
+
+<div class="toast" id="toast" role="status" hidden></div>
+<div class="cam" id="cam" hidden>
+  <div id="reader"></div>
+  <p data-t="camHelp"></p>
+  <button type="button" id="camClose" data-t="close"></button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="EC_zaiko_config.js"></script>
+<script>
+// 設定は在庫アプリと同じ EC_zaiko_config.js を使う（API_URL だけ使う）
+const CONFIG = window.ZAIKO_CONFIG || {};
+
+const T = {
+  ja: { app:'通販 出荷', langBtn:'English', staff:'担当', devName:'この端末：{n}',
+    devLead:'この端末はまだ出荷に使えません。端末の名前を入れて許可を申請してください。', devNamePh:'例：倉庫iPhone1', devAsk:'許可を申請する',
+    devPending:'「{n}」として申請しました。在庫アプリの「端末」で管理者が許可すると使えるようになります。', devCheck:'許可されたか確かめる',
+    devStopped:'この端末は停止されています。管理者に確認してください。', devNeedName:'端末の名前を入れてください。',
+    camera:'カメラで読む', camHelp:'QRコードを枠に合わせてください', close:'閉じる', loading:'読み込んでいます…', none:'見つかりませんでした。',
+    stock:'在庫', pcs:'個', units:'台', rankNone:'未決定', fromOld:'旧コード {o} を読み取りました。', loc:'棚番', old:'旧コード',
+    shipDate:'出荷日', shipDept:'販売部門', buyer:'販売先', dOnline:'通販', dWholesale:'業販', shipNo:'番号', shipNoPh:'QRを読むか番号を入れる',
+    pick:'出荷するものを選んでください', shipQty:'数量', unitPrice:'販売単価', shipping:'送料', fee:'手数料', packing:'梱包費', cod:'着払送料',
+    orderId:'取引ID', invoice:'請求書NO', note:'備考', doShip:'出荷を登録', today:'この端末の今日の出荷', cancel:'取消',
+    noToday:'今日の出荷はまだありません。', shipped:'{sid} で出荷を登録しました（{no}、残り {left}）', lowered:'出品数を在庫に合わせて下げたサイト：{s}',
+    cancelled2:'{sid} を取消しました', confirmCancel:'{sid}（{no}）の出荷を取り消しますか？', noStock:'在庫がないので出荷できません。',
+    noRank:'まだランクが決まっていない台です。', needBuyer:'販売先を入れてください。', needNo:'先に番号を読んでください。',
+    needStaff:'右上の「担当」に自分の名前を入れてください。', canceledState:'取消済み', amountLater:'金額が分からなければ空欄のまま登録できます。',
+    camErr:'カメラを使えません。ブラウザの設定でカメラを許可してください。', netErr:'サーバーにつながりません。通信を確かめて、もう一度試してください。' },
+  en: { app:'Online shipping', langBtn:'日本語', staff:'Staff', devName:'This device: {n}',
+    devLead:'This device cannot ship yet. Enter a name for it and request access.', devNamePh:'e.g. Warehouse iPhone 1', devAsk:'Request access',
+    devPending:'Requested as "{n}". You can start once an administrator allows it in the stock app.', devCheck:'Check again',
+    devStopped:'This device has been stopped. Ask an administrator.', devNeedName:'Enter a name for this device.',
+    camera:'Scan', camHelp:'Fit the QR code inside the frame', close:'Close', loading:'Loading…', none:'Nothing found.',
+    stock:'In stock', pcs:'pcs', units:'units', rankNone:'Not set', fromOld:'Read old code {o}.', loc:'Shelf', old:'Old code',
+    shipDate:'Ship date', shipDept:'Department', buyer:'Sold to', dOnline:'Online', dWholesale:'Wholesale', shipNo:'Number', shipNoPh:'Scan a QR code or type a number',
+    pick:'Choose what to ship', shipQty:'Qty', unitPrice:'Unit price', shipping:'Shipping', fee:'Fee', packing:'Packing', cod:'COD shipping',
+    orderId:'Order ID', invoice:'Invoice no.', note:'Note', doShip:'Record shipment', today:"This device's shipments today", cancel:'Cancel',
+    noToday:'No shipments yet today.', shipped:'Recorded {sid} ({no}, {left} left)', lowered:'Listing counts lowered to match stock: {s}',
+    cancelled2:'Cancelled {sid}', confirmCancel:'Cancel shipment {sid} ({no})?', noStock:'Out of stock. This item cannot be shipped.',
+    noRank:'This unit has no rank yet.', needBuyer:'Enter who it was sold to.', needNo:'Scan a number first.',
+    needStaff:'Enter your name in "Staff" at the top right.', canceledState:'Cancelled', amountLater:'Leave amounts blank if you do not know them yet.',
+    camErr:'The camera is not available. Allow camera access in your browser settings.', netErr:'Cannot reach the server. Check your connection and try again.' }
+};
+const V = { en: { 'ヤフオク':'Yahoo Auctions','ヤフリマ':'Yahoo Flea Market','メルカリ':'Mercari','アマゾン':'Amazon' } };
+let lang = localStorage.getItem('zaikoLang') || 'ja';
+const t = (k, p) => (T[lang][k] || k).replace(/\{(\w+)\}/g, (_, x) => (p && p[x] != null) ? p[x] : '');
+const v = s => (lang === 'en' && V.en[s]) || s;
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const yen = n => (n === '' || n == null) ? '' : '¥' + Number(n).toLocaleString('ja-JP');
+function toast(msg, bad) {
+  const el = $('#toast'); el.textContent = msg; el.className = 'toast' + (bad ? ' bad' : ''); el.hidden = false;
+  clearTimeout(toast.tm); toast.tm = setTimeout(() => { el.hidden = true; }, bad ? 6000 : 3500);
+}
+
+// ---- 端末の鍵（この端末のブラウザにだけ保存される長い乱数） ----
+let deviceKey = localStorage.getItem('shukkaDeviceKey');
+if (!deviceKey) {
+  const a = new Uint8Array(24); crypto.getRandomValues(a);
+  deviceKey = Array.from(a, b => b.toString(16).padStart(2, '0')).join('');
+  localStorage.setItem('shukkaDeviceKey', deviceKey);
+}
+let deviceState = { state: '', name: '' };
+
+async function api(fn, ...args) {
+  let res;
+  try {
+    res = await fetch(CONFIG.API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ fn, args, deviceKey, staff: ($('#staff').value || '').trim() }) });
+  } catch (e) { throw new Error(t('netErr')); }
+  let j;
+  try { j = await res.json(); } catch (e) { throw new Error(t('netErr') + '（' + res.status + '）'); }
+  if (!j.ok) {
+    if (j.error === 'device_not_allowed') { checkDevice(); throw new Error('device'); }
+    if (j.error === 'staff_required') { $('#staff').focus(); throw new Error(t('needStaff')); }
+    throw new Error(j.error);
+  }
+  return j.result;
+}
+
+// ---- 端末の申請・許可待ち ----
+async function checkDevice() {
+  $('#appView').hidden = true; $('#devView').hidden = false; $('#devErr').hidden = true;
+  $('#devBody').innerHTML = `<p class="msg">${esc(t('loading'))}</p>`;
+  try { deviceState = await api('deviceStatus'); }
+  catch (e) { $('#devBody').innerHTML = ''; $('#devErr').hidden = false; $('#devErr').textContent = e.message; return; }
+  if (deviceState.state === '許可') return enterApp();
+  if (deviceState.state === '申請中') {
+    $('#devBody').innerHTML = `<p>${esc(t('devPending', { n: deviceState.name }))}</p><button class="primary" id="devCheck" type="button">${esc(t('devCheck'))}</button>`;
+    $('#devCheck').addEventListener('click', checkDevice);
+  } else if (deviceState.state === '停止') {
+    $('#devBody').innerHTML = `<p class="notice">${esc(t('devStopped'))}</p>`;
+  } else {
+    $('#devBody').innerHTML = `<p>${esc(t('devLead'))}</p><input id="devNameIn" placeholder="${esc(t('devNamePh'))}" maxlength="30">
+      <button class="primary" id="devAsk" type="button">${esc(t('devAsk'))}</button>`;
+    $('#devAsk').addEventListener('click', async () => {
+      const n = $('#devNameIn').value.trim(); if (!n) { $('#devErr').hidden = false; $('#devErr').textContent = t('devNeedName'); return; }
+      try { await api('requestDevice', n); checkDevice(); }
+      catch (e) { $('#devErr').hidden = false; $('#devErr').textContent = e.message; }
+    });
+  }
+}
+
+// ---- 出荷の画面 ----
+const sf = { date: '', dept: localStorage.getItem('zaikoDept') || '通販', buyer: '', item: null };
+let buyers = [];
+async function enterApp() {
+  $('#devView').hidden = true; $('#appView').hidden = false;
+  $('#devName').textContent = t('devName', { n: deviceState.name });
+  $('#staff').value = localStorage.getItem('shukkaStaff') || '';
+  $('#main').innerHTML = `<p class="msg">${esc(t('loading'))}</p>`;
+  try {
+    const info = await api('shipInfo');
+    buyers = info.buyers; if (!sf.date) sf.date = info.today;
+    $('#staffList').innerHTML = info.staff.map(s => `<option value="${esc(s)}">`).join('');
+    renderShip();
+  } catch (e) {
+    if (e.message === 'device') return;
+    // 担当が空でも画面は出す（出荷の前に入れてもらう）
+    renderShip();
+    if (e.message !== t('needStaff')) toast(e.message, true);
+  }
+}
+$('#staff').addEventListener('change', () => { localStorage.setItem('shukkaStaff', $('#staff').value.trim()); loadToday(); });
+
+function rankHtml(r) { return r ? `<span class="rank">${esc(r)}</span>` : `<span class="rank none">${esc(t('rankNone'))}</span>`; }
+function listHtml(items) {
+  return `<ul class="list">${items.map(i => `<li><button class="row" data-no="${esc(i.no)}">
+    <span class="tag">${esc(i.no)}</span><span class="nm">${esc([i.maker, i.name].filter(Boolean).join(' '))}</span>
+    <span class="qty">${i.stock}</span>
+    <span class="sub">${i.kind === 'unit' || i.rank ? rankHtml(i.rank) : ''}${i.location ? `<span>${esc(t('loc'))} ${esc(i.location)}</span>` : ''}</span>
+  </button></li>`).join('')}</ul>`;
+}
+
+function renderShip() {
+  const f = (id, k, type, extra) => `<label for="${id}">${esc(t(k))}</label><input id="${id}" type="${type || 'text'}" ${extra || ''}>`;
+  $('#main').innerHTML = `<div class="stack">
+    <section class="box"><div class="form">
+      <label for="sDate">${esc(t('shipDate'))}</label><input id="sDate" type="date" value="${esc(sf.date)}">
+      <span>${esc(t('shipDept'))}</span><span class="seg" id="sDept">
+        <button type="button" data-d="通販" aria-pressed="${sf.dept === '通販'}">${esc(t('dOnline'))}</button>
+        <button type="button" data-d="業販" aria-pressed="${sf.dept === '業販'}">${esc(t('dWholesale'))}</button></span>
+      <label for="sBuyer">${esc(t('buyer'))}</label><input id="sBuyer" list="buyerList" value="${esc(sf.buyer)}" autocomplete="off">
+      <datalist id="buyerList">${buyers.map(b => `<option value="${esc(b)}">`).join('')}</datalist>
+    </div></section>
+    <section class="box">
+      <form class="find" id="shipForm" autocomplete="off">
+        <input id="shipNo" type="search" enterkeyhint="go" placeholder="${esc(t('shipNoPh'))}" aria-label="${esc(t('shipNo'))}">
+        <button class="scan" id="shipCam" type="button">${esc(t('camera'))}</button>
+      </form>
+      <div id="picked"></div>
+      <div id="shipFields" hidden>
+        <div class="form">
+          ${f('sQty', 'shipQty', 'number', 'min="1" step="1" inputmode="numeric" value="1"')}
+          ${f('sPrice', 'unitPrice', 'text', 'inputmode="numeric"')}
+          ${f('sShipping', 'shipping', 'text', 'inputmode="numeric"')}
+          ${f('sFee', 'fee', 'text', 'inputmode="numeric"')}
+          ${f('sPacking', 'packing', 'text', 'inputmode="numeric"')}
+          ${f('sCod', 'cod', 'text', 'inputmode="numeric"')}
+          ${f('sOrder', 'orderId')}
+          ${f('sInvoice', 'invoice')}
+          ${f('sNote', 'note')}
+        </div>
+        <p class="count">${esc(t('amountLater'))}</p>
+        <button class="primary" id="doShip" type="button">${esc(t('doShip'))}</button>
+      </div>
+    </section>
+    <section class="box"><h2>${esc(t('today'))}</h2><div id="today"></div></section>
+  </div>`;
+  $('#sDate').addEventListener('change', e => { sf.date = e.target.value; });
+  $('#sBuyer').addEventListener('input', e => { sf.buyer = e.target.value; });
+  $('#sDept').addEventListener('click', e => {
+    const b = e.target.closest('[data-d]'); if (!b) return;
+    sf.dept = b.dataset.d; localStorage.setItem('zaikoDept', sf.dept);
+    $('#sDept').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+  });
+  $('#shipForm').addEventListener('submit', e => { e.preventDefault(); pickNo($('#shipNo').value); });
+  $('#shipCam').addEventListener('click', openCam);
+  $('#doShip').addEventListener('click', doShip);
+  $('#today').addEventListener('click', onTodayClick);
+  sf.item = null;
+  loadToday();
+  $('#shipNo').focus();
+}
+async function pickNo(text) {
+  text = String(text || '').trim(); if (!text) return;
+  $('#picked').innerHTML = `<p class="count">${esc(t('loading'))}</p>`;
+  try {
+    const r = await api('shipLookup', text);
+    if (r.type === 'item') return setItem(r.item, r.from);
+    if (r.type === 'group') {
+      const items = r.group.items.filter(i => i.stock > 0);
+      $('#picked').innerHTML = items.length ? `<p class="count">${esc(t('pick'))}</p><div class="choices">${listHtml(items)}</div>`
+        : `<p class="notice">${esc(t('noStock'))}</p>`;
+      $('#picked').querySelectorAll('[data-no]').forEach(b => b.addEventListener('click', () => { $('#shipNo').value = b.dataset.no; pickNo(b.dataset.no); }));
+      $('#shipFields').hidden = true; sf.item = null; return;
+    }
+    $('#picked').innerHTML = `<p class="err">${esc(t('none'))}（${esc(text)}）</p>`; $('#shipFields').hidden = true; sf.item = null;
+  } catch (e) { if (e.message !== 'device') $('#picked').innerHTML = `<p class="err">${esc(e.message)}</p>`; }
+}
+function setItem(it, from) {
+  sf.item = it;
+  const warn = [];
+  if (it.stock <= 0 || it.cancelled) warn.push(t('noStock'));
+  else if (it.kind === 'unit' && !it.rank) warn.push(t('noRank'));
+  $('#picked').innerHTML = `<div class="picked">
+    ${from ? `<p class="count">${esc(t('fromOld', { o: from }))}</p>` : ''}
+    <div class="head"><span class="tag big">${esc(it.no)}</span>${it.kind === 'unit' || it.rank ? rankHtml(it.rank) : ''}</div>
+    <p class="title">${esc([it.maker, it.name].filter(Boolean).join(' '))}</p>
+    <p class="count">${esc(it.model)} ${esc(t('stock'))} <b>${it.stock}</b> ${esc(it.kind === 'unit' ? t('units') : t('pcs'))}</p>
+    ${warn.map(w => `<p class="notice">${esc(w)}</p>`).join('')}</div>`;
+  const ok = it.stock > 0 && !it.cancelled;
+  $('#shipFields').hidden = !ok;
+  if (!ok) return;
+  ['sPrice', 'sShipping', 'sFee', 'sPacking', 'sCod', 'sOrder', 'sInvoice', 'sNote'].forEach(id => { $('#' + id).value = ''; });
+  const q = $('#sQty'); q.value = 1; q.max = it.stock; q.disabled = it.kind === 'unit';
+  (it.kind === 'unit' ? $('#sPrice') : q).focus();
+}
+async function doShip() {
+  const it = sf.item; if (!it) return toast(t('needNo'), true);
+  if (!$('#staff').value.trim()) { $('#staff').focus(); return toast(t('needStaff'), true); }
+  sf.buyer = $('#sBuyer').value.trim(); sf.date = $('#sDate').value;
+  if (!sf.buyer) { $('#sBuyer').focus(); return toast(t('needBuyer'), true); }
+  const btn = $('#doShip'); btn.disabled = true;
+  try {
+    const r = await api('ship', { no: it.no, qty: Number($('#sQty').value), date: sf.date, dept: sf.dept, buyer: sf.buyer,
+      price: $('#sPrice').value, shipping: $('#sShipping').value, fee: $('#sFee').value, packing: $('#sPacking').value,
+      cod: $('#sCod').value, orderId: $('#sOrder').value.trim(), invoice: $('#sInvoice').value.trim(), note: $('#sNote').value.trim() });
+    if (buyers.indexOf(sf.buyer) < 0) buyers.push(sf.buyer);
+    toast(t('shipped', { sid: r.sid, no: r.no, left: r.stockAfter }) + (r.lowered.length ? ' ' + t('lowered', { s: r.lowered.map(v).join('、') }) : ''));
+    sf.item = null; $('#picked').innerHTML = ''; $('#shipFields').hidden = true; $('#shipNo').value = ''; $('#shipNo').focus();
+    loadToday();
+  } catch (e) { if (e.message !== 'device') toast(e.message, true); }
+  finally { btn.disabled = false; }
+}
+async function loadToday() {
+  const el = $('#today'); if (!el) return;
+  if (!$('#staff').value.trim()) { el.innerHTML = `<p class="count">${esc(t('needStaff'))}</p>`; return; }
+  el.innerHTML = `<p class="count">${esc(t('loading'))}</p>`;
+  try {
+    const list = await api('todayShips');
+    el.innerHTML = list.length ? `<div class="scroll"><table class="tbl"><tbody>${list.map(s => `<tr class="${s.state === '取消' ? 'struck' : ''}">
+      <td>${esc(s.at)}</td><td><span class="tag">${esc(s.no)}</span><br><span class="count">${esc(s.sid)} ${esc(s.name)}</span></td>
+      <td class="n">${esc(s.qty)}</td><td>${esc(v(s.buyer))}</td><td class="n">${yen(s.price)}</td>
+      <td>${s.state === '取消' ? esc(t('canceledState')) : `<button class="link danger" data-cancel="${esc(s.sid)}" data-cno="${esc(s.no)}">${esc(t('cancel'))}</button>`}</td>
+    </tr>`).join('')}</tbody></table></div>` : `<p class="count">${esc(t('noToday'))}</p>`;
+  } catch (e) { if (e.message !== 'device') el.innerHTML = `<p class="err">${esc(e.message)}</p>`; }
+}
+async function onTodayClick(e) {
+  const b = e.target.closest('[data-cancel]'); if (!b) return;
+  if (!confirm(t('confirmCancel', { sid: b.dataset.cancel, no: b.dataset.cno }))) return;
+  b.disabled = true;
+  try { await api('cancelShip', b.dataset.cancel); toast(t('cancelled2', { sid: b.dataset.cancel })); loadToday(); }
+  catch (err) { b.disabled = false; if (err.message !== 'device') toast(err.message, true); }
+}
+
+// ---- カメラ ----
+let qr = null;
+async function openCam() {
+  $('#cam').hidden = false;
+  try {
+    qr = qr || new Html5Qrcode('reader');
+    await qr.start({ facingMode: 'environment' }, { fps: 10, qrbox: { width: 240, height: 240 } }, async text => {
+      await closeCam(); $('#shipNo').value = text; pickNo(text);
+    });
+  } catch (e) { await closeCam(); toast(t('camErr'), true); }
+}
+async function closeCam() { try { if (qr && qr.isScanning) await qr.stop(); } catch (e) {} $('#cam').hidden = true; }
+$('#camClose').addEventListener('click', closeCam);
+
+// ---- 言語 ----
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-t]').forEach(e => { e.textContent = t(e.dataset.t); });
+  $('#lang').textContent = t('langBtn'); $('#langDev').textContent = t('langBtn'); document.title = t('app');
+}
+function toggleLang() {
+  lang = lang === 'ja' ? 'en' : 'ja'; localStorage.setItem('zaikoLang', lang); applyLang();
+  if (!$('#appView').hidden) { $('#devName').textContent = t('devName', { n: deviceState.name }); renderShip(); } else checkDevice();
+}
+$('#lang').addEventListener('click', toggleLang);
+$('#langDev').addEventListener('click', toggleLang);
+
+applyLang();
+checkDevice();
+</script>
+</body>
+</html>
